@@ -1,0 +1,206 @@
+
+#' Parse H5AD dataframe
+#'
+#' This function converts an object from rhdf5::h5read into a usable dataframe
+#'
+#' @param obj List of objects as read from rhdf5::h5read(h5, "obs") or rhdf5::h5read(h5, "var")
+#' @return A properly formatted dataframe
+.parse_h5ad_dataframe <- function(obj) {
+    if (!is.list(obj)) {
+        stop("Not a list!")
+    }
+    if ("_index" %in% names(obj)) {
+        df = data.frame(row.names=obj[["_index"]])
+        bad.cols = c("_index", "__categories")
+    } else { ## old version of anndata (pbmc3k)
+        df = data.frame(row.names=obj[["index"]])
+        bad.cols = c("index", "__categories")
+    }
+    for (cname in setdiff(names(obj), bad.cols)) {
+        item = obj[[cname]]
+        if (is.list(item)) {
+            categories = item$categories
+            codes = item$codes + 1
+            codes[codes <= 0] = NA
+            df[[cname]] = factor(categories[codes], levels=categories)
+        } else {
+            df[[cname]] = c(item)
+        }
+    }
+    if (("__categories" %in% names(obj)) & (is.list(obj[["__categories"]]))) {
+        for (cname in names(obj[["__categories"]])) {
+            categories = c(obj[["__categories"]][[cname]])
+            codes = df[[cname]] + 1
+            codes[codes <= 0] = NA
+            df[[cname]] = factor(categories[codes], levels=categories)
+        }
+    }
+    return(df)
+}
+
+
+#' Read H5AD obs
+#'
+#' This function takes an H5 filename and reads the .obs dataframe
+#'
+#' @param h5ad An H5AD filename path
+#' @return A properly formatted dataframe
+#' @export
+read_h5ad_obs <- function(h5ad) {
+    df = rhdf5::h5read(h5ad, "obs")
+    return(.parse_h5ad_dataframe(df))
+}
+#' Read H5AD var
+#'
+#' This function takes an H5 filename and reads the .var dataframe
+#'
+#' @param h5ad An H5AD filename path
+#' @return A properly formatted dataframe
+#' @export
+read_h5ad_var <- function(h5ad) {
+    df = rhdf5::h5read(h5ad, "var")
+    return(.parse_h5ad_dataframe(df))
+}
+
+#' Parse observed barcode dataframe
+#'
+#' This function reads .obs, optionally
+#' subsetting to barcodes passed from
+#' a dataframe or a vector of valid barcodes
+#'
+#' @param h5ad An H5AD filename path
+#' @param obs Either NA (all data), a vector of valid UMIs, or a dataframe of .obs with UMI rownames
+#' @return A list of the dataframe (df) and the integer index with df's rownames as names
+.parse_h5ad_obs <- function(h5ad, obs=NA) {
+    if (any(is.na(obs))) {
+        obs_df = read_h5ad_obs(h5ad)
+        obs_index = 1:nrow(obs_df)
+    } else if (is.data.frame(obs)) {
+        obsnames = rhdf5::h5read(h5ad, "/obs/_index")
+        obs_df = obs
+        obs_index = match(rownames(obs_df), obsnames)
+    } else {
+        obs_df = read_h5ad_obs(h5ad)
+        obs_index = match(obs, rownames(obs_df))
+        obs_df = obs_df[obs_index,]
+    }
+    names(obs_index) = rownames(obs_df)
+    return(list(df=obs_df, index=obs_index))
+}
+
+
+#' Parse variables dataframe
+#'
+#' This function reads .var, optionally
+#' subsetting to features passed from
+#' a dataframe or a vector of valid features
+#'
+#' @param h5ad An H5AD filename path
+#' @param var Either NA (all features), a vector of valid features, or a dataframe of .var with feature rownames
+#' @return A list of the dataframe (df) and the integer index with df's rownames as names
+.parse_h5ad_var <- function(h5ad, var=NA, base="/var/") {
+    if (any(is.na(var))) {
+        var_df = read_h5ad_var(h5ad)
+        var_index = 1:nrow(var_df)
+    } else if (is.data.frame(var)) {
+        varnames = rhdf5::h5read(h5ad, paste0(base, "/_index"))
+        var_df = var
+        var_index = match(rownames(var_df), varnames)
+    } else {
+        var_df = read_h5ad_var(h5ad)
+        var_index = match(var, rownames(var_df))
+        var_df = var_df[var_index,]
+    }
+    names(var_index) = rownames(var_df)
+    return(list(df=var_df, index=var_index))
+}
+
+#' Parse a sparse matrix given indices
+#'
+#' THis function takes a matrix and a list of indices to transform
+#' into a Matrix::sparseMatrix
+#'
+#' @param h5 An H5AD filename path
+#' @param matrix A matrix object in the H5 file
+#' @param obs_index A named vector of observed (barcode) indices
+#' @param var_index A named vector of variable (gene) indices
+#' @return A sparse matrix
+.get_sparse <- function(h5, matrix, obs_index, var_index) {
+    indptr = rhdf5::h5read(h5, paste0(matrix, "/indptr"))
+    VI = match(rhdf5::h5read(h5, paste0(matrix, "/indices")) + 1,
+                    var_index)
+    data = rhdf5::h5read(h5, paste0(matrix, "/data"))
+    OI = as.integer(rep(NA, length(VI)))
+    for (i in obs_index) {
+        begin = indptr[i] + 1
+        end = indptr[i + 1]
+        OI[begin:end] = match(i, obs_index)
+    }
+    flag = (!is.na(OI)) & (!is.na(VI))
+    return(Matrix::sparseMatrix(i=VI[flag],
+                                j=OI[flag],
+                                x=c(data[flag]),
+                                dims=c(length(var_index),
+                                       length(obs_index))))
+}
+
+#' Parse a matrix given indices
+#'
+#' THis function takes a matrix and a list of indices to transform
+#' into a matrix or Matrix::sparseMatrix
+#'
+#' @param h5 An H5AD filename path
+#' @param matrix A matrix object in the H5 file
+#' @param obs_index A named vector of observed (barcode) indices
+#' @param var_index A named vector of variable (gene) indices
+#' @return A named matrix
+.parse_h5ad_X <- function(h5, matrix, obs_index, var_index) {
+    matrix = paste0("/", matrix, "/")
+    h5list = rhdf5::h5ls(h5)
+    flag = (h5list$group == dirname(matrix)) & (h5list$name == basename(matrix))
+    if (sum(flag) != 1) {
+        stop("Not found")
+    }
+    if (h5list$otype[flag] == "H5I_GROUP") {
+        M = .get_sparse(h5, matrix, obs_index, var_index)
+        dimnames(M) = list(names(var_index), names(obs_index))
+    } else {
+        M = rhdf5::h5read(h5, matrix, index=list(var_index, obs_index))
+        dimnames(M) = list(names(var_index), names(obs_index))
+    }
+    return(M)
+}
+#' Read H5AD matrix
+#'
+#' This function reads the matrix from an H5AD file
+#' and optionally subsets to only certain genes.
+#' If raw, will only take raw variables and then return,
+#' since .raw can contain a different set of genes.
+#'
+#' @param h5ad An H5AD filename path
+#' @param obs A dataframe of .obs or vector of obsnames to subset by
+#' @param var A dataframe of .var or vector of varnames to subset by
+#' @param layer A vector of layer(s) to subset
+#' @return A SingleCellExperiment object filled with assays
+#' @export
+read_h5ad <- function(h5ad, obs=NA, var=NA, layer=NA, raw=FALSE) {
+    obs = .parse_h5ad_obs(h5ad, obs)
+    var = .parse_h5ad_var(h5ad, var, base=ifelse(raw, "/raw/var/", "/var/"))
+    if (raw) {
+        assays = list(counts=.parse_h5ad_X(h5ad, "/raw/X",
+                                           obs_index=obs$index,
+                                           var_index=var$index))
+
+
+        return(SingleCellExperiment::SingleCellExperiment(assays, colData=obs$df, rowData=var$df))
+    }
+    assays = list(counts=.parse_h5ad_X(h5ad, "/X",
+                                       obs_index=obs$index,
+                                       var_index=var$index))
+    for (L in layer[!is.na(layer)]) {
+        assays[[L]] = .parse_h5ad_X(h5ad, L,
+                                    obs_index=obs$index,
+                                    var_index=var$index)
+    }
+    return(SingleCellExperiment::SingleCellExperiment(assays, colData=obs$df, rowData=var$df))
+}

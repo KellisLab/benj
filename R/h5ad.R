@@ -69,10 +69,10 @@ read_h5ad_var <- function(h5ad) {
 #' a dataframe or a vector of valid barcodes
 #'
 #' @param h5ad An H5AD filename path
-#' @param obs Either NA (all data), a vector of valid UMIs, or a dataframe of .obs with UMI rownames
+#' @param obs Either NULL (all data), a vector of valid UMIs, or a dataframe of .obs with UMI rownames
 #' @return A list of the dataframe (df) and the integer index with df's rownames as names
-.parse_h5ad_obs <- function(h5ad, obs=NA) {
-    if (any(is.na(obs))) {
+.parse_h5ad_obs <- function(h5ad, obs=NULL) {
+    if (is.null(obs)) {
         obs_df = read_h5ad_obs(h5ad)
         obs_index = 1:nrow(obs_df)
     } else if (is.data.frame(obs)) {
@@ -96,10 +96,10 @@ read_h5ad_var <- function(h5ad) {
 #' a dataframe or a vector of valid features
 #'
 #' @param h5ad An H5AD filename path
-#' @param var Either NA (all features), a vector of valid features, or a dataframe of .var with feature rownames
+#' @param var Either NULL (all features), a vector of valid features, or a dataframe of .var with feature rownames
 #' @return A list of the dataframe (df) and the integer index with df's rownames as names
-.parse_h5ad_var <- function(h5ad, var=NA, base="/var/") {
-    if (any(is.na(var))) {
+.parse_h5ad_var <- function(h5ad, var=NULL, base="/var/") {
+    if (is.null(var)) {
         var_df = read_h5ad_var(h5ad)
         var_index = 1:nrow(var_df)
     } else if (is.data.frame(var)) {
@@ -127,6 +127,12 @@ read_h5ad_var <- function(h5ad) {
 #' @return A sparse matrix
 .get_sparse <- function(h5, matrix, obs_index, var_index) {
     indptr = rhdf5::h5read(h5, paste0(matrix, "/indptr"))
+    if (is.null(obs_index)) {
+        obs_index = seq(1, length(indptr)-1)
+    }
+    if (is.null(var_index)) {
+        stop("Not implemented")
+    }
     VI = match(rhdf5::h5read(h5, paste0(matrix, "/indices")) + 1,
                     var_index)
     data = rhdf5::h5read(h5, paste0(matrix, "/data"))
@@ -154,21 +160,48 @@ read_h5ad_var <- function(h5ad) {
 #' @param obs_index A named vector of observed (barcode) indices
 #' @param var_index A named vector of variable (gene) indices
 #' @return A named matrix
-.parse_h5ad_X <- function(h5, matrix, obs_index, var_index) {
-    matrix = paste0("/", matrix, "/")
-    h5list = rhdf5::h5ls(h5)
-    flag = (h5list$group == dirname(matrix)) & (h5list$name == basename(matrix))
-    if (sum(flag) != 1) {
-        stop("Not found")
-    }
-    if (h5list$otype[flag] == "H5I_GROUP") {
+.parse_h5ad_X <- function(h5, matrix, obs_index=NULL, var_index=NULL) {
+    #matrix = paste0(dirname(matrix), "/", basename(matrix))
+    if (matrix %in% rhdf5::h5ls(h5)$group) {
         M = .get_sparse(h5, matrix, obs_index, var_index)
-        dimnames(M) = list(names(var_index), names(obs_index))
     } else {
         M = rhdf5::h5read(h5, matrix, index=list(var_index, obs_index))
-        dimnames(M) = list(names(var_index), names(obs_index))
+    }
+    if (!is.null(obs_index)) {
+        colnames(M) = names(obs_index)
+    }
+    if (!is.null(var_index)) {
+        rownames(M) = names(var_index)
     }
     return(M)
+}
+
+.get_dimreduc <- function(h5, group, obs_index=NULL, var_index=NULL) {
+    h5list = rhdf5::h5ls(h5)
+    rd_names = h5list[(h5list$group == group) & (h5list$otype %in% c("H5I_GROUP", "H5I_DATASET")),]$name
+    names(rd_names) = rd_names
+    return(lapply(rd_names, function(name) {
+        print(paste0("DR name:", name))
+        .parse_h5ad_X(h5, paste0(group, "/", name),
+                      obs_index=obs_index,
+                      var_index=var_index)
+   }))
+}
+
+.sparse2selfhits <- function(M) {
+    N = nrow(M)
+    if (is.matrix(M)) {
+        M = reshape2::melt(M, varnames=c("i", "j"), value.name="x")
+    } else {
+        M = Matrix::summarize(M)
+    }
+    hits = SelfHits(
+        mdf$i,
+        mdf$j,
+        nnode=N
+    )
+    mcols(hits)$value = mdf$x
+    return(hits)
 }
 #' Read H5AD matrix
 #'
@@ -183,7 +216,7 @@ read_h5ad_var <- function(h5ad) {
 #' @param layer A vector of layer(s) to subset
 #' @return A SingleCellExperiment object filled with assays
 #' @export
-read_h5ad <- function(h5ad, obs=NA, var=NA, layer=NA, raw=FALSE) {
+read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE, obsp=TRUE, varp=TRUE) {
     obs = .parse_h5ad_obs(h5ad, obs)
     var = .parse_h5ad_var(h5ad, var, base=ifelse(raw, "/raw/var/", "/var/"))
     if (raw) {
@@ -192,15 +225,30 @@ read_h5ad <- function(h5ad, obs=NA, var=NA, layer=NA, raw=FALSE) {
                                            var_index=var$index))
 
 
-        return(SingleCellExperiment::SingleCellExperiment(assays, colData=obs$df, rowData=var$df))
+        sce = SingleCellExperiment::SingleCellExperiment(assays, colData=obs$df, rowData=var$df)
+    } else {
+        assays = list(counts=.parse_h5ad_X(h5ad, "/X",
+                                           obs_index=obs$index,
+                                           var_index=var$index))
+        for (L in layer) {
+            assays[[L]] = .parse_h5ad_X(h5ad, L,
+                                        obs_index=obs$index,
+                                        var_index=var$index)
+        }
+        sce = SingleCellExperiment::SingleCellExperiment(assays, colData=obs$df, rowData=var$df)
     }
-    assays = list(counts=.parse_h5ad_X(h5ad, "/X",
-                                       obs_index=obs$index,
-                                       var_index=var$index))
-    for (L in layer[!is.na(layer)]) {
-        assays[[L]] = .parse_h5ad_X(h5ad, L,
-                                    obs_index=obs$index,
-                                    var_index=var$index)
+    if (obsm) {
+        rd = .get_dimreduc(h5ad, group="/obsm", obs_index=obs$index)
+        SingleCellExperiment::reducedDims(sce) = lapply(rd, Matrix::t)
     }
-    return(SingleCellExperiment::SingleCellExperiment(assays, colData=obs$df, rowData=var$df))
+    if (obsp) {
+        ## print("OBSP:")
+        cp = .get_dimreduc(h5ad, group="/obsp", obs_index=obs$index, var_index=obs$index)
+        ## print(str(cp))
+        ## SingleCellExperiment::colPairs(sce, asSparse=TRUE) = lapply(cp, Matrix::t)
+    }
+    if (varp & !raw) {
+        #print("reading varp")
+    }
+    return(sce)
 }

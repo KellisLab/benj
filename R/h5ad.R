@@ -181,7 +181,7 @@ read_h5ad_var <- function(h5ad) {
     rd_names = h5list[(h5list$group == group) & (h5list$otype %in% c("H5I_GROUP", "H5I_DATASET")),]$name
     names(rd_names) = rd_names
     return(lapply(rd_names, function(name) {
-        print(paste0("DR name:", name))
+#        print(paste0("DR name:", name))
         .parse_h5ad_X(h5, paste0(group, "/", name),
                       obs_index=obs_index,
                       var_index=var_index)
@@ -231,7 +231,7 @@ read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE
                                            obs_index=obs$index,
                                            var_index=var$index))
         for (L in layer) {
-            assays[[L]] = .parse_h5ad_X(h5ad, L,
+            assays[[L]] = .parse_h5ad_X(h5ad, paste0("/layers/", L),
                                         obs_index=obs$index,
                                         var_index=var$index)
         }

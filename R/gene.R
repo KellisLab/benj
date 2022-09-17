@@ -7,6 +7,7 @@
 #' indices
 #'
 #' @param x features
+#' @return Unique features
 #' @export
 var_names_make_unique <- function(x) { make.unique(x, sep="-") }
 

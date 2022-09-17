@@ -19,9 +19,22 @@
     return(list(motifs = motifs, motifSummary = Reduce(rbind, mdf)))
 }
 
+#' Motif overlap of genomic ranges
+#'
+#' @param peakSet GenomicRanges
+#' @param jaspar JASPAR2022::JASPAR2022 or similar object
+#' @param species Species to select from JASPAR
+#' @param collection Collection from JASPAR
+#' @param width Width for motifmatchr. Default=7
+#' @param BSgenome BSgenome object to match peaks against. NULL means hg38
+#' @param cutoff P-value cutoff for motifmatchr. Default=5e-05
+#' @return RangedSummarizedExperiment of each motif's enrichment
+#' @export
 motif_overlap <- function(peakSet, jaspar, species="Homo sapiens", collection="CORE",
-                          width=7, cutoff=5e-05, BSgenome=NULL, counts=FALSE) {
+                          BSgenome=NULL,
+                          width=7, cutoff=5e-05, counts=FALSE) {
     if (is.null(BSgenome)) {
+        warning("BSgenome unspecified. Using BSgenome.Hsapiens.UCSC.hg38")
         BSgenome = BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38
     }
     motifs = TFBSTools::getMatrixSet(jaspar, list(species=species, collection=collection))

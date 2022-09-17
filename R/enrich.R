@@ -1,11 +1,32 @@
 
+
+#' Binomial CI estimation wilson score interval
+#' as taken from Carles Boix
+#'
+#' @param ns number successes
+#' @param n total number
+#' @param z standard deviations
+#' @param max whether lower or upper tail
+#' @export
+calc_binomial_CI <- function(ns, n, z, max=TRUE) {
+    nf = n - ns
+    zsq = z^2
+    p = (ns + zsq/2) / (n + zsq)
+    pm = (z / (n + zsq)) * sqrt((ns * nf) / n + zsq / 4)
+    return(p + (2 * max - 1) * pm)
+}
+
+#' Summarize JASPAR motifs as taken from ArchR
+#'
+#' @param motifs JASPAR motifs
+#' @return list of motifs and a summary dataframe
 .summarizeJASPARMotifs <- function(motifs) {
     mnames = sapply(seq_along(motifs), function(x) {
         namex = gsub("::", "_", motifs[[x]]@name)
         namex = make.names(namex)
         return(paste0(namex, "_", x))
     })
-    mdf = lapply(seq_along(motifs), function(x){
+    mdf = lapply(seq_along(motifs), function(x) {
         data.frame(
             row.names = mnames[x],
             name = motifs[[x]]@name[[1]],

@@ -96,9 +96,45 @@ peak_annotation <- function(gr, gff, upstream=2000, downstream=200) {
     return(gr)
 }
 
-run.great <- function(gr, split=NULL, bg=TRUE) {
-    grcol = colnames(S4Vectors::mcols(gr))
-    if (!is.null(split) & all(split %in% grcol)) {
-
+#' Run GREAT via rGREAT
+#'
+#' @param gr Ranges to send
+#' @param spt Column(s) in ranges to split upon. Optional
+#' @param bg logical set to use rest all of ranges as a background when split
+#' @param species Species to send to GREAT
+#' @return A dataframe with aggregated GREAT output and correct columns set if split
+#' @export
+run.great <- function(gr, spt=NULL, bg=TRUE, species="hg38") {
+    .rgt <- function(x, y=NULL) {
+        if (!is.null(y)) {
+            job = rGREAT::submitGreatJob(x, y, species=species)
+        } else {
+            job = rGREAT::submitGreatJob(x, species=species)
+        }
+        tbl = rGREAT::getEnrichmentTables(job, download_by="tsv")
+        if (is.list(tbl)) {
+            tbl = Reduce(rbind, tbl)
+        }
+        return(tbl)
     }
+    grcol = colnames(S4Vectors::mcols(gr))
+    if (!is.null(spt) & all(spt %in% grcol)) {
+        res = Reduce(rbind, lapply(split(gr, S4Vectors::mcols(gr)[spt]), function(lr) {
+            if (bg) {
+                tbl = .rgt(lr, gr)
+            } else {
+                tbl = .rgt(lr)
+            }
+            if (nrow(tbl) > 0) {
+                ### Add cols
+                for (col in spt) {
+                    tbl[[col]] = unique(S4Vectors::mcols(lr)[col])
+                }
+            }
+            return(tbl)
+        }))
+    } else {
+        res = .rgt(gr)
+    }
+    return(res)
 }

@@ -79,3 +79,81 @@ motif_overlap <- function(peakSet, jaspar, species="Homo sapiens", collection="C
                            dims = c(length(peakSet), length(mpos)))
     return(SummarizedExperiment::SummarizedExperiment(assays=list(matches=motifMat), rowRanges=peakSet, colData=obj$motifSummary[colnames(motifMat),]))
 }
+
+
+#' Enrich against a custom range
+#'
+#' @param peakSet The peaks to enrich
+#' @param gr The custom enrichment ranges to enrich against
+#' @param gr.col Column in gr to split upon
+#' @param counts logical whether to accumulate counts or not
+#' @return RangedSummarizedExperiment
+#' @export
+enrich_overlap_custom <- function(peakSet, gr, gr.col=NULL, counts=FALSE) {
+    ovp = GenomicRanges::findOverlaps(peakSet, gr)
+    if (is.null(gr.col)) {
+        cols = as.factor(rep("CustomEnrichment", length(ovp)))
+    } else {
+        cols = S4Vectors::mcols(gr)[S4Vectors::to(ovp), gr.col]
+        cols = as.factor(cols)
+    }
+    motifMat = Matrix::sparseMatrix(
+                           i = S4Vectors::from(ovp),
+                           j = as.integer(cols),
+                           x=rep(ifelse(counts, 1, TRUE), length(ovp)),
+                           dims=c(length(peakSet),
+                                  length(levels(cols))),
+                           dimnames=list(names(peakSet), levels(cols)))
+    return(SummarizedExperiment::SummarizedExperiment(assays=list(matches=motifMat), rowRanges=peakSet))
+}
+#' Enrich SummarizedExperiment by groupby column
+#'
+#' @param se SummarizedExperiment to enrich
+#' @param groupby Column in rowData(se) to split upon
+#' @param feature_name Feature column in returned dataframe
+#' @param group_name Group name in returned dataframe
+#' @param cols.colData Columns to add from colData(se)
+#' @return dataframe with group, log2FC, and mlog10p columns along with $feature_name
+#' @export
+enrich_se <- function(se, groupby, feature_name="features", group_name="group", cols.colData="name") {
+    P = t(make_pseudobulk(SummarizedExperiment::rowData(se)[[groupby]]))
+    M = as.matrix(P %*% SummarizedExperiment::assays(se)[[1]])
+    mdf = reshape2::melt(M, value.name="pfg", varnames=c(group_name, feature_name))
+    cd = SummarizedExperiment::colData(se)
+    for (col in cols.colData[cols.colData %in% names(cd)]) {
+        mdf[[col]] = cd[mdf[[feature_name]], col]
+    }
+    mdf$cfg = rowSums(P)[mdf[[group_name]]]
+    mdf$pbg = colSums(M)[mdf[[feature_name]]]
+    mdf$cbg = sum(P) - mdf$cfg
+    ### Compute log2FC with wilson score interval
+    mdf$log2FC = with(mdf, log2(pfg / pbg) - log2(cfg / cbg))
+    pind = which(mdf$log2FC >= 0)
+    nind = which(mdf$log2FC < 0)
+    mdf$pfrac = 1
+    mdf$cfrac = 1
+    mdf$pfrac[pind] = with(mdf, sapply(pind, function(i) {
+        calc_binomial_CI(pfg[i], pbg[i], 1.5, max=F)
+    }))
+    mdf$cfrac[pind] = with(mdf, sapply(pind, function(i) {
+        calc_binomial_CI(cfg[i], cbg[i], 1.5, max=T)
+    }))
+    mdf$pfrac[nind] = with(mdf, sapply(nind, function(i) {
+        calc_binomial_CI(pfg[i], pbg[i], 1.5, max=T)
+    }))
+    mdf$cfrac[nind] = with(mdf, sapply(nind, function(i) {
+        calc_binomial_CI(cfg[i], cbg[i], 1.5, max=F)
+    }))
+    mdf$pfrac[is.na(mdf$pfrac)] = 0
+    mdf$cfrac[is.na(mdf$cfrac)] = 0
+    mdf$log2FC = log2(mdf$pfrac / mdf$cfrac)
+    ### Calculate p-value
+    enr_mlog10p = apply(mdf[,c("pfg", "pbg", "cfg", "cbg")], 1, function(y) {
+        -phyper(q=y[1] - 1, m=y[3], n=y[4] - y[3], k=y[2], lower.tail=FALSE, log.p=TRUE) / log(10)
+    })
+    dep_mlog10p = apply(mdf[,c("pfg", "pbg", "cfg", "cbg")], 1, function(y) {
+        -phyper(q=y[1], m=y[3], n=y[4] - y[3], k=y[2], lower.tail=TRUE, log.p=TRUE) / log(10)
+    })
+    mdf$mlog10p = apply(cbind(enr_mlog10p, dep_mlog10p), 1, max)
+    return(mdf[order(mdf$mlog10p, decreasing=TRUE), ])
+}

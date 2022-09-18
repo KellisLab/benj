@@ -67,7 +67,11 @@ order.tsp <- function(mat, rows=TRUE, method="euclidean") {
         tsp = seriation::seriate(dist(t(mat), method=method))
     }
     ord = seriation::get_order(tsp, 1)
-    return(ifelse(rows, mat[ord,], mat[,ord]))
+    if (rows) {
+        return(mat[ord,])
+    } else {
+        return(mat[,ord])
+    }
 }
 
 #' Diagonally cluster the matrix
@@ -77,12 +81,61 @@ order.tsp <- function(mat, rows=TRUE, method="euclidean") {
 #' @param mat Input matrix
 #' @return A list of the sorted matrix and associated columns
 #' @export
-diag.mat2 <- function(mat, ratio=0.5, cutoff=0.25) {
-    ord = order(colSums(mat > cutoff)  > ratio * nrow(mat),
-                apply(mat,2,which.max), decreasing=TRUE)
-    mat = mat[,ord]
-    cto = apply(mat,2,which.max)
-    idx = colSums(mat > cutoff)  > ratio * nrow(mat)
-    cto[idx] = 0
-    return(list(mat, colnames(mat), cto))
+diag.mat3 <- function(mat, ratio=0.5, cutoff=0.25, rows=TRUE) {
+    prev.cutoff = attr(mat, "cutoff")
+    if (rows) {
+        ord = order(rowSums(mat > cutoff)  > ratio * ncol(mat),
+                    apply(mat,1,which.max), decreasing=TRUE)
+        mat = mat[ord,]
+        cto = apply(mat, 1, which.max)
+        idx = rowSums(mat > cutoff)  > ratio * ncol(mat)
+        cto[idx] = 0
+    } else {
+        ord = order(colSums(mat > cutoff)  > ratio * nrow(mat),
+                    apply(mat,2,which.max), decreasing=TRUE)
+        mat = mat[,ord]
+        cto = apply(mat, 2, which.max)
+        idx = colSums(mat > cutoff)  > ratio * nrow(mat)
+        cto[idx] = 0
+
+    }
+    attr(mat, "cutoff") = prev.cutoff
+    if (is.null(attr(mat, "cutoff"))) {
+        if (rows) {
+            attr(mat, "cutoff") = list(row=cto, col=NULL)
+        } else {
+            attr(mat, "cutoff") = list(row=NULL, col=cto)
+        }
+    } else {
+        if (rows) {
+            attr(mat, "cutoff")$row = cto
+        } else {
+            attr(mat, "cutoff")$col = cto
+        }
+    }
+    return(mat)
+}
+
+#' Pivot a dataframe using Matrix::sparseMatrix
+#'
+#' @param df Dataframe
+#' @param row Row of dataframe
+#' @param col Col of dataframe
+#' @param val Value to be added
+#' @param dense logical to determine whether to densify
+#' @return pivoted matrix
+#' @export
+pivot <- function(df, row, col, val, dense=TRUE) {
+    row = as.factor(df[[row]])
+    col = as.factor(df[[col]])
+    M = Matrix::sparseMatrix(i=as.integer(row),
+                             j=as.integer(col),
+                             x=df[[val]],
+                             dimnames=list(levels(row), levels(col)),
+                             dims=c(length(levels(row)), length(levels(col))))
+    if (dense) {
+        return(as.matrix(M))
+    } else {
+        return(M)
+    }
 }

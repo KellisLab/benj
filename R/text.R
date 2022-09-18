@@ -9,10 +9,10 @@
 #'          character string if possible.
 #' @param replacement a replacement for matched pattern.
 #'          Coerced to character if possible.  For ‘fixed = FALSE’ this
-#'          can include backreferences ‘"\1"’ to ‘"\9"’ to parenthesized
+#'          can include backreferences ‘"\\1"’ to ‘"\\9"’ to parenthesized
 #'          subexpressions of ‘pattern’.  For ‘perl = TRUE’ only, it can
-#'          also contain ‘"\U"’ or ‘"\L"’ to convert the rest of the
-#'          replacement to upper or lower case and ‘"\E"’ to end case
+#'          also contain ‘"\\U"’ or ‘"\\L"’ to convert the rest of the
+#'          replacement to upper or lower case and ‘"\\E"’ to end case
 #'          conversion.
 #' @param x a character vector where matches are sought, or an object
 #'          which can be coerced by ‘as.character’ to a character vector.

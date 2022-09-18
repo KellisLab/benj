@@ -47,6 +47,7 @@ make_pseudobulk <- function(x, u=NULL) {
     } else if (is.null(u)) {
         u = unique(x)
     }
+    u = u[!is.na(u)]
     names(u) = u
     return(sapply(u, function(y) {
         1 * (x == y)

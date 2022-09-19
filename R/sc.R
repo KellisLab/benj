@@ -71,8 +71,9 @@ calculate_qc_metrics <- function(se, assay=NULL, log1p=TRUE) {
 #' @param assay Assay to export
 #' @param chunk Chunk size for HDF5
 #' @param genome Genome to set
+#' @param compression integer GZIP compression level used
 #' @export
-se_to_cellranger_h5 <- function(se, h5, assay=NULL, chunk=10000, genome="GRCh38") {
+se_to_cellranger_h5 <- function(se, h5, assay=NULL, chunk=10000, genome="GRCh38", compression=6) {
     rhdf5::h5createFile(h5)
     rhdf5::h5createGroup(h5, "matrix")
     rhdf5::h5createGroup(h5, "matrix/features")
@@ -100,7 +101,7 @@ se_to_cellranger_h5 <- function(se, h5, assay=NULL, chunk=10000, genome="GRCh38"
                                dims=length(ml[[dname]]),
                                storage.mode=storage.mode(ml[[dname]]),
                                chunk=min(length(ml[[dname]]), chunk),
-                               level=6)
+                               level=compression)
         rhdf5::h5write(ml[[dname]], file=h5, name=dname)
     }
 }

@@ -5,15 +5,15 @@
 #'
 #' @param obj List of objects as read from rhdf5::h5read(h5, "obs") or rhdf5::h5read(h5, "var")
 #' @return A properly formatted dataframe
-.parse_h5ad_dataframe <- function(obj) {
+.parse_h5ad_dataframe <- function(obj, index_name="_index") {
     if (!is.list(obj)) {
         stop("Not a list!")
     }
-    if ("_index" %in% names(obj)) {
-        df = data.frame(row.names=obj[["_index"]])
+    if (index_name %in% names(obj)) {
+        df = data.frame(row.names=var_names_make_unique(obj[[index_name]]))
         bad.cols = c("_index", "__categories")
     } else { ## old version of anndata (pbmc3k)
-        df = data.frame(row.names=obj[["index"]])
+        df = data.frame(row.names=var_names_make_unique(obj[["index"]]))
         bad.cols = c("index", "__categories")
     }
     for (cname in setdiff(names(obj), bad.cols)) {
@@ -59,7 +59,11 @@ read_h5ad_obs <- function(h5ad) {
 #' @export
 read_h5ad_var <- function(h5ad) {
     df = rhdf5::h5read(h5ad, "var")
-    return(.parse_h5ad_dataframe(df))
+    if (!("_index" %in% names(df)) & ("symbol" %in% names(df))) {
+        return(.parse_h5ad_dataframe(df, "symbol"))
+    } else {
+        return(.parse_h5ad_dataframe(df))
+    }
 }
 
 #' Parse observed barcode dataframe

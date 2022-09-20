@@ -5,10 +5,10 @@
 #' @export
 set_ht_opt <- function(htsc=2.5) {
     ComplexHeatmap::ht_opt(
-        heatmap_row_names_gp = grid::gpar(fontsize = 5),
+        heatmap_row_names_gp = grid::gpar(fontsize = 5,),
         heatmap_column_names_gp = grid::gpar(fontsize = 5),
-        heatmap_row_title_gp = grid::gpar(fontsize = 5.5),
-        heatmap_column_title_gp = grid::gpar(fontsize = 5.5),
+        heatmap_row_title_gp = grid::gpar(fontsize = 5.5, fontface="bold"),
+        heatmap_column_title_gp = grid::gpar(fontsize = 5.5, fontface="bold"),
         legend_title_gp = grid::gpar(fontsize = 5.5, font=2),
         legend_labels_gp = grid::gpar(fontsize = 5),
         legend_grid_height = grid::unit(2.5, 'mm'),
@@ -29,12 +29,12 @@ set_ht_opt <- function(htsc=2.5) {
 #' @param h Height in inches
 #' @param dpi DPI of PNG
 #' @export
-saveHeatmap <- function(ht, pltprefix, w, h, dpi=600) {
+saveHeatmap <- function(ht, pltprefix, w, h, dpi=600, ...) {
     pdf(paste0(pltprefix, ".pdf"), width=w, height=h)
-    ComplexHeatmap::draw(ht, ht_gap=grid::unit(0.5, "mm"))
+    ComplexHeatmap::draw(ht, ht_gap=grid::unit(0.5, "mm"), ...)
     dev.off()
     png(paste0(pltprefix, ".png"), res=dpi, width=w, height=h, units="in")
-    ComplexHeatmap::draw(ht, ht_gap=grid::unit(0.5, "mm"))
+    ComplexHeatmap::draw(ht, ht_gap=grid::unit(0.5, "mm"), ...)
     dev.off()
     print(pltprefix)
 }

@@ -105,3 +105,19 @@ se_to_cellranger_h5 <- function(se, h5, assay=NULL, chunk=10000, genome="GRCh38"
         rhdf5::h5write(ml[[dname]], file=h5, name=dname)
     }
 }
+
+se_normalize_total <- function(se, target_sum=10000, assay=NULL, normalized="normalized") {
+    if (is.null(assay)) {
+        X = SummarizedExperiment::assays(se)[[1]]
+    } else {
+        X = SummarizedExperiment::assays(se)[[assay]]
+    }
+    SummarizedExperiment::assays(se)[[normalized]] = X %*% Matrix::Diagonal(x=target_sum / Matrix::colSums(X))
+    return(se)
+}
+
+se_log1p <- function(se, assay="normalized") {
+    X = SummarizedExperiment::assays(se)[[assay]]
+    SummarizedExperiment::assays(se)[[paste0("log1p_", assay)]] = log1p(X)
+    return(se)
+}

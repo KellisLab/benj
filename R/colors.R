@@ -17,3 +17,13 @@ colors = list(celltypes=c("Ast"="#D6242A",
                         "EC"="#FFED6F",
                         "HC"="#BEBADA",
                         "TH"="#B3DE69"))
+
+
+#' Get named color categories, subsetted by 'select'.
+#'
+#' @param name Name of color palette
+#' @param select Subset of palette to select. Use names to rename
+#' @param ordered Use specific order
+get.colors <- function(name, select, ordered=FALSE) {
+
+}

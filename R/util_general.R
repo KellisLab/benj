@@ -1,4 +1,6 @@
 
+
+
 #' Load RDS file from fname or re-compute and save
 #'
 #' @param fname RDS filename
@@ -6,15 +8,20 @@
 #' @param expiration Date object used for timestamping old data
 #' @export
 load_cached <- function(fname, func, expiration="2000-01-01") {
+    lk = filelock::lock(paste0(fname, ".lock"))
+    obj = NULL
     if (file.exists(fname)) {
         if (file.info(fname)$mtime < as.POSIXct(expiration)) {
             print(paste0("File \"", fname, "\" is out of date, recomputing"))
         } else {
-            return(readRDS(fname))
+            obj = readRDS(fname)
         }
     }
-    obj = func()
-    saveRDS(obj, fname)
+    if (is.null(obj)) {
+        obj = func()
+        saveRDS(obj, fname)
+    }
+    filelock::unlock(lk)
     return(obj)
 }
 

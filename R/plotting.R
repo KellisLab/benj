@@ -5,7 +5,7 @@
 #' @export
 set_ht_opt <- function(htsc=2.5) {
     ComplexHeatmap::ht_opt(
-        heatmap_row_names_gp = grid::gpar(fontsize = 5,),
+        heatmap_row_names_gp = grid::gpar(fontsize = 5),
         heatmap_column_names_gp = grid::gpar(fontsize = 5),
         heatmap_row_title_gp = grid::gpar(fontsize = 5.5, fontface="bold"),
         heatmap_column_title_gp = grid::gpar(fontsize = 5.5, fontface="bold"),

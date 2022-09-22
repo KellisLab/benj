@@ -107,7 +107,7 @@ read_h5ad_var <- function(h5ad) {
         var_df = read_h5ad_var(h5ad)
         var_index = 1:nrow(var_df)
     } else if (is.data.frame(var)) {
-        varnames = rhdf5::h5read(h5ad, paste0(base, "/_index"))
+        varnames = rownames(read_h5ad_var(h5ad))
         var_df = var
         var_index = match(rownames(var_df), varnames)
     } else {

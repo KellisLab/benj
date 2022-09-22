@@ -106,6 +106,13 @@ se_to_cellranger_h5 <- function(se, h5, assay=NULL, chunk=10000, genome="GRCh38"
     }
 }
 
+#' Normalize data similar to ScanPy
+#'
+#' @param se SummarizedExperiment object
+#' @param target_sum Per UMI sum to target
+#' @param assay Assay to normalize
+#' @param normalized New assay name
+#' @export
 se_normalize_total <- function(se, target_sum=10000, assay=NULL, normalized="normalized") {
     if (is.null(assay)) {
         X = SummarizedExperiment::assays(se)[[1]]

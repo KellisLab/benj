@@ -1,0 +1,68 @@
+### Anaconda environment for analysis
+### To install,
+###    conda env create --file=rbenj.yml
+### then, devtools::install_github("lhe17/nebula")
+name: rbenj
+
+channels:
+  - conda-forge
+  - bioconda
+  - r
+
+dependencies:
+  ## Must have
+  - snakemake
+  - r-devtools
+  - r-biocmanager
+  - r-matrix
+  - r-tidyverse
+  - r-seriation
+  - r-gridExtra
+  - r-filelock
+  - r-pryr
+  - r-circlize
+  - bioconductor-singlecellexperiment
+  - bioconductor-rhdf5
+  - bioconductor-rhdf5filters
+  - bioconductor-complexheatmap
+  - bioconductor-genomicfeatures
+  - r-cairo
+  - cairo
+  ### bioconductor
+  - bioconductor-motifmatchr
+  - bioconductor-tfbstools
+  - bioconductor-chromvar
+  - bioconductor-annotationdbi
+  - bioconductor-org.hs.eg.db
+  - bioconductor-org.mm.eg.db
+  - bioconductor-bsgenome.hsapiens.ucsc.hg38
+  - bioconductor-bsgenome.mmusculus.ucsc.mm10
+  - bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
+  - bioconductor-txdb.mmusculus.ucsc.mm10.knowngene
+  - bioconductor-rgreat
+  - bioconductor-clusterprofiler
+  ### extra
+  - r-nloptr
+  - r-mass
+  - r-rfast
+  - r-trust
+  - r-rcpp>=1.0.7 ## nebula
+  - r-rcppeigen
+  - r-caret
+  - r-glmnet
+  - r-rmagic
+  - r-leiden
+  - r-pracma
+  - r-precrec
+  ### plotting
+  - r-ggpubr
+  - r-ggrastr
+  - r-ggrepel
+  - r-irkernel
+  - r-uwot
+  - r-rtsne
+  - r-igraph
+  - r-cowplot
+  ### jupyter
+  - jupyter
+  - python>=3

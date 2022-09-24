@@ -65,6 +65,7 @@ dependencies:
   ### bioconductor
   - bioconductor-motifmatchr
   - bioconductor-tfbstools
+  - bioconductor-jaspar2020
   - bioconductor-chromvar
   - bioconductor-annotationdbi
   - bioconductor-go.db
@@ -122,6 +123,7 @@ dependencies:
   - bioconductor-monocle
   ### extra
   - r-nloptr
+  - r-nlme
   - r-mass
   - r-rfast
   - r-trust
@@ -134,6 +136,8 @@ dependencies:
   - r-pracma
   - r-precrec
   - r-shiny
+  ## reticulated anndata
+  - r-anndata
   ## for snapatac2
   - pytables
   - natsort

@@ -37,6 +37,7 @@ dependencies:
   ### bioconductor
   - bioconductor-motifmatchr
   - bioconductor-tfbstools
+  - bioconductor-jaspar2020
   - bioconductor-chromvar
   - bioconductor-annotationdbi
   - bioconductor-go.db
@@ -64,6 +65,7 @@ dependencies:
   - bioconductor-monocle
   ### extra
   - r-nloptr
+  - r-nlme
   - r-mass
   - r-rfast
   - r-trust
@@ -77,6 +79,9 @@ dependencies:
   - r-pracma
   - r-precrec
   - r-shiny
+  ### archr
+  - r-handsontable
+  - r-shinythemes
   ### plotting
   - r-ggpubr
   - r-ggrastr
@@ -90,3 +95,6 @@ dependencies:
   - nbconvert
   - python>=3
   - r-irkernel
+  ### anndata reticulate
+  - r-anndata
+  - anndata

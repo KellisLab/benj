@@ -158,3 +158,4 @@ dependencies:
       - snapatac2
       - magic-impute
       - scalex
+      - scopen

@@ -47,5 +47,5 @@ if __name__ == "__main__":
     ap.add_argument("--sample-size", type=float, default=0.10)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     adata = benj.parse_anndata(h5ad=args["input"], **args)
-    gen_umap(adata, sample_size=args["sample_size"], figdir=args["figdir"], batch=args["batch"], min_components=args["min_components"], plot=args["plot"], resolution=args["resolution"])
+    gen_umap(adata, sample_size=args["sample_size"], batch=args["batch"], min_components=args["min_components"], plot=args["plot"], resolution=args["resolution"])
     adata.write_h5ad(args["output"], compression="gzip")

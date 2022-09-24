@@ -88,5 +88,6 @@ dependencies:
       - snapatac2
       - magic-impute
       - scalex
+      - scopen
       - ctxcore
       - pyscenic>=0.11.0

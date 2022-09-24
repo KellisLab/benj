@@ -146,6 +146,8 @@ enrich_se <- function(se, groupby, feature_name="features", group_name="group", 
     }))
     mdf$pfrac[is.na(mdf$pfrac)] = 0
     mdf$cfrac[is.na(mdf$cfrac)] = 0
+    mdf$pfrac[is.nan(mdf$pfrac)] = 0
+    mdf$cfrac[is.nan(mdf$cfrac)] = 0
     mdf$log2FC = log2(mdf$pfrac / mdf$cfrac)
     ### Calculate p-value
     enr_mlog10p = apply(mdf[,c("pfg", "pbg", "cfg", "cbg")], 1, function(y) {

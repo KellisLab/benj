@@ -1,0 +1,92 @@
+### Anaconda environment for analysis
+### To install,
+###    mamba env create --file=pybenj.yml
+### then pip install . in benj directory to install benj (python)
+
+name: pybenj
+
+channels:
+  - conda-forge
+  - bioconda
+  - r
+
+dependencies:
+  ## Must have
+  - anndata>=0.8.0
+  - scanpy
+  - pandas
+  - numpy>=1.16.0
+  - numba
+  - cython
+  - scikit-learn
+  - statsmodels
+  - pip
+  - git
+  - tqdm
+  - bioawk
+  - jupyter
+  - nbconvert
+  - snakemake
+  - nextflow
+  ## plots
+  - seaborn
+  - matplotlib
+  - adjusttext
+  ## networks
+  - umap-learn>=0.3.10
+  - leidenalg
+  - python-infomap
+  - python-igraph
+  - networkx
+  - fa2
+  ## ml
+  - xgboost
+  - ngboost
+  - pytorch
+  - py-opencv
+  ## genomics
+  - pyranges
+  - pybedtools
+  - gtfparse
+  - pytabix
+  - pysam
+  ## single cell
+  - scrublet
+  - harmonypy
+  - bbknn
+  - mnnpy
+  - celltypist
+  - velocyto.py
+  - scvelo
+  - mudata
+  - scglue
+  - episcanpy
+  - bamnostic
+  ## for snapatac2
+  - pytables
+  - natsort
+  - boltons
+  - pyarrow
+  - plotly>=5.6.0
+  - polars==0.13.*
+  - pooch>=1.6.0
+  - retworkx
+  ## for magic
+  - scprep
+  - graphtools
+  ## for scalex
+  - dunamai
+  - nbsphinx
+  - tbb
+  ## for scenic
+  - arboreto
+  - loompy
+  - aiohttp
+  - attrs
+  - cytoolz
+  - pip:
+      - snapatac2
+      - magic-impute
+      - scalex
+      - ctxcore
+      - pyscenic>=0.11.0

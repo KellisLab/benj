@@ -1,9 +1,11 @@
 ### Anaconda environment for analysis
 ### To install,
-###    mamba env create --file=rbenj.yml
+###    mamba env create --file=benj.yml
 ### then, devtools::install_github(c("GreenleafLab/ArchR", "lhe17/nebula"), ref="master", repos = BiocManager::repositories())
-### then make -j10 in benj directory to install benj
-name: rbenj
+### then make -j10 in benj directory to install benj (R)
+### then pip install . in benj directory to install benj (python)
+
+name: benj
 
 channels:
   - conda-forge
@@ -11,8 +13,24 @@ channels:
   - r
 
 dependencies:
-  ## Must have
-  - r-base>=4.1.0
+  ## Must have python
+  - anndata>=0.8.0
+  - scanpy
+  - pandas
+  - numpy>=1.16.0
+  - numba
+  - cython
+  - scikit-learn
+  - statsmodels
+  - pip
+  - git
+  - tqdm
+  - bioawk
+  - jupyter
+  - nbconvert
+  - snakemake
+  - nextflow
+  ## Must have R
   - r-devtools
   - r-biocmanager
   - r-matrix
@@ -28,12 +46,22 @@ dependencies:
   - bioconductor-complexheatmap
   - bioconductor-genomicfeatures
   - bioconductor-rtracklayer
-  - snakemake
-  - nextflow
   - r-cairo
   - cairo
   - r-gsl
   - gsl
+  - r-irkernel
+  ## plots
+  - seaborn
+  - matplotlib
+  - adjusttext
+  - r-ggpubr
+  - r-ggrastr
+  - r-ggrepel
+  - r-uwot
+  - r-rtsne
+  - r-igraph
+  - r-cowplot
   ### bioconductor
   - bioconductor-motifmatchr
   - bioconductor-tfbstools
@@ -49,8 +77,38 @@ dependencies:
   - bioconductor-rgreat
   - bioconductor-clusterprofiler
   - r-seurat
-  # - r-seuratdisk icu error forces R below 4.1
+#  - r-seuratdisk icu error forces R below 4.1
   - r-monocle3
+  ## networks
+  - umap-learn>=0.3.10
+  - leidenalg
+  - python-infomap
+  - python-igraph
+  - networkx
+  - fa2
+  ## ml
+  - xgboost
+  - ngboost
+  - pytorch
+  - py-opencv
+  ## genomics
+  - pyranges
+  - pybedtools
+  - gtfparse
+  - pytabix
+  - pysam
+  ## single cell
+  - scrublet
+  - harmonypy
+  - bbknn
+  - mnnpy
+  - celltypist
+  - velocyto.py
+  - scvelo
+  - mudata
+  - scglue
+  - episcanpy
+  - bamnostic
   ### deg
   - bioconductor-deseq2
   - bioconductor-ruvseq
@@ -68,7 +126,6 @@ dependencies:
   - r-rfast
   - r-trust
   - r-rcpp>=1.0.7 ## nebula
-  - r-rcppziggurat
   - r-rcppeigen
   - r-caret
   - r-glmnet
@@ -77,16 +134,23 @@ dependencies:
   - r-pracma
   - r-precrec
   - r-shiny
-  ### plotting
-  - r-ggpubr
-  - r-ggrastr
-  - r-ggrepel
-  - r-uwot
-  - r-rtsne
-  - r-igraph
-  - r-cowplot
-  ### jupyter
-  - jupyter
-  - nbconvert
-  - python>=3
-  - r-irkernel
+  ## for snapatac2
+  - pytables
+  - natsort
+  - boltons
+  - pyarrow
+  - plotly>=5.6.0
+  - polars==0.13.*
+  - pooch>=1.6.0
+  - retworkx
+  ## for magic
+  - scprep
+  - graphtools
+  ## for scalex
+  - dunamai
+  - nbsphinx
+  - tbb
+  - pip:
+      - snapatac2
+      - magic-impute
+      - scalex

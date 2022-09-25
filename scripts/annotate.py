@@ -5,19 +5,20 @@ import os
 import benj
 
 def annotate(adata, **kwargs):
-    import celltypist
-    import numpy as np
-    import scanpy as sc
-    if "log1p" not in adata.uns:
-        sc.pp.normalize_total(adata, target_sum=10000)
-        sc.pp.log1p(adata)
+    ct = benj.annotate(adata, **kwargs)
     folder = kwargs["folder"]
-    valid_k = ["over_clustering", "model", "majority_voting"]
-    ctargs = {k: v for k, v in kwargs.items() if k in valid_k and v is not None and v != ""}
-    ct = celltypist.annotate(adata, **ctargs)
     if not os.path.isdir(folder):
         os.mkdir(folder)
     ct.to_table(folder, kwargs["prefix"])
+    df = ct.predicted_labels
+    cluster = kwargs["cluster"]
+    df[cluster] = adata.obs[cluster]
+    if kwargs["majority_voting"]:
+        df = benj.annotate_clusters_from_vote(df, cluster, "majority_voting", kwargs["newcol"])
+    else:
+        df = benj.annotate_clusters_from_vote(df, cluster, "predicted_labels", kwargs["newcol"])
+    df.to_csv(os.path.join(folder, "%s%s.csv.gz" % (kwargs["prefix"], kwargs["newcol"])))
+    return df
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
@@ -28,6 +29,8 @@ if __name__ == "__main__":
     ap.add_argument("--majority-voting", dest="majority_voting", action="store_true")
     ap.add_argument("--no-majority-voting", dest="majority_voting", action="store_false")
     ap.add_argument("--over-clustering", default="")
+    ap.add_argument("--cluster", default="leiden")
+    ap.add_argument("--newcol", default="CellType")
     ap.set_defaults(majority_voting=True)
     args = benj.parse_args(ap, ["log", "anndata"])
     adata = benj.parse_anndata(h5ad=args["input"], **args)

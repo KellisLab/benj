@@ -150,12 +150,7 @@ dependencies:
   ## for magic
   - scprep
   - graphtools
-  ## for scalex
-  - dunamai
-  - nbsphinx
-  - tbb
   - pip:
       - snapatac2
       - magic-impute
-      - scalex
       - scopen

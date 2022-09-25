@@ -14,9 +14,9 @@ def annotate(adata, **kwargs):
     cluster = kwargs["cluster"]
     df[cluster] = adata.obs[cluster]
     if kwargs["majority_voting"]:
-        df = benj.annotate_clusters_from_vote(df, cluster, "majority_voting", kwargs["newcol"])
+        df = benj.annotate_clusters_from_vote(df, cluster, "majority_voting", kwargs["newcol"], exclude=kwargs.get("exclude"))
     else:
-        df = benj.annotate_clusters_from_vote(df, cluster, "predicted_labels", kwargs["newcol"])
+        df = benj.annotate_clusters_from_vote(df, cluster, "predicted_labels", kwargs["newcol"], exclude=kwargs.get("exclude"))
     df.to_csv(os.path.join(folder, "%s%s.csv.gz" % (kwargs["prefix"], kwargs["newcol"])))
     return df
 
@@ -31,6 +31,7 @@ if __name__ == "__main__":
     ap.add_argument("--over-clustering", default="")
     ap.add_argument("--cluster", default="leiden")
     ap.add_argument("--newcol", default="CellType")
+    ap.add_argument("--exclude", nargs="+")
     ap.set_defaults(majority_voting=True)
     args = benj.parse_args(ap, ["log", "anndata"])
     adata = benj.parse_anndata(h5ad=args["input"], **args)

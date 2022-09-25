@@ -12,14 +12,17 @@ def annotate(adata, **kwargs):
     ct = celltypist.annotate(adata, **ctargs)
     return ct
 
-def annotate_clusters_from_vote(obs, cluster, annot, newlabel):
+def annotate_clusters_from_vote(obs, cluster, annot, newlabel, exclude=None):
     import pandas as pd
     from scipy.stats import hypergeom
     import numpy as np
+    if exclude is None:
+        exclude = []
     cf = obs.groupby([cluster, annot]).count().iloc[:, [0]]
     cf.columns = ["count"]
     cf = cf.loc[cf["count"] > 0, :].reset_index()
     cf = cf.loc[cf[annot] != "", :]
+    cf = cf.loc[~cf[annot].isin(exclude), :]
     ct = cf.groupby(cluster).agg(ctotal=("count", sum)).reset_index()
     at = cf.groupby(annot).agg(atotal=("count", sum)).reset_index()
     df = pd.merge(pd.merge(cf, at), ct)

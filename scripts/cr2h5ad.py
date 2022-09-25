@@ -8,7 +8,7 @@ def cr2h5ad(infile, outfile, gex_only=False):
     import scipy.sparse
     adata = sc.read_10x_h5(infile, gex_only=gex_only)
     dt = adata.X
-    if not np.issubtype(dt, np.integer):
+    if not np.issubdtype(dt, np.integer):
         dat = adata.X
         if scipy.sparse.issparse(adata.X):
             dat = adata.X.data
@@ -16,7 +16,6 @@ def cr2h5ad(infile, outfile, gex_only=False):
             adata.X = adata.X.astype(np.uint32)
     adata.var_names_make_unique()
     adata.write_h5ad(outfile, compression="gzip")
-
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()

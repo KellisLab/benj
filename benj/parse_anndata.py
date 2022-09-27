@@ -5,6 +5,7 @@ def setup_args_anndata(ap):
     ap.add_argument("--max", nargs="+", metavar="KEY=VALUE")
     ap.add_argument("--subset", nargs="+", metavar="KEY=VALUE")
     ap.add_argument("--subsample", default=1, type=int)
+    ap.add_argument("--split", default=",")
     return ap
 
 def parse_anndata(h5ad, **args):

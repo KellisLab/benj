@@ -17,7 +17,7 @@ def annotate(adata, **kwargs):
         df = benj.annotate_clusters_from_vote(df, cluster, "majority_voting", kwargs["newcol"], exclude=kwargs.get("exclude"))
     else:
         df = benj.annotate_clusters_from_vote(df, cluster, "predicted_labels", kwargs["newcol"], exclude=kwargs.get("exclude"))
-    df.to_csv(os.path.join(folder, "%s%s.csv.gz" % (kwargs["prefix"], kwargs["newcol"])))
+    df.to_csv(os.path.join(folder, "%s%s.tsv.gz" % (kwargs["prefix"], kwargs["newcol"])), sep="\t")
     return df
 
 if __name__ == "__main__":

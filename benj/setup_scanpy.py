@@ -26,5 +26,5 @@ def setup_scanpy(**args):
         sc.settings.verbosity = args["verbosity"]
     else:
         sc.settings.verbosity = 2
-    sc.set_figure_params(dpi_save=dpi, color_map=cm_benj(), frameon=frameon)
+    sc.set_figure_params(dpi_save=dpi, frameon=frameon)
     return args

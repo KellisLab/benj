@@ -7,6 +7,6 @@ def cm_benj(base="viridis", count=100, zero=[0.4, 0.4, 0.4, 1]):
     import numpy as np
     cm = get_cmap(base)(np.linspace(0, 1, count-1))
     colors = np.vstack((zero, cm))
-    my_cm = LinearSegmentedColormap.from_list('benj', colors)
+    my_cm = mcolors.LinearSegmentedColormap.from_list('benj', colors)
     matplotlib.colormaps.register(my_cm)
     return "benj"

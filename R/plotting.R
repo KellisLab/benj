@@ -1,5 +1,5 @@
 
-#' Set default heatmap options
+#' Set default heatmap options, modified from Carles Boix
 #'
 #' @param htsc Padding ratio
 #' @export
@@ -21,7 +21,7 @@ set_ht_opt <- function(htsc=2.5) {
         ANNOTATION_LEGEND_PADDING = grid::unit(2 / htsc, 'mm'))
 }
 
-#' Save ComplexHeatmap
+#' Save ComplexHeatmap, modified from Carles Boix
 #'
 #' @param ht ComplexHeatmap heatmap
 #' @param pltprefix Prefix for images
@@ -39,7 +39,7 @@ saveHeatmap <- function(ht, pltprefix, w, h, dpi=600, ...) {
     print(pltprefix)
 }
 
-#' Save ggplot
+#' Save ggplot, modified from Carles Boix
 #'
 #' @param gp GGplot object
 #' @param pltprefix Prefix for images

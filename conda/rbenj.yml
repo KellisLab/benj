@@ -81,7 +81,7 @@ dependencies:
   - r-precrec
   - r-shiny
   ### archr
-  - r-handsontable
+  - r-rhandsontable
   - r-shinythemes
   ### plotting
   - r-ggpubr

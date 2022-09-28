@@ -11,13 +11,22 @@
 #' @param cpm.cutoff Cutoff of CPM to utilize
 #' @param cpm.count Number of observations passing CPM cutoff for filter
 #' @export
-deg.edger <- function(se, pathology, case, control, covariates,
-                      method="LRT", assay=NULL, cpm.cutoff=1, cpm.count=3) {
+deg.edger <- function(se, pathology, case, control, covariates=c(),
+                      method="LRT", assay=NULL, cpm.cutoff=1, cpm.count=3,
+                      filter_only_case_control=FALSE) {
+    if (filter_only_case_control) {
+        se = se[,SummarizedExperiment::colData(se)[[pathology]] %in% c(case, control)]
+    }
+
     if (is.null(assay)) {
-        X = SummarizedExperiment::assays(se)[[1]]
+        X = SummarizedExperiment::assays(se)$counts
     } else {
         X = SummarizedExperiment::assays(se)[[assay]]
     }
+    if (Matrix::ncol(X) > 1000) {
+        warning("More than 1000 samples are being called to a function under the assumption data passed in is pseudobulk")
+    }
+
     cd = SummarizedExperiment::colData(se)
     if (!is.character(cd[[pathology]]) | !is.factor(cd[[pathology]])) {
         warning(paste0("Converting ", pathology, " to factor"))
@@ -27,7 +36,7 @@ deg.edger <- function(se, pathology, case, control, covariates,
     to_keep = rowSums(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.count
     dgel = dgel[to_keep,,keep.lib.sizes=FALSE]
     dgel = edgeR::calcNormFactors(dgel, method="TMM")
-    design = model.matrix(as.formula(paste0("~0 + ", c(pathology, covariates), collapse=" + ")),
+    design = model.matrix(as.formula(paste0("~0 + ", paste0(c(pathology, covariates), collapse=" + "))),
                           data=cd)
     colnames(design) = make.names(colnames(design)) ### need spaces to be removed
     contrasts = limma::makeContrasts(contrasts=paste0(make.names(paste0(pathology, case)),
@@ -52,10 +61,13 @@ deg.edger <- function(se, pathology, case, control, covariates,
     colnames(tbl) = gsub("^logFC$", "log2FC", colnames(tbl))
     tbl$gene = rownames(tbl)
     tbl$method = method
+    tbl$case = case
+    tbl$control = control
     return(tbl[order(tbl$FDR),])
 }
 
 #' Add RUVseq columns to SummarizedExperiment
+#' Based on Carles Boix's RUVSeq workflow
 #'
 #' @param sce SummarizedExperiment object
 #' @param sample Sample on which to pseudobulk
@@ -66,16 +78,16 @@ deg.edger <- function(se, pathology, case, control, covariates,
 #' @param cpm.count Number of observations passing CPM cutoff for filter
 #' @param norm edgeR norm method for calcNormFactors
 #' @export
-ruvseq <- function(sce, sample, pathology, NRUV=10, assay=NULL, cpm.cutoff=1, cpm.count=3, norm="TMM") {
+deg.ruvseq <- function(sce, sample, pathology, NRUV=10, assay=NULL, cpm.cutoff=1, cpm.count=3, norm="TMM") {
     pb = se_make_pseudobulk(sce, sample)
     if (is.null(assay)) {
-        X = SummarizedExperiment::assays(pb)[[1]]
+        X = SummarizedExperiment::assays(pb)$counts
     } else {
         X = SummarizedExperiment::assays(pb)[[assay]]
     }
     cd = SummarizedExperiment::colData(pb)
     dgel = edgeR::DGEList(X, remove.zeros=TRUE, group=cd[[pathology]])
-    to_keep = rowSums(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.count
+    to_keep = Matrix::rowSums(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.count
     dgel = dgel[to_keep,,keep.lib.sizes=FALSE]
     design = model.matrix(~group, dgel$samples)
 ### Use LRT workflow
@@ -85,8 +97,9 @@ ruvseq <- function(sce, sample, pathology, NRUV=10, assay=NULL, cpm.cutoff=1, cp
     fit1 = edgeR::glmFit(dgel, design)
     res1 = residuals(fit1, type="deviance")
     ruv = RUVSeq::RUVr(dgel$counts,
-                        cIdx=as.character(rownames(dgel$counts)),
-                        k=NRUV, residuals=res1)
+                       cIdx=as.character(rownames(dgel$counts)),
+                       k=NRUV,
+                       residuals=res1)
     ruvw = ruv$W
     ruvw = ruvw[,apply(ruvw, 2, sd) > 0]
     colnames(ruvw) = paste0("RUV", colnames(ruvw))
@@ -96,4 +109,128 @@ ruvseq <- function(sce, sample, pathology, NRUV=10, assay=NULL, cpm.cutoff=1, cp
         SummarizedExperiment::colData(sce)[[cn]] = ruvw[S, cn]
     }
     return(sce)
+}
+
+#' Run Nebula on a SummarizedExperiment
+#'
+#' @param sce SummarizedExperiment object
+#' @param sample Sample which to model dispersions
+#' @param pathology Pathology column to study
+#' @param case Case to look at within pathology column
+#' @param control Control value to look at within pathology column
+#' @param covariates Vector of covariate columns within colData(sce)
+#' @param offset Offset from which to weight cells in model
+#' @param assay Assay within sce. Default is "counts"
+#' @param model Model to pass to nebula::nebula
+#' @param filter_only_case_control logical telling whether to filter sce to only case and control values within pathology
+#' @param NRUV Number of RUVSeq::RUVr components. 0 means no RUVr components
+#' @param cpm.cutoff Cutoff of CPM to utilize for RUV
+#' @param cpm.count Number of observations passing CPM cutoff for filter for RUV
+#' @export
+deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
+                   offset="total_counts", assay=NULL, model="NBGMM",
+                   filter_only_case_control=FALSE,
+                   cpm.cutoff=1, cpm.count=3, NRUV=10) {
+    if (filter_only_case_control) {
+        sce = sce[,SummarizedExperiment::colData(sce)[[pathology]] %in% c(case, control)]
+    }
+    if (NRUV > 0) {
+        sce = deg.ruvseq(sce,
+                         sample=sample,
+                         pathology=pathology,
+                         NRUV=NRUV,
+                         assay=assay,
+                         cpm.cutoff=cpm.cutoff,
+                         cpm.count=cpm.count)
+        cd = SummarizedExperiment::colData(sce)
+        covariates = c(covariates, colnames(cd)[grep("^RUV", colnames(cd))])
+    }
+    sce[[sample]] = as.factor(as.character(sce[[sample]]))
+    sce = sce[,order(sce[[sample]])]
+    cd = SummarizedExperiment::colData(sce)
+    if (is.null(assay)) {
+        X = SummarizedExperiment::assays(sce)$counts
+    } else {
+        X = SummarizedExperiment::assays(sce)[[assay]]
+    }
+    cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
+    design = model.matrix(as.formula(paste0("~", pathology, "+",
+                                            paste0(covariates, collapse="+"))),
+                          data=cd)
+    if (is.null(offset) | !(offset %in% colnames(cd))) {
+        warning("Offset not present. Using number of counts")
+        offset = Matrix::colSums(X)
+    } else {
+        print(paste0("Using offset ", offset))
+        offset = cd[[offset]]
+    }
+    neb = nebula::nebula(X,
+                         cd[[sample]],
+                         design,
+                         offset=offset,
+                         model=model)
+    ### Now to parse output
+    name.case = paste0(pathology, case)
+    name.control = paste0(pathology, control)
+    if (paste0("p_", name.case) %in% colnames(neb$summary)) {
+        neb$summary$FDR = p.adjust(neb$summary[[paste0("p_", name.case)]], "fdr")
+        neb$summary$log2FC = neb$summary[[paste0("logFC_", name.case)]] / log(2)
+    } else if (paste0("p_", name.control) %in% colnames(neb$summary)) {
+        neb$summary$FDR = p.adjust(neb$summary[[paste0("p_", name.control)]], "fdr")
+        neb$summary$log2FC = -1 * neb$summary[[paste0("logFC_", name.control)]] / log(2)
+    }
+    neb_df = neb$summary
+    ovr = neb$overdispersion
+    colnames(ovr) = paste0("overdispersion_", colnames(ovr))
+    neb_df = cbind(neb_df, ovr)
+    neb_df$convergence = neb$convergence
+    neb_df$algorithm = neb$algorithm
+    neb_df$case = case
+    neb_df$control = control
+    return(neb_df[order(neb_df$FDR),])
+}
+
+#' Run DESeq2 on pseudobulked data
+#'
+#' @param se SummarizedExperiment data, expected pseudobulk
+#' @param pathology Column in colData(se) from which to study differential changes
+#' @param case Case value within pathology column
+#' @param control Control value within pathology column
+#' @param covariates Covariates to pass to DESeq2
+#' @param assay Assay to perform differential changes upon. Default is "counts"
+#' @param filter_only_case_control logical telling whether to filter sce to only case and control values within pathology
+#' @export
+deg.deseq2 <- function(se,
+                       pathology,
+                       case,
+                       control,
+                       covariates=c(),
+                       assay=NULL,
+                       filter_only_case_control=FALSE) {
+    if (filter_only_case_control) {
+        se = se[,SummarizedExperiment::colData(se)[[pathology]] %in% c(case, control)]
+    }
+    if (is.null(assay)) {
+        X = SummarizedExperiment::assays(se)$counts
+    } else {
+        X = SummarizedExperiment::assays(se)[[assay]]
+    }
+    if (Matrix::ncol(X) > 1000) {
+        warning("More than 1000 samples are being called to a function under the assumption data passed in is pseudobulk")
+    }
+    formula = paste0(c(pathology, covariates), collapse=" + ")
+    dds = DESeq2::DESeqDataSetFromMatrix(
+                      X,
+                      colData=SummarizedExperiment::colData(se),
+                      design=as.formula(formula))
+    out = DESeq2::DESeq(dds)
+    df = DESeq2::results(out, contrast=c(pathology, case, control))
+    df = df[!is.na(df$padj),]
+    df = df[order(df$padj),]
+    df$gene = rownames(df)
+    colnames(df) = msub(c("^log2FoldChange$", "^padj$"),
+                        c("log2FC", "FDR"), colnames(df))
+    df$case = case
+    df$control = control
+    return(df[order(df$FDR),])
 }

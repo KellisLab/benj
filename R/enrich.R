@@ -106,7 +106,8 @@ enrich_overlap_custom <- function(peakSet, gr, gr.col=NULL, counts=FALSE) {
                            dimnames=list(names(peakSet), levels(cols)))
     return(SummarizedExperiment::SummarizedExperiment(assays=list(matches=motifMat), rowRanges=peakSet))
 }
-#' Enrich SummarizedExperiment by groupby column
+#' Enrich SummarizedExperiment by groupby column.
+#' Enrichment strategy taken from Carles Boix
 #'
 #' @param se SummarizedExperiment to enrich
 #' @param groupby Column in rowData(se) to split upon

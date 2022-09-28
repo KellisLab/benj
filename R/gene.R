@@ -1,6 +1,6 @@
 
 
-#' Varnames to names
+#' Varnames to names as in Scanpy
 #'
 #' Converts gene names to ignore
 #' duplicates so that can be made

@@ -86,10 +86,10 @@ deg.ruvseq <- function(sce, sample, pathology, NRUV=10, assay=NULL, cpm.cutoff=1
         X = SummarizedExperiment::assays(pb)[[assay]]
     }
     cd = SummarizedExperiment::colData(pb)
-    dgel = edgeR::DGEList(X, remove.zeros=TRUE, group=cd[[pathology]])
+    dgel = edgeR::DGEList(X, remove.zeros=TRUE)
     to_keep = Matrix::rowSums(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.count
     dgel = dgel[to_keep,,keep.lib.sizes=FALSE]
-    design = model.matrix(~group, dgel$samples)
+    design = model.matrix(as.formula(paste0("~", pathology)), dgel$samples)
 ### Use LRT workflow
     dgel = edgeR::calcNormFactors(dgel, method=norm)
     dgel = edgeR::estimateGLMCommonDisp(dgel, design)
@@ -129,7 +129,7 @@ deg.ruvseq <- function(sce, sample, pathology, NRUV=10, assay=NULL, cpm.cutoff=1
 #' @export
 deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
                    offset="total_counts", assay=NULL, model="NBGMM",
-                   filter_only_case_control=FALSE,
+                   filter_only_case_control=FALSE, factorize_pathology=TRUE,
                    cpm.cutoff=1, cpm.count=3, NRUV=10) {
     if (filter_only_case_control) {
         sce = sce[,SummarizedExperiment::colData(sce)[[pathology]] %in% c(case, control)]
@@ -153,9 +153,11 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
     } else {
         X = SummarizedExperiment::assays(sce)[[assay]]
     }
-    cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
-    design = model.matrix(as.formula(paste0("~", pathology, "+",
-                                            paste0(covariates, collapse="+"))),
+    if (factorize_pathology) {
+        cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
+    }
+    design = model.matrix(as.formula(paste0("~",
+                                            paste0(c(pathology, covariates), collapse="+"))),
                           data=cd)
     if (is.null(offset) | !(offset %in% colnames(cd))) {
         warning("Offset not present. Using number of counts")

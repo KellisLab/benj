@@ -42,6 +42,7 @@ dependencies:
   - bioconductor-chromvar
   - bioconductor-annotationdbi
   - bioconductor-go.db
+  - bioconductor-do.db
   - bioconductor-org.hs.eg.db
   - bioconductor-org.mm.eg.db
   - bioconductor-bsgenome.hsapiens.ucsc.hg38

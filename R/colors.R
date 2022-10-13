@@ -13,10 +13,12 @@ colors = list(celltypes=c("Ast"="#D6242A",
               regions=c("AG"="#8DD3C7",
                         "MT"="#80B1D3",
                         "NAc"="#32768C",
-                        "MB"="FAC0DF",
+                        "MB"="#FAC0DF",
                         "PFC"="#FDB462",
                         "EC"="#FFED6F",
                         "HC"="#BEBADA",
+                        "DS"="",
+                        "VS"="",
                         "TH"="#B3DE69"))
 
 

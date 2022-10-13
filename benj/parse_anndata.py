@@ -8,12 +8,13 @@ def setup_args_anndata(ap):
     ap.add_argument("--split", default=",")
     return ap
 
-def parse_anndata(h5ad, **args):
+def parse_anndata(**args):
     import os
     import numpy as np
+    h5ad = args.get("h5ad", args.get("input", ""))
     if os.path.exists(h5ad):
         import anndata
-        adata = anndata.read(args["input"], backed="r")
+        adata = anndata.read(h5ad, backed="r")
     else:
         import sys
         raise RuntimeError("File \"%s\" does not exist." % args["input"])

@@ -21,6 +21,26 @@ set_ht_opt <- function(htsc=2.5) {
         ANNOTATION_LEGEND_PADDING = grid::unit(2 / htsc, 'mm'))
 }
 
+
+#' Automatic heatmap
+#'
+#' @param M matrix to pass
+#' @param ux millimeters per grid
+#' @export
+autoHeatmap <- function(M, ux=1.5, ...) {
+    M = order.tsp(M, rows=TRUE)
+    M = order.tsp(M, rows=FALSE)
+    M = diag.mat3(M, rows=TRUE)
+    M = diag.mat3(M, rows=FALSE)
+    return(ComplexHeatmap::Heatmap(
+        M, cluster_rows=FALSE, cluster_columns=FALSE,
+        width = ncol(M)*grid::unit(ux, "mm"),
+        height = nrow(M)*grid::unit(ux, "mm"),
+        row_names_gp=grid::gpar(fontsize=3.5),
+        column_names_gp=grid::gpar(fontsize=3.5),
+        ...
+    ))
+}
 #' Save ComplexHeatmap, modified from Carles Boix
 #'
 #' @param ht ComplexHeatmap heatmap

@@ -33,8 +33,6 @@ def parse_anndata(**args):
                 flag &= obs[S[0]].isin(S[1].split(args["split"])).values
                 if np.sum(flag) == 0:
                     raise RuntimeError("%s not in %s" % (S[1].split(args["split"]), S[0]))
-                else:
-                    print(S[0], "is not a valid column")
     if args.get("min") and isinstance(args["min"], list):
         for kv in args["min"]:
             S = [s.strip() for s in kv.split("=")]

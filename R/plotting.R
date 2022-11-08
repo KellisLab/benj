@@ -27,11 +27,13 @@ set_ht_opt <- function(htsc=2.5) {
 #' @param M matrix to pass
 #' @param ux millimeters per grid
 #' @export
-autoHeatmap <- function(M, ux=1.5, ...) {
-    M = order.tsp(M, rows=TRUE)
-    M = order.tsp(M, rows=FALSE)
-    M = diag.mat3(M, rows=TRUE)
-    M = diag.mat3(M, rows=FALSE)
+autoHeatmap <- function(M, ux=1.5, sort=TRUE, ...) {
+    if (sort) {
+        M = order.tsp(M, rows=TRUE)
+        M = order.tsp(M, rows=FALSE)
+        M = diag.mat3(M, rows=TRUE)
+        M = diag.mat3(M, rows=FALSE)
+    }
     return(ComplexHeatmap::Heatmap(
         M, cluster_rows=FALSE, cluster_columns=FALSE,
         width = ncol(M)*grid::unit(ux, "mm"),

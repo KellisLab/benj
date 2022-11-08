@@ -119,16 +119,17 @@ run.great <- function(gr, spt=NULL, bg=TRUE, species="hg38") {
     }
     grcol = colnames(S4Vectors::mcols(gr))
     if (!is.null(spt) & all(spt %in% grcol)) {
-        res = Reduce(rbind, lapply(split(gr, S4Vectors::mcols(gr)[spt]), function(lr) {
+        res = Reduce(rbind, lapply(split(gr, S4Vectors::mcols(gr)[[spt]]), function(lr) {
             if (bg) {
                 tbl = .rgt(lr, gr)
             } else {
                 tbl = .rgt(lr)
             }
+            print(str(tbl))
             if (nrow(tbl) > 0) {
                 ### Add cols
                 for (col in spt) {
-                    tbl[[col]] = unique(S4Vectors::mcols(lr)[col])
+                    tbl[[col]] = rep(unique(S4Vectors::mcols(lr)[col]), nrow(tbl))
                 }
             }
             return(tbl)

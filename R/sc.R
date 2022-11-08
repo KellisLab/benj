@@ -7,7 +7,7 @@
 #' @param se SummarizedExperiment
 #' @param on Column in colData() to split upon
 #' @export
-se_make_pseudobulk <- function(se, on) {
+se_make_pseudobulk <- function(se, on, missing.levels=FALSE) {
     cd = SummarizedExperiment::colData(se)
     rd = SummarizedExperiment::rowData(se)
     A = SummarizedExperiment::assays(se)
@@ -20,7 +20,11 @@ se_make_pseudobulk <- function(se, on) {
     for (cn in colnames(cd)) {
 ### for each "on", ensure all equal
         u = lapply(split(cd[[cn]], cd[[on]]), unique)
-        good = all(sapply(u, function(x) { length(x) == 1 }))
+        if (missing.levels) {
+            good = all(sapply(u, function(x) { length(x) <= 1 }))
+        } else {
+            good = all(sapply(u, function(x) { length(x) == 1 }))
+        }
         if (good) {
             pcd[[cn]] = sapply(u, identity)[rownames(pcd)]
             if (is.factor(cd[[cn]])) {

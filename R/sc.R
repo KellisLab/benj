@@ -7,11 +7,11 @@
 #' @param se SummarizedExperiment
 #' @param on Column in colData() to split upon
 #' @export
-se_make_pseudobulk <- function(se, on, missing.levels=FALSE) {
+se_make_pseudobulk <- function(se, on, missing.levels=FALSE, unlevel=TRUE) {
     cd = SummarizedExperiment::colData(se)
     rd = SummarizedExperiment::rowData(se)
     A = SummarizedExperiment::assays(se)
-    to_P = Matrix::Matrix(make_pseudobulk(cd[[on]]))
+    to_P = Matrix::Matrix(make_pseudobulk(cd[[on]], unlevel=unlevel))
     P = lapply(A, function(mat) {
         mat %*% to_P
     })

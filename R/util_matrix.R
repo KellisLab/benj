@@ -41,8 +41,11 @@ qclip <- function(mat, percentile=0.01, high=TRUE, low=TRUE) {
 #' @param u unique levels to set
 #' @return collapsed pseudobulk matrix
 #' @export
-make_pseudobulk <- function(x, u=NULL) {
+make_pseudobulk <- function(x, u=NULL, unlevel=FALSE) {
     if (is.factor(x)) {
+        if (unlevel) {
+            x = as.factor(as.character(x))
+        }
         u = levels(x)
     } else if (is.null(u)) {
         u = unique(x)

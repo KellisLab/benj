@@ -83,6 +83,8 @@ order.tsp <- function(mat, rows=TRUE, method="euclidean") {
 #' This function clusters a matrix
 #'
 #' @param mat Input matrix
+#' @param ratio Ratio
+#' @param cutoff Cutoff for value being counted
 #' @return A list of the sorted matrix and associated columns
 #' @export
 diag.mat3 <- function(mat, ratio=0.5, cutoff=0.25, rows=TRUE) {

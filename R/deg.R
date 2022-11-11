@@ -217,10 +217,10 @@ deg.deseq2 <- function(se,
     } else {
         X = SummarizedExperiment::assays(se)[[assay]]
     }
-    if (Matrix::ncol(X) > 1000) {
+    if (S4Vectors::ncol(X) > 1000) {
         warning("More than 1000 samples are being called to a function under the assumption data passed in is pseudobulk")
     }
-    formula = paste0(c(pathology, covariates), collapse=" + ")
+    formula = paste0("~", c(pathology, covariates), collapse=" + ")
     dds = DESeq2::DESeqDataSetFromMatrix(
                       X,
                       colData=SummarizedExperiment::colData(se),

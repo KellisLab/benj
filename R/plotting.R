@@ -27,19 +27,19 @@ set_ht_opt <- function(htsc=2.5) {
 #' @param M matrix to pass
 #' @param ux millimeters per grid
 #' @export
-autoHeatmap <- function(M, ux=1.5, sort=TRUE, ...) {
+autoHeatmap <- function(M, ux=1.5, sort=TRUE, method="euclidean", dimname_fontsize=3.5, ratio=0.5, cutoff=0.25, ...) {
     if (sort) {
-        M = order.tsp(M, rows=TRUE)
-        M = order.tsp(M, rows=FALSE)
-        M = diag.mat3(M, rows=TRUE)
-        M = diag.mat3(M, rows=FALSE)
+        M = order.tsp(M, rows=TRUE, method=method)
+        M = order.tsp(M, rows=FALSE, method=method)
+        M = diag.mat3(M, rows=TRUE, ratio=ratio, cutoff=cutoff)
+        M = diag.mat3(M, rows=FALSE, ratio=ratio, cutoff=cutoff)
     }
     return(ComplexHeatmap::Heatmap(
         M, cluster_rows=FALSE, cluster_columns=FALSE,
         width = ncol(M)*grid::unit(ux, "mm"),
         height = nrow(M)*grid::unit(ux, "mm"),
-        row_names_gp=grid::gpar(fontsize=3.5),
-        column_names_gp=grid::gpar(fontsize=3.5),
+        row_names_gp=grid::gpar(fontsize=dimname_fontsize),
+        column_names_gp=grid::gpar(fontsize=dimname_fontsize),
         ...
     ))
 }

@@ -1,6 +1,6 @@
 
 def setup_args_anndata(ap):
-    ap.add_argument("-a", "--annotation", default="")
+    ap.add_argument("-a", "--annotation", nargs="+")
     ap.add_argument("--min", nargs="+", metavar="KEY=VALUE")
     ap.add_argument("--max", nargs="+", metavar="KEY=VALUE")
     ap.add_argument("--subset", nargs="+", metavar="KEY=VALUE")
@@ -20,12 +20,16 @@ def parse_anndata(**args):
         raise RuntimeError("File \"%s\" does not exist." % args["input"])
     obs = adata.obs.copy()
     flag = np.repeat(True, obs.shape[0])
-    if args.get("annotation") and os.path.exists(args["annotation"]):
+    if args.get("annotation"):
         import pandas as pd
-        annot = pd.read_csv(args["annotation"], index_col=0, sep="\t")
-        obs = obs.loc[annot.index.values,:].copy()
-        for cn in annot.columns.values:
-            obs[cn] = annot[cn].values
+        for fname in args["annotation"]:
+            if os.path.exists(fname):
+                annot = pd.read_csv(fname, index_col=0, sep="\t")
+                obs = obs.loc[annot.index.values,:].copy()
+                for cn in annot.columns.values:
+                    obs[cn] = annot[cn].values
+            else:
+                print("Warning: File", fname, "does not exist")
     if args.get("subset") and isinstance(args["subset"], list):
         for ss in args["subset"]:
             S = [s.strip() for s in ss.split("=")]

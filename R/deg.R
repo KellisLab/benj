@@ -86,16 +86,20 @@ deg.ruvseq <- function(sce, sample, pathology, NRUV=10, assay=NULL, cpm.cutoff=1
         X = SummarizedExperiment::assays(pb)[[assay]]
     }
     cd = SummarizedExperiment::colData(pb)
-    dgel = edgeR::DGEList(X, remove.zeros=TRUE)
+    if (!is.character(cd[[pathology]]) | !is.factor(cd[[pathology]])) {
+        warning(paste0("Converting ", pathology, " to factor"))
+    }
+    cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
+    dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
     to_keep = Matrix::rowSums(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.count
     dgel = dgel[to_keep,,keep.lib.sizes=FALSE]
-    design = model.matrix(as.formula(paste0("~", pathology)), dgel$samples)
+    design = model.matrix(as.formula(paste0("~", pathology)), data=cd)
 ### Use LRT workflow
     dgel = edgeR::calcNormFactors(dgel, method=norm)
     dgel = edgeR::estimateGLMCommonDisp(dgel, design)
     dgel = edgeR::estimateGLMTagwiseDisp(dgel, design)
     fit1 = edgeR::glmFit(dgel, design)
-    res1 = residuals(fit1, type="deviance")
+    res1 = BiocGenerics::residuals(fit1, type="deviance")
     ruv = RUVSeq::RUVr(dgel$counts,
                        cIdx=as.character(rownames(dgel$counts)),
                        k=NRUV,

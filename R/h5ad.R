@@ -74,19 +74,35 @@ read_h5ad_var <- function(h5ad) {
 #'
 #' @param h5ad An H5AD filename path
 #' @param obs Either NULL (all data), a vector of valid UMIs, or a dataframe of .obs with UMI rownames
+#' @param subset A list of column-value(s) mappings to subset OBS to
 #' @return A list of the dataframe (df) and the integer index with df's rownames as names
-.parse_h5ad_obs <- function(h5ad, obs=NULL) {
-    if (is.null(obs)) {
-        obs_df = read_h5ad_obs(h5ad)
-        obs_index = 1:nrow(obs_df)
-    } else if (is.data.frame(obs)) {
-        obsnames = rhdf5::h5read(h5ad, "/obs/_index")
-        obs_df = obs
-        obs_index = match(rownames(obs_df), obsnames)
-    } else {
-        obs_df = read_h5ad_obs(h5ad)
-        obs_index = match(obs, rownames(obs_df))
-        obs_df = obs_df[obs_index,]
+.parse_h5ad_obs <- function(h5ad, obs=NULL, subset=list()) {
+    obs_df = read_h5ad_obs(h5ad)
+    obs_index = 1:nrow(obs_df)
+    if (!is.null(obs)) {
+        if (is.data.frame(obs)) {
+            obs_index = match(rownames(obs), rownames(obs_df))
+            obs_df = obs_df[rownames(obs),]
+        } else {
+            obs_index = match(obs, rownames(obs_df))
+            obs_df = obs_df[obs,]
+        }
+    }
+    if (length(subset) > 0) {
+        for (i in seq_along(subset)) {
+            if (names(subset)[i] %in% colnames(obs_df)) {
+                cn = names(subset)[i]
+                if (any(subset[[i]] %in% obs_df[[cn]])) {
+                    flag = obs_df[[cn]] %in% subset[[i]]
+                    obs_df = obs_df[flag, ]
+                    obs_index = obs_index[flag]
+                } else {
+                    warning(paste0("No object(s) ", subset[[i]], " in column ", cn))
+                }
+            } else {
+                warning(paste0("Column ", cn, " is not in .obs"))
+            }
+        }
     }
     names(obs_index) = rownames(obs_df)
     return(list(df=obs_df, index=obs_index))
@@ -217,11 +233,12 @@ read_h5ad_var <- function(h5ad) {
 #' @param h5ad An H5AD filename path
 #' @param obs A dataframe of .obs or vector of obsnames to subset by
 #' @param var A dataframe of .var or vector of varnames to subset by
+#' @param subset A list of column-value(s) pairs to subset .obs by, e.g. list("CellType"=c("Exc","Inh"))
 #' @param layer A vector of layer(s) to subset
 #' @return A SingleCellExperiment object filled with assays
 #' @export
-read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE, obsp=TRUE, varp=TRUE) {
-    obs = .parse_h5ad_obs(h5ad, obs)
+read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE, obsp=TRUE, varp=TRUE, subset=list()) {
+    obs = .parse_h5ad_obs(h5ad, obs, subset=subset)
     var = .parse_h5ad_var(h5ad, var, base=ifelse(raw, "/raw/var/", "/var/"))
     if (raw) {
         assays = list(counts=.parse_h5ad_X(h5ad, "/raw/X",

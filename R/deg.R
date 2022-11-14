@@ -99,7 +99,7 @@ deg.ruvseq <- function(sce, sample, pathology, NRUV=10, assay=NULL, cpm.cutoff=1
     dgel = edgeR::estimateGLMCommonDisp(dgel, design)
     dgel = edgeR::estimateGLMTagwiseDisp(dgel, design)
     fit1 = edgeR::glmFit(dgel, design)
-    res1 = RUVSeq:::residuals(fit1, type="deviance")
+    res1 = RUVSeq:::residuals.DGEGLM(fit1, type="deviance")
     ruv = RUVSeq::RUVr(dgel$counts,
                        cIdx=as.character(rownames(dgel$counts)),
                        k=NRUV,

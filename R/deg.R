@@ -163,6 +163,8 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
     design = model.matrix(as.formula(paste0("~",
                                             paste0(c(pathology, covariates), collapse="+"))),
                           data=cd)
+    A = apply(design, 2, sd)
+    design = design[,names(A)[(A>0) | (names(A) == '(Intercept)')]]
     if (is.null(offset) | !(offset %in% colnames(cd))) {
         warning("Offset not present. Using number of counts")
         offset = Matrix::colSums(X)

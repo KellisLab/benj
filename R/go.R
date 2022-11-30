@@ -51,12 +51,16 @@ gseGO <- function(geneList, ranks, OrgDb, filter=NULL, keyType="SYMBOL", ont="AL
     } else {
         geneList = setNames(ranks, geneList)
     }
-    ego = clusterProfiler::gseGO(geneList=geneList,
+    if (length(geneList) < 2) {
+        ego = NULL
+    } else {
+        ego = clusterProfiler::gseGO(geneList=geneList,
                                  OrgDb=OrgDb,
                                  keyType=keyType,
                                  ont=ont,
                                  minGSSize=minGSSize,
                                  maxGSSize=maxGSSize,
                                  ...)
+    }
     return(.proc.go.result(ego))
 }

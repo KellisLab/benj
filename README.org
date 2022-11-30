@@ -34,3 +34,8 @@ R --slave -e 'devtools::install_github(c("GreenleafLab/ArchR", "lhe17/nebula"), 
 make
 pip install .
 #+END_SRC
+* TODO Upgrades
+1. heatmap legend size
+2. easy volcano plots
+3. heatmap annotations
+4. colorRamp2 log transform

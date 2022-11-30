@@ -8,7 +8,7 @@ colors = list(celltypes=c("Ast"="#D6242A",
                           "Mic"="#BE9FCE",
                           "Oli"="#F4A85E",
                           "Opc"="#A14E2D",
-                          "Spn"="#F59695",
+                          "Msn"="#F59695",
                           "Vas"="#FED9A6"),
               regions=c("AG"="#8DD3C7",
                         "MT"="#80B1D3",
@@ -18,7 +18,7 @@ colors = list(celltypes=c("Ast"="#D6242A",
                         "EC"="#FFED6F",
                         "HC"="#BEBADA",
                         "DS"="",
-                        "VS"="",
+                        "VS"="#F59695",
                         "TH"="#B3DE69"))
 
 

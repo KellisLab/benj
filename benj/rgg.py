@@ -14,3 +14,18 @@ def extract_rank_genes_groups(adata, key="rank_genes_groups_filtered", group_nam
         idx = adata.uns[key]["pts"].index.get_indexer(df[gene_name].values)
         df["pts"] = adata.uns[key]["pts"].values[idx, C]
     return df
+
+def score_genes_by_rgg(adata, rgg):
+    import numpy as np
+    import scipy.sparse
+    import pandas as pd
+    import anndata
+    df = rgg.loc[adata.var_names.get_indexer(rgg["names"]) >= 0,:].copy()
+    df["name_index"] = adata.var_names.get_indexer(df["names"])
+    ugrp, grp_index = np.unique(df["group"].values, return_inverse=True)
+    df["group_index"] = grp_index
+    S = scipy.sparse.csr_matrix((df["scores"].values, (df["name_index"].values, df["group_index"].values)),
+                            shape=(adata.shape[1], len(ugrp)))
+    #S = S.dot(scipy.sparse.diags(1/np.ravel(S.sum(0))))
+    X = S.T.dot(adata.X.T).T
+    return anndata.AnnData(X, obs=adata.obs, var=pd.DataFrame(index=ugrp), obsm=adata.obsm, dtype=np.float32)

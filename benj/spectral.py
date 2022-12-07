@@ -77,15 +77,15 @@ def n_spectral(eigenvalues, S=1.0, curve="convex", direction="decreasing"):
                 curve=curve)
     return kl.knee
 
-def find_features(adata, resolution=1., features="selected", n_features=10000, blacklist="blacklist", min_comps=5, chunk_size=20000, max_val=4):
+def find_features(adata, resolution=1., features="selected", n_features=25000, blacklist="blacklist", chunk_size=20000, max_val=4, use_rep="X_spectral", n_pcs=None):
     import scanpy as sc
     import numpy as np
     import pandas as pd
     import anndata
     import scipy.sparse
     from tqdm.auto import tqdm
-    n_pcs = max(n_spectral(adata.uns["spectral_eigenvalue"]), min_comps)
-    sc.pp.neighbors(adata, n_pcs=n_pcs, use_rep="X_spectral")
+    #n_pcs = max(n_spectral(adata.uns["spectral_eigenvalue"]), min_comps)
+    sc.pp.neighbors(adata, n_pcs=n_pcs, use_rep=use_rep)
     sc.tl.leiden(adata, resolution=resolution)
     ### pseudobulk per cluster
     ul, linv = np.unique(adata.obs["leiden"], return_inverse=True)
@@ -105,6 +105,7 @@ def find_features(adata, resolution=1., features="selected", n_features=10000, b
         del S
     ### then highly variable per cluster
     pdata = anndata.AnnData(P, obs=pd.DataFrame(index=ul), var=adata.var, dtype=int)
+    del P
     if blacklist is not None and blacklist in pdata.var.columns:
         pdata = pdata[:, ~pdata.var[blacklist]].copy()
     sc.pp.normalize_total(pdata, target_sum=10000)
@@ -124,17 +125,18 @@ def iterativeSpectral(adata, n_comps=50,
                       chunk_size=20000,
                       distance_metric="jaccard",
                       inplace=True):
-    adata = spectral(adata, n_comps=n_comps, features=features,
-                     random_state=random_state,
-                     sample_size=sample_size,
-                     chunk_size=chunk_size,
-                     distance_metric=distance_metric)
+    spectral(adata, n_comps=n_comps, features=features,
+             random_state=random_state,
+             sample_size=sample_size,
+             chunk_size=chunk_size,
+             distance_metric=distance_metric)
     for i in range(1, n_iter):
         print("Iteration", i)
-        find_features(adata, resolution=resolution, features=features, blacklist=blacklist, min_comps=nn_min_comps, chunk_size=chunk_size)
-        adata = spectral(adata, n_comps=n_comps, features=features,
-                         random_state=random_state,
-                         sample_size=sample_size,
-                         chunk_size=chunk_size,
-                         distance_metric=distance_metric)
+        n_pcs = max(n_spectral(adata.uns["spectral_eigenvalue"]), nn_min_comps)
+        find_features(adata, resolution=resolution, n_pcs=n_pcs, features=features, blacklist=blacklist, chunk_size=chunk_size, n_features=n_features)
+        spectral(adata, n_comps=n_comps, features=features,
+                 random_state=random_state,
+                 sample_size=sample_size,
+                 chunk_size=chunk_size,
+                 distance_metric=distance_metric)
     return adata

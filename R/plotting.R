@@ -22,22 +22,39 @@ set_ht_opt <- function(htsc=2.5) {
 }
 
 
-htSortMatrix <- function(M, method="euclidean", ratio=0.5, cutoff=cutoff) {
-    M = order.tsp(M, rows=TRUE, method=method)
-    M = order.tsp(M, rows=FALSE, method=method)
-    M = diag.mat3(M, rows=TRUE, ratio=ratio, cutoff=cutoff)
-    M = diag.mat3(M, rows=FALSE, ratio=ratio, cutoff=cutoff)
+#' @export
+htSortMatrix <- function(M, method="euclidean", ratio=0.5, cutoff=0.25, sort=c(1,2)) {
+    if (is.logical(sort)) {
+        if (sort) {
+            sort = c(1,2)
+        } else {
+            sort = c()
+        }
+    }
+    rows = 1 %in% sort
+    columns = 2 %in% sort
+    if (rows) {
+        M = order.tsp(M, rows=TRUE, method=method)
+    }
+    if (columns) {
+        M = order.tsp(M, rows=FALSE, method=method)
+    }
+    if (rows) {
+        M = diag.mat3(M, rows=TRUE, ratio=ratio, cutoff=cutoff)
+    }
+    if (columns) {
+        M = diag.mat3(M, rows=FALSE, ratio=ratio, cutoff=cutoff)
+    }
     return(M)
 }
+
 #' Automatic heatmap
 #'
 #' @param M matrix to pass
 #' @param ux millimeters per grid
 #' @export
-autoHeatmap <- function(M, ux=1.5, sort=TRUE, method="euclidean", dimname_fontsize=3.5, ratio=0.5, cutoff=0.25, ...) {
-    if (sort) {
-        M = htSortMatrix(M, method=method, ratio=ratio, cutoff=cutoff)
-    }
+autoHeatmap <- function(M, ux=1.5, sort=c(1, 2), method="euclidean", dimname_fontsize=3.5, ratio=0.5, cutoff=0.25, ...) {
+    M = htSortMatrix(M, method=method, ratio=ratio, cutoff=cutoff, sort=sort)
     return(ComplexHeatmap::Heatmap(
         M, cluster_rows=FALSE, cluster_columns=FALSE,
         width = ncol(M)*grid::unit(ux, "mm"),
@@ -104,6 +121,25 @@ ht_triangle_split <- function(mat.ul, mat.lr, col.ul, col.lr, lwd=0, ...) {
     })
 }
 
+#' Draw asterisks
+#'
+#' @param p.matrix P value matrix, unsorted
+#' @param gp graphic parameters from grid::gpar(). Recommended to set fontsize
+#' @param ... Arguments to grid::grid.text
+#' @export
+htAsterisks <- function(p.matrix, gp, ...) {
+    return(function(j, i, x, y, w, h, fill) {
+        if (is.na(p.matrix[i, j]) | is.nan(p.matrix[i, j])) {
+        } else if (p.matrix[i, j] < 0.001) {
+            grid::grid.text("***", x, y, gp=gp, ...)
+        } else if (p.matrix[i, j] < 0.01) {
+            grid::grid.text("**", x, y, gp=gp, ...)
+        } else if (p.matrix[i, j] < 0.05) {
+            grid::grid.text("*", x, y, gp=gp, ...)
+        }
+    })
+}
+
 #ht_dotplot <- function(pct,
 volcano <- function(df, min.FDR=0.99999) {
 
@@ -133,8 +169,6 @@ repel_text <- function(x, y, text, cex=1, ord=NULL, max.overlaps=NULL, font=NULL
                                 hjust=hjust,
                                 vjust=vjust,
                                 max_overlaps=max_overlaps)
-
-
 }
 
 #' @export

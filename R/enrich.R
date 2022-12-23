@@ -20,6 +20,7 @@ calc_binomial_CI <- function(ns, n, z, max=TRUE) {
 #'
 #' @param motifs JASPAR motifs
 #' @return list of motifs and a summary dataframe
+#' @export
 .summarizeJASPARMotifs <- function(motifs) {
     mnames = sapply(seq_along(motifs), function(x) {
         namex = gsub("::", "_", motifs[[x]]@name)
@@ -139,12 +140,14 @@ enrich_se <- function(se, groupby, feature_name="features", group_name="group", 
     mdf$cfrac[pind] = with(mdf, sapply(pind, function(i) {
         calc_binomial_CI(cfg[i], cbg[i], 1.5, max=T)
     }))
-    mdf$pfrac[nind] = with(mdf, sapply(nind, function(i) {
-        calc_binomial_CI(pfg[i], pbg[i], 1.5, max=T)
-    }))
-    mdf$cfrac[nind] = with(mdf, sapply(nind, function(i) {
-        calc_binomial_CI(cfg[i], cbg[i], 1.5, max=F)
-    }))
+    if (length(nind) > 0) {
+        mdf$pfrac[nind] = with(mdf, sapply(nind, function(i) {
+            calc_binomial_CI(pfg[i], pbg[i], 1.5, max=T)
+        }))
+        mdf$cfrac[nind] = with(mdf, sapply(nind, function(i) {
+            calc_binomial_CI(cfg[i], cbg[i], 1.5, max=F)
+        }))
+    }
     mdf$pfrac[is.na(mdf$pfrac)] = 0
     mdf$cfrac[is.na(mdf$cfrac)] = 0
     mdf$pfrac[is.nan(mdf$pfrac)] = 0

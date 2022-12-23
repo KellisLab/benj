@@ -36,6 +36,9 @@ pip install .
 #+END_SRC
 * TODO Upgrades
 1. heatmap legend size
-2. easy volcano plots
-3. heatmap annotations
-4. colorRamp2 log transform
+2. repel
+3. easy volcano plots
+4. heatmap annotations
+5. colorRamp2 log transform
+6. easy manhattan plot
+7. examples

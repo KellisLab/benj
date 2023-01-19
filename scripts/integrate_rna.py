@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import argparse
-
 def integrate(adata, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist_model=None, **kwargs):
     import scanpy as sc
     import pandas as pd
@@ -56,6 +54,8 @@ def integrate(adata, batch=None, hvg=0, use_combat=True, use_harmony=True, use_b
 
 
 if __name__ == "__main__":
+    import benj
+    import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--input", dest="h5ad", required=True)
     ap.add_argument("-o", "--output", required=True)

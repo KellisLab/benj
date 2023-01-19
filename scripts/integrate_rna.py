@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-def integrate(adata, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist_model=None, **kwargs):
+def integrate(adata, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist_model=None, tsv=None, **kwargs):
     import scanpy as sc
     import pandas as pd
     import numpy as np
     if batch not in adata.obs.columns:
         batch = None
     if batch is not None:
-        cdf = obs.groupby(batch).count().iloc[:, 0]
+        cdf = adata.obs.groupby(batch).count().iloc[:, 0]
         cdf = cdf[cdf >= 3].index.values
         if np.setdiff1d(pd.unique(adata.obs[batch]), cdf) > 0:
             adata = adata[adata.obs[batch].isin(cdf.index), :].copy()
@@ -38,6 +38,8 @@ def integrate(adata, batch=None, hvg=0, use_combat=True, use_harmony=True, use_b
         if col in adata.obs.columns or col in adata.var.index:
             sc.pl.umap(adata, color=col, save="_%s.png" % col)
     sc.tl.leiden(adata, resolution=resolution, key_added=leiden)
+    if tsv is not None:
+        adata.obs.loc[:, [leiden]].to_csv(tsv, sep="\t")
     sc.pl.umap(adata, color=leiden, save="_%s_beside.png" % leiden)
     sc.pl.umap(adata, color=leiden, save="_%s_ondata.png" % leiden, legend_loc="on data")
     if dotplot is not None:
@@ -59,6 +61,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--input", dest="h5ad", required=True)
     ap.add_argument("-o", "--output", required=True)
+    ap.add_argument("-t", "--tsv")
     ap.add_argument("-b", "--batch", type=str, default=None)
     ap.add_argument("-p", "--plot", nargs="+")
     ap.add_argument("-r", "--resolution", default=1., type=float)

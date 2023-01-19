@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist_model=None, tsv=None, rgg_ng=5, prefix="", **kwargs):
+def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist=None, tsv=None, rgg_ng=5, prefix="", **kwargs):
     import scanpy as sc
     import pandas as pd
     import numpy as np
+    import benj
     if batch not in adata.obs.columns:
         batch = None
     if batch is not None:
@@ -12,6 +13,7 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
             adata = adata[adata.obs[batch].isin(cdf.index), :].copy()
         if len(pd.unique(adata.obs[batch])) == 0:
             batch = None
+    print("Working with %d cells" % adata.shape[0])
     sc.pp.normalize_total(adata, target_sum=10000)
     sc.pp.log1p(adata)
     adata.raw = adata
@@ -39,10 +41,19 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
     for col in plot:
         if col in adata.obs.columns or col in adata.var.index:
             sc.pl.umap(adata, color=col, save="_%s.png" % col)
+    if celltypist is not None:
+        ct = benj.annotate(adata.raw.to_adata(), majority_voting=True, model=celltypist)
+        for cn in ct.predicted_labels.columns:
+            adata.obs[cn] = ct.predicted_labels[cn]
+        newlabel = "%s_voting" % leiden
+        obs = benj.annotate_clusters_from_vote(adata.obs, leiden, "majority_voting", newlabel)
+        adata.obs[newlabel] = obs[newlabel]
+        del ct, obs
     sc.tl.leiden(adata, resolution=resolution, key_added=leiden)
     adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
     if tsv is not None:
-        adata.obs.loc[:, [leiden]].to_csv(tsv, sep="\t")
+        cols = np.intersect1d([leiden, "majority_voting", "predicted_labels"], adata.obs.columns)
+        adata.obs.loc[:, cols].to_csv(tsv, sep="\t")
     sc.pl.umap(adata, color=leiden, save="_%s_beside.png" % leiden)
     sc.pl.umap(adata, color=leiden, save="_%s_ondata.png" % leiden, legend_loc="on data")
     if dotplot is not None:
@@ -54,7 +65,8 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
     sc.pl.rank_genes_groups_dotplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
     sc.pl.rank_genes_groups_matrixplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
     sc.pl.rank_genes_groups_heatmap(adata, save="_rgg_%s.png" % leiden, n_genes=rgg_ng)
-    adata.write_h5ad(output, compression="gzip")
+    if output is not None:
+        adata.write_h5ad(output, compression="gzip")
     return adata
 
 
@@ -63,7 +75,7 @@ if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--input", dest="h5ad", required=True)
-    ap.add_argument("-o", "--output", required=True)
+    ap.add_argument("-o", "--output")
     ap.add_argument("-t", "--tsv")
     ap.add_argument("-b", "--batch", type=str, default=None)
     ap.add_argument("-p", "--plot", nargs="+")
@@ -78,6 +90,7 @@ if __name__ == "__main__":
     ap.add_argument("--no-use-bbknn", dest="use_bbknn", action="store_false")
     ap.add_argument("--use-bbknn", dest="use_bbknn", action="store_true")
     ap.add_argument("--dotplot", nargs="+")
+    ap.add_argument("--celltypist")
     ap.set_defaults(use_combat=True, use_harmony=True, use_bbknn=True)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     adata = benj.parse_anndata(**args)

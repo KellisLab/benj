@@ -67,7 +67,7 @@ if __name__ == "__main__":
     ap.add_argument("-p", "--plot", nargs="+")
     ap.add_argument("-r", "--resolution", default=1., type=float)
     ap.add_argument("-l", "--leiden", default="overall_clust")
-    ap.add_argument("-p", "--prefix", default="C")
+    ap.add_argument("--prefix", default="C")
     ap.add_argument("--hvg", default=0, type=int)
     ap.add_argument("--no-use-combat", dest="use_combat", action="store_false")
     ap.add_argument("--use-combat", dest="use_combat", action="store_true")

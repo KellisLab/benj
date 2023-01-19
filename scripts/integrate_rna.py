@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-def integrate(adata, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist_model=None, tsv=None, **kwargs):
+def integrate(adata, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist_model=None, tsv=None, rgg_ng=5, **kwargs):
     import scanpy as sc
     import pandas as pd
     import numpy as np
@@ -8,7 +8,7 @@ def integrate(adata, batch=None, hvg=0, use_combat=True, use_harmony=True, use_b
     if batch is not None:
         cdf = adata.obs.groupby(batch).count().iloc[:, 0]
         cdf = cdf[cdf >= 3].index.values
-        if np.setdiff1d(pd.unique(adata.obs[batch]), cdf) > 0:
+        if len(np.setdiff1d(pd.unique(adata.obs[batch]), cdf)) > 0:
             adata = adata[adata.obs[batch].isin(cdf.index), :].copy()
     sc.pp.normalize_total(adata, target_sum=10000)
     sc.pp.log1p(adata)
@@ -48,9 +48,9 @@ def integrate(adata, batch=None, hvg=0, use_combat=True, use_harmony=True, use_b
         sc.pl.violin(adata, vv, groupby=leiden, save="_%s_%s.png" % (leiden, vv))
     sc.tl.dendrogram(adata, groupby=leiden)
     sc.tl.rank_genes_groups(adata, groupby=leiden, method="wilcoxon", pts=True)
-    sc.pl.rank_genes_groups_dotplot(adata, save="rgg_%s.png" % leiden)
-    sc.pl.rank_genes_groups_matrixplot(adata, save="rgg_%s.png" % leiden)
-    sc.pl.rank_genes_groups_heatmap(adata, save="_rgg_%s.png" % leiden)
+    sc.pl.rank_genes_groups_dotplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
+    sc.pl.rank_genes_groups_matrixplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
+    sc.pl.rank_genes_groups_heatmap(adata, save="_rgg_%s.png" % leiden, n_genes=rgg_ng)
     adata.write_h5ad(output, compression="gzip")
     return adata
 

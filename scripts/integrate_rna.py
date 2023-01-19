@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist_model=None, tsv=None, rgg_ng=5, **kwargs):
+def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist_model=None, tsv=None, rgg_ng=5, prefix="", **kwargs):
     import scanpy as sc
     import pandas as pd
     import numpy as np
@@ -38,6 +38,7 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
         if col in adata.obs.columns or col in adata.var.index:
             sc.pl.umap(adata, color=col, save="_%s.png" % col)
     sc.tl.leiden(adata, resolution=resolution, key_added=leiden)
+    adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
     if tsv is not None:
         adata.obs.loc[:, [leiden]].to_csv(tsv, sep="\t")
     sc.pl.umap(adata, color=leiden, save="_%s_beside.png" % leiden)
@@ -66,6 +67,7 @@ if __name__ == "__main__":
     ap.add_argument("-p", "--plot", nargs="+")
     ap.add_argument("-r", "--resolution", default=1., type=float)
     ap.add_argument("-l", "--leiden", default="overall_clust")
+    ap.add_argument("-p", "--prefix", default="C")
     ap.add_argument("--hvg", default=0, type=int)
     ap.add_argument("--no-use-combat", dest="use_combat", action="store_false")
     ap.add_argument("--use-combat", dest="use_combat", action="store_true")

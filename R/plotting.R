@@ -159,6 +159,9 @@ repel_text <- function(x, y, text, cex=1, ord=NULL, max.overlaps=NULL, font=NULL
     bb_h = graphics::strheight(text, cex=cex, font=font, vfont=vfont)
     bb_px = .1 * quantile(bb_h, q)
     bb_py = .1 * quantile(bb_w, q)
+    point_padding_x <- graphics::strheight('a', cex=pt.cex)
+    point_padding_y <- graphics::strheight('a', cex=pt.cex)
+
     rb = ggrepel:::repel_boxes2(data_points=data_points,
                                 point_size=point_size,
                                 point_padding_x=point_padding_x,
@@ -169,6 +172,7 @@ repel_text <- function(x, y, text, cex=1, ord=NULL, max.overlaps=NULL, font=NULL
                                 hjust=hjust,
                                 vjust=vjust,
                                 max_overlaps=max_overlaps)
+
 }
 
 #' @export

@@ -127,6 +127,11 @@ se_normalize_total <- function(se, target_sum=10000, assay=NULL, normalized="nor
     return(se)
 }
 
+#' Log1p assay similar to Scanpy
+#'
+#' @param se SummarizedExperiment object
+#' @param assay Base assay
+#' @export
 se_log1p <- function(se, assay="normalized") {
     X = SummarizedExperiment::assays(se)[[assay]]
     SummarizedExperiment::assays(se)[[paste0("log1p_", assay)]] = log1p(X)

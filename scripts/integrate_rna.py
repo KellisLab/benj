@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-def integrate(adata, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist_model=None, tsv=None, rgg_ng=5, **kwargs):
+def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist_model=None, tsv=None, rgg_ng=5, **kwargs):
     import scanpy as sc
     import pandas as pd
     import numpy as np

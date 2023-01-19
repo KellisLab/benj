@@ -2,7 +2,7 @@
 def extract_rank_genes_groups(adata, key="rank_genes_groups_filtered", group_name="group", gene_name="names", pval_cutoff=0.05):
     import pandas as pd
     import numpy as np
-    names = pd.DataFrame(adata.uns[key]["names"])
+    names = pd.DataFrame(adata.uns[key][gene_name])
     pvals = pd.DataFrame(adata.uns[key]["pvals_adj"])
     R, C = np.where((~names.isna()) & (pvals <= pval_cutoff))
     df = pd.DataFrame({gene_name: names.values[R, C], group_name: names.columns.values[C]})
@@ -23,7 +23,7 @@ def score_genes_by_rgg(adata, rgg):
     import scipy.sparse
     import pandas as pd
     import anndata
-    df = rgg.loc[adata.var_names.get_indexer(rgg["names"]) >= 0,:].copy()
+    df = rgg.loc[adata.var_names.get_indexer(rgg["names"]) >= 0, :].copy()
     df["name_index"] = adata.var_names.get_indexer(df["names"])
     ugrp, grp_index = np.unique(df["group"].values, return_inverse=True)
     df["group_index"] = grp_index

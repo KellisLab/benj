@@ -34,6 +34,27 @@ R --slave -e 'devtools::install_github(c("GreenleafLab/ArchR", "lhe17/nebula"), 
 make
 pip install .
 #+END_SRC
+* RNA integration/subtyping framework
+#+BEGIN_SRC bash
+  function integrate() {
+      cls="$1"
+      shift
+      integrate_rna.py -i concatenated.h5ad \
+		       -o "${cls}.h5ad" \
+		       -t "${cls}/${cls}_clust.tsv.gz" \
+		       -f "${cls}" \
+		       -b "batch" \
+		       -l "${cls}_clust" \
+		       --hvg 5000 \
+		       --dotplot Mbp Pdgfra Aif1 Gfap Flt1 Pdgfrb Syt1 Slc17a7 Gad1 \
+		       "$@"
+  }
+  integrate overall
+  integrate Exc -a ./overall_clust/overall_clust.tsv.gz --subset overall_clust=C1,C2,C3
+  integrate Exc_L23 -a ./Exc_clust/Exc_clust.tsv.gz --subset Exc_clust=C0,C2,C3
+
+
+#+END_SRC
 * TODO Upgrades
 1. heatmap legend size
 2. repel

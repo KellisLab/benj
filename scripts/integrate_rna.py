@@ -10,6 +10,8 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
         cdf = cdf[cdf >= 3].index.values
         if len(np.setdiff1d(pd.unique(adata.obs[batch]), cdf)) > 0:
             adata = adata[adata.obs[batch].isin(cdf.index), :].copy()
+        if len(pd.unique(adata.obs[batch])) == 0:
+            batch = None
     sc.pp.normalize_total(adata, target_sum=10000)
     sc.pp.log1p(adata)
     adata.raw = adata

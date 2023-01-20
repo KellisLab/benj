@@ -16,8 +16,10 @@ def index_of(values, idx):
     values_idx = sort_idx[np.searchsorted(idx, values, sorter=sort_idx)]
     return values_idx
 
-def weighted_pearson_correlation(A, B, wt):
+def weighted_pearson_correlation(A, B, wt=None):
     import numpy as np
+    if wt is None:
+        wt = np.ones(A.shape[1])
     wt = np.ravel(wt) / np.sum(wt)
     Am = (A.T - np.dot(A, wt)).T
     Bm = (B.T - np.dot(B, wt)).T

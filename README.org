@@ -36,11 +36,11 @@ pip install .
 #+END_SRC
 * RNA integration/subtyping framework
 #+BEGIN_SRC bash
-  function integrate() {
-      cls="$1"
+  function integrate {
+      cls=${1:-overall}
       shift
       integrate_rna.py -i concatenated.h5ad \
-		       -o "${cls}.h5ad" \
+		       -o "${cls}/${cls}.h5ad" \
 		       -t "${cls}/${cls}_clust.tsv.gz" \
 		       -f "${cls}" \
 		       -b "batch" \
@@ -50,8 +50,8 @@ pip install .
 		       "$@"
   }
   integrate overall
-  integrate Exc -a ./overall_clust/overall_clust.tsv.gz --subset overall_clust=C1,C2,C3
-  integrate Exc_L23 -a ./Exc_clust/Exc_clust.tsv.gz --subset Exc_clust=C0,C2,C3
+  integrate exc -a ./overall_clust/overall_clust.tsv.gz --subset overall_clust=C1,C2,C3 --plot overall_clust
+  integrate exc_L23 -a ./exc_clust/exc_clust.tsv.gz --subset exc_clust=C0,C2,C3 --plot overall_clust exc_clust
 
 
 #+END_SRC

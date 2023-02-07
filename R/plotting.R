@@ -140,9 +140,21 @@ htAsterisks <- function(p.matrix, gp, ...) {
     })
 }
 
-#ht_dotplot <- function(pct,
-volcano <- function(df, min.FDR=0.99999) {
-
+                                        #ht_dotplot <- function(pct,
+#' @export
+volcano <- function(df, threshold.FDR=0.99999, threshold.log2FC=0.5, label=NULL, title="Volcano plot of", force=1, max.overlaps = getOption("ggrepel.max.overlaps", default = 10)) {
+    df$log2FC = qclip(df$log2FC, .99)
+    df$FDR = vclip(df$FDR, min=1e-300)
+    df$score = -log10(df$FDR) * abs(df$log2FC)
+    if (label %in% colnames(df)) {
+        df$label = df[[label]]
+    } else {
+        df$label = ""
+    }
+    df$label = ifelse(df$FDR <= threshold.FDR, df$label, rep("", nrow(df)))
+    df$label = ifelse(abs(df$log2FC) >= threshold.log2FC, df$label, rep("", nrow(df)))
+    g = ggplot(df, aes(x=log2FC, y=-log10(FDR), label=label)) + geom_point() + ggrepel::geom_text_repel(force=force, max.overlaps=max.overlaps) + ggpubr::theme_pubr() + ggtitle(title)
+    return(g)
 }
 ## manhattan <- function(gr, chrom.sizes) {
 

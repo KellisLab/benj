@@ -57,8 +57,8 @@ read_h5ad_obs <- function(h5ad) {
 #' @param h5ad An H5AD filename path
 #' @return A properly formatted dataframe
 #' @export
-read_h5ad_var <- function(h5ad) {
-    df = rhdf5::h5read(h5ad, "var")
+read_h5ad_var <- function(h5ad, base="/var") {
+    df = rhdf5::h5read(h5ad, base)
     if (!("_index" %in% names(df)) & ("symbol" %in% names(df))) {
         return(.parse_h5ad_dataframe(df, "symbol"))
     } else {
@@ -120,14 +120,14 @@ read_h5ad_var <- function(h5ad) {
 #' @return A list of the dataframe (df) and the integer index with df's rownames as names
 .parse_h5ad_var <- function(h5ad, var=NULL, base="/var/") {
     if (is.null(var)) {
-        var_df = read_h5ad_var(h5ad)
+        var_df = read_h5ad_var(h5ad, base=base)
         var_index = 1:nrow(var_df)
     } else if (is.data.frame(var)) {
-        varnames = rownames(read_h5ad_var(h5ad))
+        varnames = rownames(read_h5ad_var(h5ad, base=base))
         var_df = var
         var_index = match(rownames(var_df), varnames)
     } else {
-        var_df = read_h5ad_var(h5ad)
+        var_df = read_h5ad_var(h5ad, base=base)
         var_index = match(var, rownames(var_df))
         var_df = var_df[var_index,]
     }
@@ -244,8 +244,6 @@ read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE
         assays = list(counts=.parse_h5ad_X(h5ad, "/raw/X",
                                            obs_index=obs$index,
                                            var_index=var$index))
-
-
         sce = SingleCellExperiment::SingleCellExperiment(assays, colData=obs$df, rowData=var$df)
     } else {
         assays = list(counts=.parse_h5ad_X(h5ad, "/X",

@@ -137,3 +137,34 @@ se_log1p <- function(se, assay="normalized") {
     SummarizedExperiment::assays(se)[[paste0("log1p_", assay)]] = log1p(X)
     return(se)
 }
+
+#' Un-normalize SummarizedExperiment using total_counts column
+#' @param se SummarizedExperiment object
+#' @param total_counts total_counts column in colData(se) to extract real counts from
+se_unnormalize <- function(se, assay=NULL, unnormalized="raw", eps=0.01, total_counts="total_counts") {
+    if (is.null(assay)) {
+        E = SummarizedExperiment::assays(se)[[1]]
+    } else {
+        E = SummarizedExperiment::assays(se)[[assay]]
+    }
+    cs = Matrix::colSums(E)
+    if (sd(cs) < eps) {
+        ### first check if is just CPM normalized
+        M = E %*% Matrix::Diagonal(x=colData(se)[[total_counts]]/mean(cs))
+    } else {
+        ### otherwise assume log1p-CPM normalization
+        cs = Matrix::colSums(expm1(E))
+        M = NULL
+        if (sd(cs) < eps) {
+            M = expm1(E) %*% Matrix::Diagonal(x=colData(se)[[total_counts]]/mean(cs))
+        }
+    }
+    if (!is.null(M)) {
+        diff = abs(colSums(E) - colData(se)$total_counts)
+        print(paste0("max diff: ", mean(diff), " counts per cell"))
+        print(paste0("Saving to '", unnormalized, "'"))
+        dimnames(M) = dimnames(E)
+        assays(se)[[unnormalized]] = round(M)
+    }
+    return(se)
+}

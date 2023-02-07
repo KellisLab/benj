@@ -78,7 +78,7 @@ deg.edger <- function(se, pathology, case, control, covariates=c(),
 #' @param cpm.count Number of observations passing CPM cutoff for filter
 #' @param norm edgeR norm method for calcNormFactors
 #' @export
-deg.ruvseq <- function(sce, sample, pathology, NRUV=10, assay=NULL, cpm.cutoff=1, cpm.count=3, norm="TMM") {
+deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=10, assay=NULL, cpm.cutoff=1, cpm.count=3, norm="TMM") {
     pb = se_make_pseudobulk(sce, sample)
     if (is.null(assay)) {
         X = SummarizedExperiment::assays(pb)$counts
@@ -93,7 +93,8 @@ deg.ruvseq <- function(sce, sample, pathology, NRUV=10, assay=NULL, cpm.cutoff=1
     dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
     to_keep = Matrix::rowSums(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.count
     dgel = dgel[to_keep,,keep.lib.sizes=FALSE]
-    design = model.matrix(as.formula(paste0("~", pathology)), data=cd)
+    covariates = covariates[covariates %in% colnames(cd)]
+    design = model.matrix(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), data=cd)
 ### Use LRT workflow
     dgel = edgeR::calcNormFactors(dgel, method=norm)
     dgel = edgeR::estimateGLMCommonDisp(dgel, design)
@@ -132,9 +133,10 @@ deg.ruvseq <- function(sce, sample, pathology, NRUV=10, assay=NULL, cpm.cutoff=1
 #' @param cpm.count Number of observations passing CPM cutoff for filter for RUV
 #' @export
 deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
-                   offset="total_counts", assay=NULL, model="NBGMM",
-                   filter_only_case_control=FALSE, factorize_pathology=TRUE,
-                   cpm.cutoff=1, cpm.count=3, NRUV=10) {
+                       offset="total_counts", assay=NULL, model="NBGMM",
+                       filter_only_case_control=FALSE, factorize_pathology=TRUE,
+                       ruv.remove.subjectlevel=TRUE,
+                       cpm.cutoff=1, cpm.count=3, NRUV=10, reml=1) {
     if (filter_only_case_control) {
         sce = sce[,SummarizedExperiment::colData(sce)[[pathology]] %in% c(case, control)]
     }
@@ -143,10 +145,15 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
                          sample=sample,
                          pathology=pathology,
                          NRUV=NRUV,
+                         covariates=covariates,
                          assay=assay,
                          cpm.cutoff=cpm.cutoff,
                          cpm.count=cpm.count)
         cd = SummarizedExperiment::colData(sce)
+        cd.pb = SummarizedExperiment::colData(se_make_pseudobulk(sce, sample))
+        if (ruv.remove.subjectlevel) {
+            covariates = setdiff(covariates, colnames(cd.pb))
+        }
         covariates = c(covariates, colnames(cd)[grep("^RUV", colnames(cd))])
     }
     sce[[sample]] = as.factor(as.character(sce[[sample]]))
@@ -176,7 +183,7 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
                          cd[[sample]],
                          design,
                          offset=offset,
-                         model=model)
+                         model=model, reml=reml)
     ### Now to parse output
     name.case = paste0(pathology, case)
     name.control = paste0(pathology, control)

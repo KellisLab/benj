@@ -131,12 +131,13 @@ diag.mat3 <- function(mat, ratio=0.5, cutoff=0.25, rows=TRUE) {
 #' @param dense logical to determine whether to densify
 #' @return pivoted matrix
 #' @export
-pivot <- function(df, row, col, val, dense=TRUE) {
+pivot <- function(df, row, col, val, dense=TRUE, use.last.ij=FALSE) {
     row = as.factor(df[[row]])
     col = as.factor(df[[col]])
     M = Matrix::sparseMatrix(i=as.integer(row),
                              j=as.integer(col),
                              x=df[[val]],
+                             use.last.ij=use.last.ij,
                              dimnames=list(levels(row), levels(col)),
                              dims=c(length(levels(row)), length(levels(col))))
     if (dense) {

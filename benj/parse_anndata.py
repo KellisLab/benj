@@ -1,4 +1,18 @@
 
+def annotation_to_numbered(df, sample_order, index_unique="#", startnum:int=1, label=None):
+    import pandas as pd
+    out = []
+    for i, sample in enumerate(sample_order):
+        flag = df.index.str.contains("^[ACGT]+-1%s%s$" % (index_unique, sample))
+        nf = df.loc[flag, :].copy()
+        nf.index = nf.index.str.replace("1%s%s$" % (index_unique, sample),
+                                        "%d" % (startnum + i),
+                                        regex=True)
+        if label is not None:
+            nf[label] = sample
+        out.append(nf)
+    return pd.concat(out)
+
 def setup_args_anndata(ap):
     ap.add_argument("-a", "--annotation", nargs="+")
     ap.add_argument("--min", nargs="+", metavar="KEY=VALUE")

@@ -56,7 +56,34 @@ bed.slurp <- function(fname, row.names=FALSE, name.col="name", score.col="score"
     return(gr)
 }
 
-
+#'
+#' Dump genomic ranges to BED6+
+#'
+#' gr Ranges
+#' file File or connection for output
+#' name Name of column to put as 4th column in BED6+
+#' score Score column to put as 5th column in BED6+
+#' extra Extra columns
+#' default.score Number from 0-1000 inclusive to put as default for score if none exists
+#' @export
+bed.dump <- function(gr, file="", name="name", score="score", extra=NULL, default.score=0) {
+    df = as.data.frame(gr)
+    if ((!is.null(name)) & (name %in% colnames(df))) {
+        df$name = df[[name]]
+    } else if (!is.null(names(gr))) {
+        df$name = names(gr)
+    } else {
+        df$name = with(df, paste0(seqnames, ":", start, "-", end))
+    }
+    extra = intersect(extra, colnames(df))
+    if ((!is.null(score)) & (score %in% colnames(df))) {
+        df$score = df[[score]]
+    } else {
+        df$score = default.score
+    }
+    df = df[c("seqnames", "start", "end", "name", "score", "strand", extra)]
+    write.table(df, file=file, quote=FALSE, sep="\t", row.names=FALSE, col.names=FALSE)
+}
 #' Annotate peaks based on GFF
 #'
 #' gff can be a dataframe for filtering, e.g. gff[gff$gene_type == "protein_coding",]
@@ -69,7 +96,7 @@ bed.slurp <- function(fname, row.names=FALSE, name.col="name", score.col="score"
 #' @export
 peak_annotation <- function(gr, gff, upstream=2000, downstream=200) {
     if (!is.data.frame(gff)) {
-        gff = rtracklayer::readGFF(gff)
+        gff = as.data.frame(rtracklayer::readGFF(gff))
     }
     exons = with(gff[gff$type == "exon", ],
                  GenomicRanges::GRanges(seqnames=seqid,
@@ -119,13 +146,16 @@ run.great <- function(gr, spt=NULL, bg=TRUE, species="hg38") {
     }
     grcol = colnames(S4Vectors::mcols(gr))
     if (!is.null(spt) & all(spt %in% grcol)) {
-        res = Reduce(rbind, lapply(split(gr, S4Vectors::mcols(gr)[[spt]]), function(lr) {
+        res = do.call(rbind, lapply(split(gr, S4Vectors::mcols(gr)[[spt]]), function(lr) {
             if (bg) {
                 tbl = .rgt(lr, gr)
             } else {
                 tbl = .rgt(lr)
             }
             print(str(tbl))
+            if (is.null(tbl)) {
+                tbl = data.frame()
+            }
             if (nrow(tbl) > 0) {
                 ### Add cols
                 for (col in spt) {

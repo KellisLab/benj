@@ -19,16 +19,12 @@
 #'
 #' @param gene List of genes
 #' @param OrgDb OrgDb e.g. org.Hs.eg.db::org.Hs.eg.db or org.Mm.eg.db::org.Mm.eg.db
-#' @param filter Optional logical filter to subset genes (for ease of use)
 #' @param keyType Set default keyType to SYMBOL instead of ENTREZID for clusterProfiler::enrichGO
 #' @param ont Set default ontology to ALL for clusterProfiler::enrichGO
 #' @param minGSSize Minimum gene set size for a GO term
 #' @param maxGSSize Maximum gene set size for a GO term
 #' @export
-enrichGO <- function(gene, OrgDb, filter=NULL, keyType="SYMBOL", ont="ALL", minGSSize=10, maxGSSize=100, ...) {
-    if (!is.null(filter)) {
-        gene = gene[filter]
-    }
+enrichGO <- function(gene, OrgDb, keyType="SYMBOL", ont="ALL", minGSSize=10, maxGSSize=100, ...) {
     ego = clusterProfiler::enrichGO(gene=gene, OrgDb=OrgDb, keyType=keyType, ont=ont, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
     return(.proc.go.result(ego))
 }

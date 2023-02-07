@@ -45,7 +45,7 @@ promoter_enrichment <- function(gene_list, universe=NULL, upstream=2000, downstr
                                      gene_id=gene_id,
                                      strand=strand,
                                      gene_type=gene_type))
-    names(gr) = benj::var_names_make_unique(prom.gr$gene_name)
+    names(gr) = benj::var_names_make_unique(gr$gene_name)
     prom.gr = GenomicRanges::promoters(gr, upstream=upstream, downstream=downstream)
     prom.gr$to_enrich = names(gr) %in% gene_list
     if (is.null(jaspar)) {

@@ -59,6 +59,7 @@ motif_overlap <- function(peakSet, jaspar, species="Homo sapiens", collection="C
         warning("BSgenome unspecified. Using BSgenome.Hsapiens.UCSC.hg38")
         BSgenome = BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38
     }
+    peakSet = peakSet[as.character(GenomicRanges::seqnames(peakSet)) %in% names(BSgenome)]
     motifs = TFBSTools::getMatrixSet(jaspar, list(species=species, collection=collection))
     obj = .summarizeJASPARMotifs(motifs)
     ### get matches

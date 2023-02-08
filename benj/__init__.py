@@ -5,3 +5,4 @@ from .parse_anndata import parse_anndata
 from .annotate import *
 from .timer import template as stopwatch
 from .rgg import *
+from .mu import *

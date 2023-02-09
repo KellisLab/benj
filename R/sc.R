@@ -123,7 +123,9 @@ se_normalize_total <- function(se, target_sum=10000, assay=NULL, normalized="nor
     } else {
         X = SummarizedExperiment::assays(se)[[assay]]
     }
-    SummarizedExperiment::assays(se)[[normalized]] = X %*% Matrix::Diagonal(x=target_sum / Matrix::colSums(X))
+    out = X %*% Matrix::Diagonal(x=target_sum / Matrix::colSums(X))
+    dimnames(out) = dimnames(X)
+    SummarizedExperiment::assays(se)[[normalized]] = out
     return(se)
 }
 

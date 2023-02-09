@@ -35,3 +35,10 @@ get_cache_loader <- function(expiration) {
         load_cached(fname, func, expiration, ...)
     })
 }
+
+#' Reverse complement
+#'
+#' @export
+reverseComplement <- function(x) {
+    return(rev(chartr(old="ACGT", new="TGCA", x)))
+}

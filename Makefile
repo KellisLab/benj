@@ -8,9 +8,22 @@ PKG_SOURCE := ../$(PKG)_$(VERSION).tar.gz
 PKG_BINARY := ../$(PKG)_$(VERSION).zip
 
 
-all: document source_package binary_package packages test install pkgdown #drat
+all: document data source_package binary_package packages test install pkgdown #drat
 
-.PHONY: document source_package binary_package packages targets all install test pkgdown #drat
+.PHONY: document data source_package binary_package packages targets all install test pkgdown #drat
+
+inst/extdata/10x/%.csv: inst/extdata/10x
+	$(shell wget "https://cdn.10xgenomics.com/raw/upload/v1655151897/support/in-line documents/$(@F)" -O $@)
+
+inst/extdata/10x: inst/extdata
+	$(shell	mkdir inst/extdata/10x)
+
+inst/extdata: inst
+	$(shell	mkdir inst/extdata)
+inst:
+	$(shell mkdir inst)
+
+data: inst/extdata/10x/Dual_Index_Kit_TT_Set_A.csv inst/extdata/10x/Dual_Index_Kit_NN_Set_A.csv inst/extdata/10x/Dual_Index_Kit_NT_Set_A.csv inst/extdata/10x/Single_Index_Kit_T_Set_A.csv inst/extdata/10x/Single_Index_Kit_N_Set_A.csv
 
 targets:
 	$(info Package : $(PKG))

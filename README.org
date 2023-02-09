@@ -63,3 +63,16 @@ pip install .
 5. colorRamp2 log transform
 6. easy manhattan plot
 7. examples
+
+* Datasets
+
+| Link                                                                                                                                    | MD5sum                           |
+|-----------------------------------------------------------------------------------------------------------------------------------------+----------------------------------|
+| https://cf.10xgenomics.com/samples/cell-arc/2.0.0/pbmc_granulocyte_sorted_10k/pbmc_granulocyte_sorted_10k_filtered_feature_bc_matrix.h5 | df86844b99161b9487090d91e644745e |
+| https://cf.10xgenomics.com/samples/cell-arc/2.0.0/pbmc_granulocyte_sorted_10k/pbmc_granulocyte_sorted_10k_atac_fragments.tsv.gz         | 7635e27373de5dabd5b54ad58a30bc61 |
+| https://cf.10xgenomics.com/samples/cell-arc/2.0.0/pbmc_granulocyte_sorted_10k/pbmc_granulocyte_sorted_10k_atac_fragments.tsv.gz.tbi     | 134a3ca2dc01c398a2905504bd6384f7 |
+| https://cf.10xgenomics.com/samples/cell-arc/2.0.0/pbmc_granulocyte_sorted_10k/pbmc_granulocyte_sorted_10k_atac_peak_annotation.tsv      | 38f8abd2ba764e9693869e0111ad7a59 |
+| https://cf.10xgenomics.com/samples/cell-arc/2.0.0/human_brain_3k/human_brain_3k_filtered_feature_bc_matrix.h5                           | ba0b765eddb138d6d6294227879b9a9b |
+| https://cf.10xgenomics.com/samples/cell-arc/2.0.0/human_brain_3k/human_brain_3k_atac_fragments.tsv.gz                                   | b1594a4096405128e646e6a275e3ada3 |
+| https://cf.10xgenomics.com/samples/cell-arc/2.0.0/human_brain_3k/human_brain_3k_atac_fragments.tsv.gz.tbi                               | 3054c179689ff025f9e64df6d7a79040 |
+| https://cf.10xgenomics.com/samples/cell-arc/2.0.0/human_brain_3k/human_brain_3k_atac_peak_annotation.tsv                                | 5c9cde0442444bbc2c4c57c577db6c80 |

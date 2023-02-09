@@ -1,6 +1,6 @@
 Package: benj
 Title: Benj Sample functions
-Version: 0.0.1
+Version: 0.0.2
 Authors@R:
     person("Benjamin", "James", , "benjames@mit.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-6228-055X"))
@@ -20,3 +20,4 @@ Suggests:
     GenomicFeatures,
     anndata
 Config/testthat/edition: 3
+LazyData: true

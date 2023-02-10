@@ -12,7 +12,7 @@
 #' @param cpm.count Number of observations passing CPM cutoff for filter
 #' @export
 deg.edger <- function(se, pathology, case, control, covariates=c(),
-                      method="LRT", assay=NULL, cpm.cutoff=1, cpm.count=3,
+                      method="LRT", assay=NULL, cpm.cutoff=1, cpm.count=10,
                       filter_only_case_control=FALSE) {
     if (filter_only_case_control) {
         se = se[,SummarizedExperiment::colData(se)[[pathology]] %in% c(case, control)]
@@ -78,7 +78,7 @@ deg.edger <- function(se, pathology, case, control, covariates=c(),
 #' @param cpm.count Number of observations passing CPM cutoff for filter
 #' @param norm edgeR norm method for calcNormFactors
 #' @export
-deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=10, assay=NULL, cpm.cutoff=1, cpm.count=3, norm="TMM") {
+deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=10, assay=NULL, cpm.cutoff=1, cpm.count=10, norm="TMM") {
     pb = se_make_pseudobulk(sce, sample)
     if (is.null(assay)) {
         X = SummarizedExperiment::assays(pb)$counts
@@ -136,7 +136,7 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
                        offset="total_counts", assay=NULL, model="NBGMM",
                        filter_only_case_control=FALSE, factorize_pathology=TRUE,
                        ruv.remove.subjectlevel=TRUE,
-                       cpm.cutoff=1, cpm.count=3, NRUV=10, reml=1) {
+                       cpm.cutoff=1, cpm.count=10, NRUV=10, reml=1) {
     if (filter_only_case_control) {
         sce = sce[,SummarizedExperiment::colData(sce)[[pathology]] %in% c(case, control)]
     }

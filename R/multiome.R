@@ -1,4 +1,7 @@
 
+#' Make aggregation table
+#' @param dir.list Vector of directories within which cellranger output folders reside. If named, use names as batch names
+#' @export
 make_aggregation_table <- function(dir.list) {
     dirlist = do.call(rbind, lapply(dir.list, function(dir) {
         file = list.files(dir, full.names=TRUE)

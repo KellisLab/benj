@@ -118,7 +118,7 @@ enrich_overlap_custom <- function(peakSet, gr, gr.col=NULL, counts=FALSE) {
 #' @param cols.colData Columns to add from colData(se)
 #' @return dataframe with group, log2FC, and mlog10p columns along with $feature_name
 #' @export
-enrich_se <- function(se, groupby, feature_name="features", group_name="group", cols.colData="name") {
+enrich_se <- function(se, groupby, feature_name="features", group_name="group", cols.colData="name", dropNA=TRUE) {
     P = t(make_pseudobulk(SummarizedExperiment::rowData(se)[[groupby]]))
     M = as.matrix(P %*% SummarizedExperiment::assays(se)[[1]])
     mdf = reshape2::melt(M, value.name="pfg", varnames=c(group_name, feature_name))
@@ -126,8 +126,8 @@ enrich_se <- function(se, groupby, feature_name="features", group_name="group", 
     for (col in cols.colData[cols.colData %in% names(cd)]) {
         mdf[[col]] = cd[mdf[[feature_name]], col]
     }
-    mdf$cfg = rowSums(P)[mdf[[group_name]]]
-    mdf$pbg = colSums(M)[mdf[[feature_name]]]
+    mdf$cfg = rowSums(P)[as.character(mdf[[group_name]])]
+    mdf$pbg = colSums(M)[as.character(mdf[[feature_name]])]
     mdf$cbg = sum(P) - mdf$cfg
     ### Compute log2FC with wilson score interval
     mdf$log2FC = with(mdf, log2(pfg / pbg) - log2(cfg / cbg))
@@ -135,12 +135,14 @@ enrich_se <- function(se, groupby, feature_name="features", group_name="group", 
     nind = which(mdf$log2FC < 0)
     mdf$pfrac = 1
     mdf$cfrac = 1
-    mdf$pfrac[pind] = with(mdf, sapply(pind, function(i) {
-        calc_binomial_CI(pfg[i], pbg[i], 1.5, max=F)
-    }))
-    mdf$cfrac[pind] = with(mdf, sapply(pind, function(i) {
-        calc_binomial_CI(cfg[i], cbg[i], 1.5, max=T)
-    }))
+    if (length(pind) > 0) {
+        mdf$pfrac[pind] = with(mdf, sapply(pind, function(i) {
+            calc_binomial_CI(pfg[i], pbg[i], 1.5, max=F)
+        }))
+        mdf$cfrac[pind] = with(mdf, sapply(pind, function(i) {
+            calc_binomial_CI(cfg[i], cbg[i], 1.5, max=T)
+        }))
+    }
     if (length(nind) > 0) {
         mdf$pfrac[nind] = with(mdf, sapply(nind, function(i) {
             calc_binomial_CI(pfg[i], pbg[i], 1.5, max=T)
@@ -162,5 +164,8 @@ enrich_se <- function(se, groupby, feature_name="features", group_name="group", 
         -phyper(q=y[1], m=y[3], n=y[4] - y[3], k=y[2], lower.tail=TRUE, log.p=TRUE) / log(10)
     })
     mdf$mlog10p = apply(cbind(enr_mlog10p, dep_mlog10p), 1, max)
+    if (dropNA) {
+        mdf = mdf[!is.na(mdf$mlog10p),]
+    }
     return(mdf[order(mdf$mlog10p, decreasing=TRUE), ])
 }

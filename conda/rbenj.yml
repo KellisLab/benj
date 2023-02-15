@@ -34,11 +34,10 @@ dependencies:
   - cairo
   - r-gsl
   - gsl
-  - idr
   ### bioconductor
   - bioconductor-motifmatchr
   - bioconductor-tfbstools
-  - bioconductor-jaspar2020
+  - bioconductor-jaspar2022
   - bioconductor-chromvar
   - bioconductor-annotationdbi
   - bioconductor-go.db
@@ -52,12 +51,13 @@ dependencies:
   - bioconductor-rgreat
   - bioconductor-clusterprofiler
   - r-seurat
-  # - r-seuratdisk icu error forces R below 4.1
+  - r-seuratdisk # icu error forces R below 4.1
   - r-monocle3
   ### deg
   - bioconductor-deseq2
   - bioconductor-ruvseq
   - bioconductor-limma
+  - bioconductor-sva
   - bioconductor-edger
   - bioconductor-mast
   - bioconductor-scde
@@ -92,6 +92,7 @@ dependencies:
   - r-rtsne
   - r-igraph
   - r-cowplot
+  - r-patchwork
   ### jupyter
   - jupyter
   - nbconvert

@@ -16,10 +16,14 @@ bulk_aggregate <- function(dname, use_gene_names=TRUE) {
         return(df)
     }))
     M = pivot(df, "gene_id", "library_id", "count")
+    rd = data.frame(row.names=rownames(M), gene_id=rownames(M))
+    gf = df[!duplicated(df$gene_id), c("gene_id", "gene_name")]
+    rownames(gf) = gf$gene_id
+    rd$gene_name = var_names_make_unique(gf[rownames(rd),"gene_name"])
     if (use_gene_names) {
-        gf = df[!duplicated(df$gene_id), c("gene_id", "gene_name")]
-        rownames(gf) = gf$gene_id
-        rownames(M) = var_names_make_unique(gf[rownames(M),"gene_name"])
+        rownames(M) = rd[rownames(M),]$gene_name
+        rownames(rd) = rd$gene_name
     }
-    return(SummarizedExperiment::SummarizedExperiment(list(counts=M)))
+    cd = data.frame(row.names=colnames(M), batch=rep(basename(dname), ncol(M)))
+    return(SummarizedExperiment::SummarizedExperiment(list(counts=M), rowData=rd, colData=cd))
 }

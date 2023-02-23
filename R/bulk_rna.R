@@ -49,7 +49,7 @@ se_tmm <- function(se, method="TMM", log=FALSE) {
 #' @export
 read_star <- function(star.prefix, index="/net/bmc-lab5/data/kellis/group/Benjamin/ref/STAR_gencode43/", strand=NULL, ...) {
     if (file.exists(paste0(index, "/geneInfo.tab"))) {
-        gf = read.table(, skip=1,sep="\t")
+        gf = read.table(paste0(index, "/geneInfo.tab"), skip=1,sep="\t")
         if (ncol(gf) == 3) {
             colnames(gf) = c("gene_id", "gene_name", "gene_type")
         } else {

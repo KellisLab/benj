@@ -46,8 +46,8 @@
 #' @param h5ad An H5AD filename path
 #' @return A properly formatted dataframe
 #' @export
-read_h5ad_obs <- function(h5ad) {
-    df = rhdf5::h5read(h5ad, "obs")
+read_h5ad_obs <- function(h5ad, base="/") {
+    df = rhdf5::h5read(h5ad, paste0(base, "/obs"))
     return(.parse_h5ad_dataframe(df))
 }
 #' Read H5AD var
@@ -57,8 +57,8 @@ read_h5ad_obs <- function(h5ad) {
 #' @param h5ad An H5AD filename path
 #' @return A properly formatted dataframe
 #' @export
-read_h5ad_var <- function(h5ad, base="/var") {
-    df = rhdf5::h5read(h5ad, base)
+read_h5ad_var <- function(h5ad, base="/") {
+    df = rhdf5::h5read(h5ad, paste0(base, "/var"))
     if (!("_index" %in% names(df)) & ("symbol" %in% names(df))) {
         return(.parse_h5ad_dataframe(df, "symbol"))
     } else {
@@ -76,8 +76,8 @@ read_h5ad_var <- function(h5ad, base="/var") {
 #' @param obs Either NULL (all data), a vector of valid UMIs, or a dataframe of .obs with UMI rownames
 #' @param subset A list of column-value(s) mappings to subset OBS to
 #' @return A list of the dataframe (df) and the integer index with df's rownames as names
-.parse_h5ad_obs <- function(h5ad, obs=NULL, subset=list()) {
-    obs_df = read_h5ad_obs(h5ad)
+.parse_h5ad_obs <- function(h5ad, obs=NULL, subset=list(), base="/") {
+    obs_df = read_h5ad_obs(h5ad, base=base)
     obs_index = 1:nrow(obs_df)
     if (!is.null(obs)) {
         if (is.data.frame(obs)) {
@@ -118,7 +118,7 @@ read_h5ad_var <- function(h5ad, base="/var") {
 #' @param h5ad An H5AD filename path
 #' @param var Either NULL (all features), a vector of valid features, or a dataframe of .var with feature rownames
 #' @return A list of the dataframe (df) and the integer index with df's rownames as names
-.parse_h5ad_var <- function(h5ad, var=NULL, base="/var/") {
+.parse_h5ad_var <- function(h5ad, var=NULL, base="/") {
     if (is.null(var)) {
         var_df = read_h5ad_var(h5ad, base=base)
         var_index = 1:nrow(var_df)
@@ -237,11 +237,11 @@ read_h5ad_var <- function(h5ad, base="/var") {
 #' @param layer A vector of layer(s) to subset
 #' @return A SingleCellExperiment object filled with assays
 #' @export
-read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE, obsp=TRUE, varp=TRUE, subset=list()) {
-    obs = .parse_h5ad_obs(h5ad, obs, subset=subset)
-    var = .parse_h5ad_var(h5ad, var, base=ifelse(raw, "/raw/var/", "/var/"))
+read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE, obsp=TRUE, varp=TRUE, base="/", subset=list()) {
+    obs = .parse_h5ad_obs(h5ad, obs, subset=subset, base=base)
+    var = .parse_h5ad_var(h5ad, var, base=paste0(base, ifelse(raw, "/raw/", "/")))
     if (raw) {
-        assays = list(counts=.parse_h5ad_X(h5ad, "/raw/X",
+        assays = list(counts=.parse_h5ad_X(h5ad, paste0(base, "/raw/X"),
                                            obs_index=obs$index,
                                            var_index=var$index))
         sce = SingleCellExperiment::SingleCellExperiment(assays, colData=obs$df, rowData=var$df)

@@ -41,13 +41,31 @@ se_tmm <- function(se, method="TMM", log=FALSE) {
     return(se)
 }
 
+#' Add genomicranges of gene to
+#' @export
+se_gene_ranges <- function(se, gtf, by="gene_id") {
+    rd = SummarizedExperiment::rowData(se)
+    gf = as.data.frame(rtracklayer::readGFF(gtf))
+    gf = gf[gf$type == "gene",]
+    rownames(gf) = var_names_make_unique(gf[[by]])
+    gr = with(gf, GenomicRanges::GRanges(seqid, ranges=IRanges::IRanges(start, end)))
+    names(gr) = rownames(gf)
+    gr = gr[rd[[by]]]
+    for (name in colnames(rd)) {
+        S4Vectors::mcols(gr)[[name]] = rd[[name]]
+    }
+    names(gr) = rownames(rd)
+    SummarizedExperiment::rowRanges(se) = gr
+    return(se)
+}
 #' Load STAR ReadsPerGene into SummarizedExperiment
 #'
 #' @param star.prefix Vector of directories with STAR ReadsPerGene.out.tab inside. Can be named
 #' @param index STAR index used. Will use geneInfo.tab to load in gene names
 #' @param strand By default, use unstranded. Can use either first or second strand as well.
+#' @param featureCounts use featureCounts output file
 #' @export
-read_star <- function(star.prefix, index="/net/bmc-lab5/data/kellis/group/Benjamin/ref/STAR_gencode43/", strand=NULL, ...) {
+read_star <- function(star.prefix, index="/net/bmc-lab5/data/kellis/group/Benjamin/ref/STAR_gencode43/", featureCounts="featureCounts", strand=NULL, ...) {
     if (file.exists(paste0(index, "/geneInfo.tab"))) {
         gf = read.table(paste0(index, "/geneInfo.tab"), skip=1,sep="\t")
         if (ncol(gf) == 3) {
@@ -83,4 +101,33 @@ read_star <- function(star.prefix, index="/net/bmc-lab5/data/kellis/group/Benjam
         }
     }
     return(se)
+}
+
+
+#' @export
+plotPCA <- function(se, title, method="TMM", top=500, cpm.frac=0.25, cpm.cutoff=100, gene.selection="common", correct=FALSE, use_label=TRUE) {
+    require(ggplot2)
+    dgel = edgeR::calcNormFactors(se, method)
+    to_keep = rowMeans(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.frac
+    dgel = dgel[to_keep,,keep.lib.sizes=FALSE]
+    if (correct) {
+        dgel = limma::removeBatchEffect(dgel, dgel$batch)
+    }
+    pl = limma::plotMDS(dgel, top=top, gene.selection=gene.selection, plot=FALSE)
+    pf = as.data.frame(SummarizedExperiment::colData(se))
+    pf$x = pl$x
+    pf$y = pl$y
+    if (length(unique(pf$batch))==1) {
+        g = ggplot(pf, aes(x=x, y=y, label=title))
+    } else {
+        g = ggplot(pf, aes(x=x, y=y, color=batch, label=title)) + scale_color_brewer(palette="Set2")
+    }
+    g = g + geom_point()
+    if (use_label) {
+        g = g + ggrepel::geom_text_repel(force=0.2)
+    }
+    g = g + xlab(paste0("PC1: ", round(100 * pl$var.explained[1]), "% of variance"))
+    g = g + ylab(paste0("PC2: ", round(100 * pl$var.explained[2]), "% of variance"))
+    g = g + ggpubr::theme_pubr() + ggtitle(title) + theme(plot.title=element_text(size=10), legend.text=element_text(size=8))
+    return(g)
 }

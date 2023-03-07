@@ -9,10 +9,10 @@
 #' @param method Method used for edgeR. Either LRT or QL
 #' @param assay Assay from se to utilize
 #' @param cpm.cutoff Cutoff of CPM to utilize
-#' @param cpm.count Number of observations passing CPM cutoff for filter
+#' @param cpm.frac Fraction of samples passing CPM cutoff for filter
 #' @export
 deg.edger <- function(se, pathology, case, control, covariates=c(),
-                      method="LRT", assay=NULL, cpm.cutoff=1, cpm.count=10,
+                      method="LRT", assay=NULL, cpm.cutoff=10, cpm.frac=0.25,
                       filter_only_case_control=FALSE) {
     if (filter_only_case_control) {
         se = se[,SummarizedExperiment::colData(se)[[pathology]] %in% c(case, control)]
@@ -33,7 +33,7 @@ deg.edger <- function(se, pathology, case, control, covariates=c(),
     }
     cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
     dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
-    to_keep = rowSums(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.count
+    to_keep = Matrix::rowMeans(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.frac
     dgel = dgel[to_keep,,keep.lib.sizes=FALSE]
     dgel = edgeR::calcNormFactors(dgel, method="TMM")
     design = model.matrix(as.formula(paste0("~0 + ", paste0(c(pathology, covariates), collapse=" + "))),
@@ -75,10 +75,10 @@ deg.edger <- function(se, pathology, case, control, covariates=c(),
 #' @param NRUV Number of RUV components to generate. Non-variable RUV components are removed.
 #' @param assay Assay from SummarizedExperiment to use
 #' @param cpm.cutoff Cutoff of CPM to utilize
-#' @param cpm.count Number of observations passing CPM cutoff for filter
+#' @param cpm.frac Number of observations passing CPM cutoff for filter
 #' @param norm edgeR norm method for calcNormFactors
 #' @export
-deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=10, assay=NULL, cpm.cutoff=1, cpm.count=10, norm="TMM") {
+deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=10, assay=NULL, cpm.cutoff=1, cpm.frac=0.25, norm="TMM") {
     pb = se_make_pseudobulk(sce, sample)
     if (is.null(assay)) {
         X = SummarizedExperiment::assays(pb)$counts
@@ -91,7 +91,7 @@ deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=10, assay=N
     }
     cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
     dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
-    to_keep = Matrix::rowSums(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.count
+    to_keep = Matrix::rowMeans(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.frac
     dgel = dgel[to_keep,,keep.lib.sizes=FALSE]
     covariates = covariates[covariates %in% colnames(cd)]
     design = model.matrix(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), data=cd)

@@ -14,6 +14,7 @@ dependencies:
   ## Must have
   - anndata>=0.8.0
   - scanpy
+  - muon
   - pandas
   - numpy>=1.16.0
   - numba
@@ -50,6 +51,7 @@ dependencies:
   - gtfparse
   - pytabix
   - pysam
+  - pyjaspar
   ## single cell
   - scrublet
   - harmonypy
@@ -60,7 +62,6 @@ dependencies:
   - scvelo
   - mudata
   - scglue
-  - episcanpy
   - bamnostic
   ## for snapatac2
   - pytables
@@ -78,16 +79,13 @@ dependencies:
   - dunamai
   - nbsphinx
   - tbb
-  ## for scenic
-  - arboreto
-  - loompy
-  - aiohttp
-  - attrs
-  - cytoolz
   - pip:
       - snapatac2
       - magic-impute
       - scalex
       - scopen
       - ctxcore
-      - pyscenic>=0.11.0
+      - mofapy2
+      - cellphonedb
+      - pychromvar
+      - pygreat

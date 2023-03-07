@@ -1,7 +1,9 @@
 ### Anaconda environment for analysis
 ### To install,
 ###    mamba env create --file=rbenj.yml
-### then, devtools::install_github(c("GreenleafLab/ArchR", "lhe17/nebula"), ref="master", repos = BiocManager::repositories())
+### then, devtools::install_github(c("GreenleafLab/ArchR", "lhe17/nebula", "mojaveazure/seurat-disk"), ref="master", repos = BiocManager::repositories())
+### then, ArchR::installExtraPackages()
+###
 ### then make -j10 in benj directory to install benj
 name: rbenj
 
@@ -12,11 +14,13 @@ channels:
 
 dependencies:
   ## Must have
-  - r-base>=4.1.0
+  - r-base>=4.2.0
   - r-devtools
   - r-biocmanager
   - r-matrix
   - r-tidyverse
+  - r-readxl
+  - r-writexl
   - r-seriation
   - r-gridExtra
   - r-filelock
@@ -34,6 +38,7 @@ dependencies:
   - cairo
   - r-gsl
   - gsl
+  - r-hdf5r
   ### bioconductor
   - bioconductor-motifmatchr
   - bioconductor-tfbstools
@@ -44,14 +49,19 @@ dependencies:
   - bioconductor-do.db
   - bioconductor-org.hs.eg.db
   - bioconductor-org.mm.eg.db
-  - bioconductor-bsgenome.hsapiens.ucsc.hg38
+  - bioconductor-genomeinfodb
+  - bioconductor-bsgenome
+  # - bioconductor-bsgenome.hsapiens.ucsc.hg38
   - bioconductor-bsgenome.mmusculus.ucsc.mm10
   - bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
   - bioconductor-txdb.mmusculus.ucsc.mm10.knowngene
+  - bioconductor-ensdb.hsapiens.v86
   - bioconductor-rgreat
   - bioconductor-clusterprofiler
   - r-seurat
-  - r-seuratdisk # icu error forces R below 4.1
+  - r-harmony
+  - r-signac
+  # - r-seuratdisk # icu error forces R below 4.1
   - r-monocle3
   ### deg
   - bioconductor-deseq2

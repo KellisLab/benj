@@ -3,7 +3,7 @@
 ###    mamba env create --file=rbenj.yml
 ### then, devtools::install_github(c("GreenleafLab/ArchR", "lhe17/nebula", "mojaveazure/seurat-disk"), ref="master", repos = BiocManager::repositories())
 ### then, ArchR::installExtraPackages()
-###
+### then devtools::install_github("cole-trapnell-lab/cicero-release", ref = "monocle3")
 ### then make -j10 in benj directory to install benj
 name: rbenj
 
@@ -14,7 +14,7 @@ channels:
 
 dependencies:
   ## Must have
-  - r-base>=4.2.0
+  - r-base>=4.2.2
   - r-devtools
   - r-biocmanager
   - r-matrix
@@ -61,6 +61,7 @@ dependencies:
   - bioconductor-clusterprofiler
   - bioconductor-variantannotation
   - bioconductor-gviz
+  - bioconductor-geoquery
   - r-seurat
   - r-harmony
   - r-signac

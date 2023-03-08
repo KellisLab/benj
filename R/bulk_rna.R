@@ -63,9 +63,10 @@ se_gene_ranges <- function(se, gtf, by="gene_id") {
 #' @param star.prefix Vector of directories with STAR ReadsPerGene.out.tab inside. Can be named
 #' @param index STAR index used. Will use geneInfo.tab to load in gene names
 #' @param strand By default, use unstranded. Can use either first or second strand as well.
-#' @param featureCounts use featureCounts output file
+#' @param featureCounts use featureCounts output file if exists. Will use instead of STAR ReadsPerGene.out.tab
 #' @export
 read_star <- function(star.prefix, index="/net/bmc-lab5/data/kellis/group/Benjamin/ref/STAR_gencode43/", featureCounts="featureCounts", strand=NULL, ...) {
+    gf = NULL
     if (file.exists(paste0(index, "/geneInfo.tab"))) {
         gf = read.table(paste0(index, "/geneInfo.tab"), skip=1,sep="\t")
         if (ncol(gf) == 3) {
@@ -77,7 +78,20 @@ read_star <- function(star.prefix, index="/net/bmc-lab5/data/kellis/group/Benjam
     }
     xf = NULL
     for (i in seq_along(star.prefix)) {
-        df = read.table(paste0(star.prefix[i], "ReadsPerGene.out.tab"), sep="\t", col.names=c("gene_id", "unstranded", "first", "second"))
+        if (all(file.exists(paste0(star.prefix, featureCounts)))) {
+            print(paste0("Using ", star.prefix[i], "featureCounts"))
+            ### Only use featureCounts if exists for all in prefix.
+            df = read.table(paste0(star.prefix[i], featureCounts), sep="\t", skip="#", header=TRUE)
+            if (ncol(df) == 7) {
+                df = df[c("Geneid", colnames(df)[ncol(df)])]
+                colnames(df) = c("gene_id", "unstranded")
+            } else {
+                stop(paste0("Incorrect number of columns in ", star.prefix[i], featureCounts, ", ", ncol(df)))
+            }
+        } else {
+            print(paste0("Using ", star.prefix[i], "ReadsPerGene.out.tab"))
+            df = read.table(paste0(star.prefix[i], "ReadsPerGene.out.tab"), sep="\t", col.names=c("gene_id", "unstranded", "first", "second"))
+        }
         df$sample = ifelse(is.null(names(star.prefix)), basename(star.prefix[i]), names(star.prefix)[i])
         if (is.null(xf)) {
             xf = df

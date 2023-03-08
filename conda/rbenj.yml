@@ -37,6 +37,7 @@ dependencies:
   - r-cairo
   - cairo
   - r-gsl
+  - r-rcppgsl
   - gsl
   - r-hdf5r
   ### bioconductor
@@ -58,11 +59,15 @@ dependencies:
   - bioconductor-ensdb.hsapiens.v86
   - bioconductor-rgreat
   - bioconductor-clusterprofiler
+  - bioconductor-variantannotation
+  - bioconductor-gviz
   - r-seurat
   - r-harmony
   - r-signac
   # - r-seuratdisk # icu error forces R below 4.1
   - r-monocle3
+  - gxx_linux-64
+  - gcc_linux-64
   ### deg
   - bioconductor-deseq2
   - bioconductor-ruvseq
@@ -88,6 +93,7 @@ dependencies:
   - r-glmnet
   - r-rmagic
   - r-leiden
+  - r-glasso
   - r-pracma
   - r-precrec
   - r-shiny

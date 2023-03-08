@@ -13,9 +13,9 @@ class BedLine:
     def __repr__(self):
         return "BedLine(chrom=%s start=%d end=%d)" % (self.chrom, self.start, self.end)
     def __lt__(self, other):
-        return self.chrom < other.chrom or self.start < other.start or self.end < other.end
+        return self.chrom < other.chrom or self.start < other.start
     def __eq__(self, other):
-        return self.chrom == other.chrom and self.start == other.start and self.end == other.end
+        return self.chrom == other.chrom and self.start == other.start
 
 def run(input_files, output, buffer_size=10):
     import gzip

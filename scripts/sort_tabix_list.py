@@ -1,51 +1,34 @@
 #!/usr/bin/env python3
-import functools
 
-@functools.total_ordering
-class BedLine:
-    def __init__(self, line, **kwargs):
-        self.line = line.strip()
-        S = self.line.split("\t")
-        self.chrom = S[0]
-        self.start = int(S[1])
-        self.end = int(S[2])
-        self.kwargs = kwargs
-    def __repr__(self):
-        return "BedLine(chrom=%s start=%d end=%d)" % (self.chrom, self.start, self.end)
-    def __lt__(self, other):
-        return self.chrom < other.chrom or self.start < other.start
-    def __eq__(self, other):
-        return self.chrom == other.chrom and self.start == other.start
-
-def run(input_files, output, buffer_size=10):
-    import gzip
+def run(input_files, output, chrom_sizes, buffer_size=100000, threads=8):
+    import pysam
     import heapq
-    FL = [gzip.open(fname, "r") for fname in input_files]
-    pq = []
-    for index, fname in enumerate(FL):
-        for _ in range(buffer_size):
-            next_line = fname.readline().decode("utf-8")
-            while next_line and next_line.startswith("#"):
-                next_line = fname.readline().decode("utf-8")
-            if next_line:
-                heapq.heappush(pq, BedLine(next_line, index=index))
-    while heapq:
-        item = heapq.heappop(pq)
-        index = item.kwargs["index"]
-        print(item.line, file=output)
-        if not FL[index].closed:
-            next_line = FL[index].readline().decode("utf-8")
-            if next_line:
-                heapq.heappush(pq, BedLine(next_line, index=index))
-            else:
-                FL[index].close()
+    import sys
+    FL = [pysam.TabixFile(fname, threads=threads) for fname in input_files]
+    contig_list = FL[0].contigs
+    for i in range(1, len(FL)):
+        if set(contig_list) != set(FL[i].contigs):
+            print("Warning: Contigs are not equal", file=sys.stderr)
+    for contig in contig_list:
+        for start in range(0, chrom_sizes[contig], buffer_size):
+            print(contig, start, file=sys.stderr)
+            end = start + buffer_size
+            heap = []
+            for bed in FL:
+                for line in bed.fetch(contig, start, end, parser=pysam.asBed()):
+                    heapq.heappush(heap, (line.start, str(line)))
+            while heap:
+                print(heapq.heappop(heap)[1], file=output)
 
 if __name__ == "__main__":
     import argparse
     import sys
+    import pandas as pd
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--input", required=True, nargs="+", dest="input_files")
     ap.add_argument("-o", "--output", type=argparse.FileType("w"), default=sys.stdout)
-    ap.add_argument("-b", "--buffer-size", type=int, default=10)
+    ap.add_argument("-c", "--chrom-sizes", required=True)
+    ap.add_argument("-b", "--buffer-size", type=int, default=100000)
     args = vars(ap.parse_args())
-    run(input_files=args["input_files"], output=args["output"])
+    chrom_sizes = pd.read_csv(args["chrom_sizes"], header=None, sep="\t")
+    run(input_files=args["input_files"], output=args["output"], buffer_size=args["buffer_size"], chrom_sizes={k: v for k, v in zip(chrom_sizes[0], chrom_sizes[1])})

@@ -15,8 +15,8 @@ dependencies:
   - anndata>=0.8.0
   - scanpy
   - muon
-  - pandas
-  - numpy>=1.16.0
+  - pandas>=1.5.0
+  - numpy>=1.21.6
   - numba
   - cython
   - scikit-learn
@@ -52,6 +52,7 @@ dependencies:
   - pytabix
   - pysam
   - pyjaspar
+  - pybiomart
   ## single cell
   - scrublet
   - harmonypy
@@ -79,6 +80,7 @@ dependencies:
   - dunamai
   - nbsphinx
   - tbb
+  - episcanpy
   - pip:
       - snapatac2
       - magic-impute
@@ -88,4 +90,3 @@ dependencies:
       - mofapy2
       - cellphonedb
       - pychromvar
-      - pygreat

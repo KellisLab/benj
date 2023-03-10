@@ -119,7 +119,7 @@ read_star <- function(star.prefix, index="/net/bmc-lab5/data/kellis/group/Benjam
 
 
 #' @export
-plotPCA <- function(se, title, method="TMM", top=500, cpm.frac=0.25, cpm.cutoff=100, gene.selection="common", correct=FALSE, use_label=TRUE) {
+plotPCA <- function(se, title, method="TMM", top=500, cpm.frac=0.25, cpm.cutoff=100, gene.selection="common", correct=FALSE, use_label=TRUE, force=0.2, text.size=4, max.overlaps=10) {
     require(ggplot2)
     dgel = edgeR::calcNormFactors(se, method)
     to_keep = rowMeans(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.frac
@@ -138,7 +138,7 @@ plotPCA <- function(se, title, method="TMM", top=500, cpm.frac=0.25, cpm.cutoff=
     }
     g = g + geom_point()
     if (use_label) {
-        g = g + ggrepel::geom_text_repel(force=0.2)
+        g = g + ggrepel::geom_text_repel(force=force, size=text.size, max.overlaps=max.overlaps)
     }
     g = g + xlab(paste0("PC1: ", round(100 * pl$var.explained[1]), "% of variance"))
     g = g + ylab(paste0("PC2: ", round(100 * pl$var.explained[2]), "% of variance"))

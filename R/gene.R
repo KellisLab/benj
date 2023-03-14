@@ -11,6 +11,7 @@
 #' @export
 var_names_make_unique <- function(x) { make.unique(x, sep="-") }
 
+#' @export
 gff3_symbols <- function(gff) {
     gff = rtracklayer::readGFF(gff)
     gff = gff[gff$type == "gene",]

@@ -21,3 +21,19 @@ extractMarkerPeaks <- function(markerPeaks, FDR=0.10, Log2FC=0.5) {
     rD = rD[!is.na(rD$col),]
     return(with(rD, GenomicRanges::GRanges(seqnames=seqnames, ranges=IRanges::IRanges(start, end), col=col)))
 }
+
+#' @export
+createGeneAnnotationGFF <- function(gff, OrgDb,dataSource, organism="Homo sapiens", annoStyle="ENSEMBL") {
+    gdf = gff3_symbols(gff)
+    rownames(gdf) = gdf$gene_id
+    txdb = GenomicFeatures::makeTxDbFromGFF(gff, dataSource=dataSource, organism=organism)
+    cga = ArchR::createGeneAnnotation(TxDb=txdb,
+                                      OrgDb=OrgDb,
+                                      annoStyle=annoStyle)
+    return(S4Vectors::SimpleList(lapply(cga, function(obj) {
+        if (all(c("gene_id", "symbol") %in% colnames(S4Vectors::mcols(obj)))) {
+            S4Vectors::mcols(obj)$symbol = gdf[S4Vectors::mcols(obj)$gene_id, "gene_name"]
+        }
+        return(obj)
+    })))
+}

@@ -13,28 +13,27 @@ channels:
   - r
 
 dependencies:
-  ## Must have python
+  ## Must have
   - anndata>=0.8.0
   - scanpy
-  - pandas
-  - numpy>=1.16.0
-  - numba
+  - muon
+  - pandas>=1.5.0
+  - numpy>=1.21.6
+  - numba>=0.56.3
   - cython
   - scikit-learn
   - statsmodels
   - pip
   - git
   - tqdm
-  - bioawk
-  - jupyter
-  - nbconvert
-  - snakemake
-  - nextflow
-  ## Must have R
+  ## r
+  - r-base>=4.2.2
   - r-devtools
   - r-biocmanager
   - r-matrix
   - r-tidyverse
+  - r-readxl
+  - r-writexl
   - r-seriation
   - r-gridExtra
   - r-filelock
@@ -46,40 +45,24 @@ dependencies:
   - bioconductor-complexheatmap
   - bioconductor-genomicfeatures
   - bioconductor-rtracklayer
+  - snakemake
+  - nextflow
   - r-cairo
   - cairo
   - r-gsl
+  - r-rcppgsl
   - gsl
-  - r-irkernel
+  - r-hdf5r
+  ## other
+  - bioawk
+  - jupyter
+  - nbconvert
+  - snakemake
+  - nextflow
   ## plots
   - seaborn
   - matplotlib
   - adjusttext
-  - r-ggpubr
-  - r-ggrastr
-  - r-ggrepel
-  - r-uwot
-  - r-rtsne
-  - r-igraph
-  - r-cowplot
-  ### bioconductor
-  - bioconductor-motifmatchr
-  - bioconductor-tfbstools
-  - bioconductor-jaspar2020
-  - bioconductor-chromvar
-  - bioconductor-annotationdbi
-  - bioconductor-go.db
-  - bioconductor-org.hs.eg.db
-  - bioconductor-org.mm.eg.db
-  - bioconductor-bsgenome.hsapiens.ucsc.hg38
-  - bioconductor-bsgenome.mmusculus.ucsc.mm10
-  - bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
-  - bioconductor-txdb.mmusculus.ucsc.mm10.knowngene
-  - bioconductor-rgreat
-  - bioconductor-clusterprofiler
-  - r-seurat
-#  - r-seuratdisk icu error forces R below 4.1
-  - r-monocle3
   ## networks
   - umap-learn>=0.3.10
   - leidenalg
@@ -98,22 +81,42 @@ dependencies:
   - gtfparse
   - pytabix
   - pysam
-  ## single cell
-  - scrublet
-  - harmonypy
-  - bbknn
-  - mnnpy
-  - celltypist
-  - velocyto.py
-  - scvelo
-  - mudata
-  - scglue
-  - episcanpy
-  - bamnostic
+  - pyjaspar
+  - pybiomart
+  ### bioconductor
+  - bioconductor-motifmatchr
+  - bioconductor-tfbstools
+  - bioconductor-jaspar2022
+  - bioconductor-chromvar
+  - bioconductor-annotationdbi
+  - bioconductor-go.db
+  - bioconductor-do.db
+  - bioconductor-org.hs.eg.db
+  - bioconductor-org.mm.eg.db
+  - bioconductor-genomeinfodb
+  - bioconductor-bsgenome
+  # - bioconductor-bsgenome.hsapiens.ucsc.hg38
+  - bioconductor-bsgenome.mmusculus.ucsc.mm10
+  - bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
+  - bioconductor-txdb.mmusculus.ucsc.mm10.knowngene
+  - bioconductor-ensdb.hsapiens.v86
+  - bioconductor-rgreat
+  - bioconductor-clusterprofiler
+  - bioconductor-variantannotation
+  - bioconductor-gviz
+  - bioconductor-geoquery
+  - r-seurat
+  - r-harmony
+  - r-signac
+  # - r-seuratdisk # icu error forces R below 4.1
+  - r-monocle3
+  - gxx_linux-64
+  - gcc_linux-64
   ### deg
   - bioconductor-deseq2
   - bioconductor-ruvseq
   - bioconductor-limma
+  - bioconductor-sva
   - bioconductor-edger
   - bioconductor-mast
   - bioconductor-scde
@@ -128,16 +131,46 @@ dependencies:
   - r-rfast
   - r-trust
   - r-rcpp>=1.0.7 ## nebula
+  - r-rcppziggurat
   - r-rcppeigen
   - r-caret
   - r-glmnet
   - r-rmagic
   - r-leiden
+  - r-glasso
   - r-pracma
   - r-precrec
   - r-shiny
-  ## reticulated anndata
+  ### archr
+  - r-rhandsontable
+  - r-shinythemes
+  ### plotting
+  - r-ggpubr
+  - r-ggrastr
+  - r-ggrepel
+  - r-uwot
+  - r-rtsne
+  - r-igraph
+  - r-cowplot
+  - r-patchwork
+  ### jupyter
+  - jupyter
+  - nbconvert
+  - python>=3
+  - r-irkernel
+  ### anndata reticulate
   - r-anndata
+  ## single cell
+  - scrublet
+  - harmonypy
+  - bbknn
+  - mnnpy
+  - celltypist
+  - velocyto.py
+  - scvelo
+  - mudata
+  - scglue
+  - bamnostic
   ## for snapatac2
   - pytables
   - natsort
@@ -150,7 +183,17 @@ dependencies:
   ## for magic
   - scprep
   - graphtools
+  ## for scalex
+  - dunamai
+  - nbsphinx
+  - tbb
+  - episcanpy
   - pip:
       - snapatac2
       - magic-impute
+      - scalex
       - scopen
+      - ctxcore
+      - mofapy2
+      - cellphonedb
+      - pychromvar

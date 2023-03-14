@@ -22,9 +22,19 @@ extractMarkerPeaks <- function(markerPeaks, FDR=0.10, Log2FC=0.5) {
     return(with(rD, GenomicRanges::GRanges(seqnames=seqnames, ranges=IRanges::IRanges(start, end), col=col)))
 }
 
+#' Create annotation from GTF or GFF file
+#'
+#' @param gff Path to GTF or GFF file
+#' @param OrgDb org.Hs.eg.db::org.Hs.eg.db or similar object
+#' @param dataSource String to create TxDb, e.g. "GENCODEv43"
+#' @param organism Organism string, e.g. Homo sapiens
+#' @param annoStyle How to join gene ids
+#' @return ArchR style createGeneAnnotation object
 #' @export
-createGeneAnnotationGFF <- function(gff, OrgDb,dataSource, organism="Homo sapiens", annoStyle="ENSEMBL") {
+createGeneAnnotationGFF <- function(gff, OrgDb, dataSource, organism, annoStyle="ENSEMBL") {
     gdf = gff3_symbols(gff)
+    gdf$orig_gene_id = gdf$gene_id
+    gdf$gene_id = gsub("[.][0-9]+$", "", gdf$gene_id)
     rownames(gdf) = gdf$gene_id
     txdb = GenomicFeatures::makeTxDbFromGFF(gff, dataSource=dataSource, organism=organism)
     cga = ArchR::createGeneAnnotation(TxDb=txdb,

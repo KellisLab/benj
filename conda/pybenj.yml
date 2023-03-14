@@ -17,10 +17,10 @@ dependencies:
   - scanpy>=1.9.3
   - muon>=0.56.4
   - pandas>=1.5.0
-  - numpy>=1.21.6
+  - numpy>=1.16.0
   - numba
   - cython
-  - scikit-learn
+  - scikit-learn>=1.2.0
   - statsmodels
   - pip
   - git
@@ -45,8 +45,8 @@ dependencies:
   ## ml
   - xgboost
   - ngboost
-  - pytorch
-  - py-opencv
+  - pytorch-cpu
+  #- py-opencv
   ## genomics
   - pyranges
   - pybedtools
@@ -63,11 +63,12 @@ dependencies:
   - celltypist
   - velocyto.py
   - scvelo
+  - multivelo
   - mudata
   - scglue
   - bamnostic
   ## for snapatac2
-  - pytables
+  - pytables>=3.6.1
   - natsort
   - boltons
   - pyarrow
@@ -82,12 +83,15 @@ dependencies:
   - dunamai
   - nbsphinx
   - tbb
-  - episcanpy
+  #- episcanpy
+  ## for build
+  - gcc_linux-64
+  - gxx_linux-64
   - pip:
       - snapatac2
       - magic-impute
       - scalex
-      - scopen
+      #- scopen
       - ctxcore
       - mofapy2
       - cellphonedb

@@ -15,17 +15,18 @@ channels:
 dependencies:
   ## Must have
   - anndata>=0.8.0
-  - scanpy
-  - muon
+  - scanpy>=1.9.3
+  - muon>=0.56.4
   - pandas>=1.5.0
   - numpy>=1.21.6
   - numba>=0.56.3
   - cython
-  - scikit-learn
+  - scikit-learn>=1.2.0
   - statsmodels
   - pip
   - git
   - tqdm
+  - h5py>=3
   ## r
   - r-base>=4.2.2
   - r-devtools
@@ -73,8 +74,8 @@ dependencies:
   ## ml
   - xgboost
   - ngboost
-  - pytorch
-  - py-opencv
+  - pytorch-cpu
+  #- py-opencv
   ## genomics
   - pyranges
   - pybedtools
@@ -95,7 +96,7 @@ dependencies:
   - bioconductor-org.mm.eg.db
   - bioconductor-genomeinfodb
   - bioconductor-bsgenome
-  # - bioconductor-bsgenome.hsapiens.ucsc.hg38
+  #- bioconductor-bsgenome.hsapiens.ucsc.hg38
   - bioconductor-bsgenome.mmusculus.ucsc.mm10
   - bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
   - bioconductor-txdb.mmusculus.ucsc.mm10.knowngene
@@ -108,7 +109,7 @@ dependencies:
   - r-seurat
   - r-harmony
   - r-signac
-  # - r-seuratdisk # icu error forces R below 4.1
+  #- r-seuratdisk # icu error forces R below 4.1
   - r-monocle3
   - gxx_linux-64
   - gcc_linux-64
@@ -156,7 +157,7 @@ dependencies:
   ### jupyter
   - jupyter
   - nbconvert
-  - python>=3
+  - python>=3.8
   - r-irkernel
   ### anndata reticulate
   - r-anndata
@@ -168,11 +169,12 @@ dependencies:
   - celltypist
   - velocyto.py
   - scvelo
+  - multivelo
   - mudata
   - scglue
   - bamnostic
   ## for snapatac2
-  - pytables
+  - pytables>=3.6.1
   - natsort
   - boltons
   - pyarrow
@@ -187,12 +189,12 @@ dependencies:
   - dunamai
   - nbsphinx
   - tbb
-  - episcanpy
+  #- episcanpy
   - pip:
       - snapatac2
       - magic-impute
       - scalex
-      - scopen
+      #- scopen
       - ctxcore
       - mofapy2
       - cellphonedb

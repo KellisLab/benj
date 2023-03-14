@@ -27,6 +27,7 @@ dependencies:
   - git
   - tqdm
   - h5py>=3
+  - rpy2
   ## r
   - r-base>=4.2.2
   - r-devtools

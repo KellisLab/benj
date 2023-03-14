@@ -16,7 +16,7 @@ dependencies:
   ## Must have
   - anndata>=0.8.0
   - scanpy>=1.9.3
-  - muon>=0.56.4
+  - muon
   - pandas>=1.5.0
   - numpy>=1.21.6
   - numba>=0.56.3

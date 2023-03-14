@@ -1,38 +1,27 @@
 
-def annotation_to_numbered(df, sample_order, index_unique="#", startnum:int=1, label=None):
-    import pandas as pd
-    out = []
-    for i, sample in enumerate(sample_order):
-        flag = df.index.str.contains("^[ACGT]+-1%s%s$" % (index_unique, sample))
-        nf = df.loc[flag, :].copy()
-        nf.index = nf.index.str.replace("1%s%s$" % (index_unique, sample),
-                                        "%d" % (startnum + i),
-                                        regex=True)
-        if label is not None:
-            nf[label] = sample
-        out.append(nf)
-    return pd.concat(out)
-
-def setup_args_anndata(ap):
+def setup_args_mudata(ap):
     ap.add_argument("-a", "--annotation", nargs="+")
     ap.add_argument("--min", nargs="+", metavar="KEY=VALUE")
     ap.add_argument("--max", nargs="+", metavar="KEY=VALUE")
     ap.add_argument("--subset", nargs="+", metavar="KEY=VALUE")
     ap.add_argument("--subsample", default=1, type=int)
     ap.add_argument("--split", default=",")
+    ap.add_argument("--intersect-obs", action="store_true", dest="intersect_obs")
+    ap.add_argument("--no-intersect-obs", action="store_false", dest="intersect_obs")
+    ap.set_defaults(intersect_obs=False)
     return ap
 
-def parse_anndata(**args):
+def parse_mudata(**args):
     import os
     import numpy as np
-    h5ad = args.get("h5ad", args.get("input", ""))
-    if os.path.exists(h5ad):
-        import anndata
-        adata = anndata.read(h5ad, backed="r")
+    h5mu = args.get("h5mu", args.get("input", ""))
+    if os.path.exists(h5mu):
+        import muon
+        mdata = muon.read_h5mu(h5mu, backed="r")
     else:
         import sys
-        raise RuntimeError("File \"%s\" does not exist." % h5ad)
-    obs = adata.obs.copy()
+        raise RuntimeError("File \"%s\" does not exist." % h5mu)
+    obs = mdata.obs.copy()
     flag = np.repeat(True, obs.shape[0])
     if args.get("annotation"):
         import pandas as pd
@@ -69,7 +58,12 @@ def parse_anndata(**args):
         ss = args["subsample"]
         flag = np.ravel(np.where(flag))
         flag = np.random.choice(flag, len(flag)//args["subsample"], replace=False)
-    adata = adata[obs.index.values[flag], :].to_memory()
-    for cn in np.setdiff1d(obs.columns, adata.obs.columns):
-        adata.obs[cn] = obs[cn]
-    return adata
+    mdata = mdata[obs.index.values[flag], :].to_memory()
+    for cn in np.setdiff1d(obs.columns, mdata.obs.columns):
+        mdata.obs[cn] = obs[cn]
+    if mdata.filename is not None:
+        mdata.file._to_memory_mode()
+    if args.get("intersect_obs"):
+        import muon
+        muon.pp.intersect_obs(mdata)
+    return mdata

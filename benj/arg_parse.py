@@ -2,10 +2,13 @@
 from .parse_anndata import setup_args_anndata
 from .setup_scanpy import *
 from .log import setup_args_log, setup_logging
+from .mudata import setup_args_mudata
 
 def parse_args(ap, which=["log"]):
     if "anndata" in which:
         ap = setup_args_anndata(ap)
+    if "mudata" in which:
+        ap = setup_args_mudata(ap)
     if "scanpy" in which:
         ap = setup_args_scanpy(ap)
     if "log" in which or "logging" in which:

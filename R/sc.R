@@ -95,11 +95,14 @@ se_to_cellranger_h5 <- function(se, h5, assay=NULL, chunk=10000, genome="GRCh38"
               "matrix/barcodes"=colnames(X),
               "matrix/features/name"=var_names_make_unique(rownames(X)),
               "matrix/features/id"=rownames(X),
-              "matrix/features/feature_type"=ifelse(strtrim(rownames(X), 3) == "chr",
-                                                    "Peaks",
+              "matrix/features/feature_type"=ifelse(1:nrow(X) %in% grep(".*[:][0-9]+-[0-9]+$", rownames(X)),
+                                                    "Chromatin Accessibility",
                                                     "Gene Expression"),
               "matrix/features/genome"=rep(genome, nrow(X)),
               "matrix/shape"=t(dim(X)))
+    if (!is.null(SummarizedExperiment::rowRanges(se))) {
+        ml[["matrix/features/interval"]] = with(as.data.frame(SummarizedExperiment::rowRanges(se)), paste0(seqnames, ":", start, "-", end))
+    }
     for (dname in names(ml)) {
         rhdf5::h5createDataset(h5, dname,
                                dims=length(ml[[dname]]),

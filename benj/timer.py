@@ -32,11 +32,11 @@ class stopwatch:
         delta = time() - self.timer
         self.logger.info("Finished %s in %.2f seconds" % (self.post_message, delta))
 
-def template(logname : str, level=None):
+def template(logname : str = "benj", level=None):
     import logging
     logger = logging.getLogger(logname)
     if level is not None:
-        logger.setLevel(level)
+        logging.basicConfig(level=level)
     else:
-        logger.setLevel(logging.INFO)
+        logging.basicConfig(level=logging.INFO)
     return lambda msg: stopwatch(msg, logger=logger)

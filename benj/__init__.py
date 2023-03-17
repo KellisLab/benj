@@ -7,4 +7,4 @@ from .timer import template as stopwatch
 from .rgg import *
 from .mu import *
 from .setup_scanpy import setup_scanpy as sc_setup
-from .parse_mudata import parse_mudata
+from .mudata import parse_mudata

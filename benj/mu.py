@@ -11,9 +11,6 @@ def remove_ordereddict(mdata):
         mdata.mod[k].uns = convert_dict(mdata.mod[k].uns)
     return mdata
 
-def add_interval(adata:anndata.AnnData, gtf):
-    import pyranges
-
 def mu_load_with_aggr(feature_matrix_h5, aggr_csv, library_id="library_id", *extra_cols):
     from .timer import template as stopwatch
     import pandas as pd

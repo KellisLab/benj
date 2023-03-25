@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-def run(fragments, sample, cell_metadata, peaks, output, **kwargs):
+def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, **kwargs):
     import pandas as pd
     import numpy as np
     import anndata
@@ -49,7 +49,7 @@ def run(fragments, sample, cell_metadata, peaks, output, **kwargs):
             qc_vars = list(set(pk.columns) & set(pk["peakType"]))
         sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=None)
     with sw("Writing to H5AD") as _:
-        adata.write_h5ad(output, compression="gzip", compression_opts=9)
+        adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return 0
 
 if __name__ == "__main__":
@@ -62,6 +62,7 @@ if __name__ == "__main__":
     ap.add_argument("--peaks-bed", dest="bed", action="store_true")
     ap.add_argument("--peaks-tsv", dest="bed", action="store_false")
     ap.add_argument("-o", "--output", required=True)
+    ap.add_argument("--compression", type=int, default=9)
     ap.set_defaults(bed=False)
     args = vars(ap.parse_args())
     run(**args)

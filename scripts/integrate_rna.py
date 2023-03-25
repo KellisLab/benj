@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., min_dist:float=0.5, dotplot=None, celltypist=None, tsv=None, rgg_ng=5, prefix="", compression:int=9, **kwargs):
+def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., min_dist:float=0.5, dotplot=None, celltypist=None, tsv=None, rgg_ng=5, prefix="", sw=None, compression:int=9, **kwargs):
     import scanpy as sc
     import pandas as pd
     import numpy as np
     import benj
+    if sw is None:
+        sw = benj.stopwatch()
     if batch not in adata.obs.columns:
         batch = None
     if batch is not None:
@@ -14,26 +16,41 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
         if len(pd.unique(adata.obs[batch])) == 0:
             batch = None
     print("Working with %d cells" % adata.shape[0])
-    sc.pp.normalize_total(adata, target_sum=10000)
-    sc.pp.log1p(adata)
-    adata.raw = adata
-    if hvg > 0:
-        sc.pp.highly_variable_genes(adata, n_top_genes=hvg, batch_key=batch, subset=True)
-    if batch is not None and use_combat:
-        sc.pp.combat(adata, batch)
+    if "raw" in adata.layers:
+        with sw("Copying .layers[\"raw\"] to .X"):
+            adata.X = adata.layers["raw"].copy()
     else:
-        sc.pp.scale(adata, max_value=10)
-    sc.pp.pca(adata)
+        with sw("Copying .X to .layers[\"raw\"]"):
+            adata.layers["raw"] = adata.X.copy()
+    with sw("Normalizing data"):
+        sc.pp.normalize_total(adata, target_sum=10000)
+        sc.pp.log1p(adata)
+        adata.raw = adata
+    if hvg > 0:
+        with sw("Calculating %d HVG" % hvg):
+            sc.pp.highly_variable_genes(adata, n_top_genes=hvg, batch_key=batch, subset=True)
+    if batch is not None and use_combat:
+        with sw("Running ComBat"):
+            sc.pp.combat(adata, batch)
+    else:
+        with sw("Scaling data"):
+            sc.pp.scale(adata, max_value=10)
+    with sw("Running PCA"):
+        sc.pp.pca(adata)
     if batch is not None and use_harmony:
-        sc.external.pp.harmony_integrate(adata, batch, max_iter_harmony=50)
-        rep = "X_pca_harmony"
+        with sw("Running Harmony"):
+            sc.external.pp.harmony_integrate(adata, batch, max_iter_harmony=50)
+            rep = "X_pca_harmony"
     else:
         rep = "X_pca"
     if batch is not None and use_bbknn:
-        sc.external.pp.bbknn(adata, batch_key=batch, use_rep=rep)
+        with sw("Running BBKNN"):
+            sc.external.pp.bbknn(adata, batch_key=batch, use_rep=rep)
     else:
-        sc.pp.neighbors(adata, use_rep=rep)
-    sc.tl.umap(adata, min_dist=min_dist)
+        with sw("Running neighbors"):
+            sc.pp.neighbors(adata, use_rep=rep)
+    with sw("Running UMAP"):
+        sc.tl.umap(adata, min_dist=min_dist)
     if plot is not None:
         plot = np.union1d(["biosample", "pathology", "log1p_total_counts"], plot)
     else:
@@ -49,8 +66,9 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
         obs = benj.annotate_clusters_from_vote(adata.obs, leiden, "majority_voting", newlabel)
         adata.obs[newlabel] = obs[newlabel]
         del ct, obs
-    sc.tl.leiden(adata, resolution=resolution, key_added=leiden)
-    adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
+    with sw("Running Leiden"):
+        sc.tl.leiden(adata, resolution=resolution, key_added=leiden)
+        adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
     if tsv is not None:
         cols = np.intersect1d([leiden, "majority_voting", "predicted_labels"], adata.obs.columns)
         adata.obs.loc[:, cols].to_csv(tsv, sep="\t")
@@ -61,12 +79,14 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
     for vv in np.intersect1d(["pct_counts_mt", "doublet_score", "log1p_total_counts"], adata.obs.columns):
         sc.pl.violin(adata, vv, groupby=leiden, save="_%s_%s.png" % (leiden, vv))
     sc.tl.dendrogram(adata, groupby=leiden)
-    sc.tl.rank_genes_groups(adata, groupby=leiden, method="wilcoxon", pts=True)
+    with sw("Ranking genes"):
+        sc.tl.rank_genes_groups(adata, groupby=leiden, method="wilcoxon", pts=True)
     sc.pl.rank_genes_groups_dotplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
     sc.pl.rank_genes_groups_matrixplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
     sc.pl.rank_genes_groups_heatmap(adata, save="_rgg_%s.png" % leiden, n_genes=rgg_ng)
     if output is not None:
-        adata.write_h5ad(output, compression="gzip", compression_opts=compression)
+        with sw("Writing to H5AD"):
+            adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata
 
 

@@ -23,6 +23,10 @@ deg.edger <- function(se, pathology, case, control, covariates=c(),
     } else {
         X = SummarizedExperiment::assays(se)[[assay]]
     }
+    round_diff = mean(abs(X - round(X)))
+    if (round_diff > 0) {
+        warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
+    }
     if (S4Vectors::ncol(X) > 1000) {
         warning("More than 1000 samples are being called to a function under the assumption data passed in is pseudobulk")
     }
@@ -78,12 +82,16 @@ deg.edger <- function(se, pathology, case, control, covariates=c(),
 #' @param cpm.frac Number of observations passing CPM cutoff for filter
 #' @param norm edgeR norm method for calcNormFactors
 #' @export
-deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=10, assay=NULL, cpm.cutoff=1, cpm.frac=0.25, norm="TMM") {
+deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=10, assay=NULL, cpm.cutoff=10, cpm.frac=0.25, norm="TMM") {
     pb = se_make_pseudobulk(sce, sample)
     if (is.null(assay)) {
         X = SummarizedExperiment::assays(pb)$counts
     } else {
         X = SummarizedExperiment::assays(pb)[[assay]]
+    }
+    round_diff = mean(abs(X - round(X)))
+    if (round_diff > 0) {
+        warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
     }
     cd = SummarizedExperiment::colData(pb)
     if (!is.character(cd[[pathology]]) | !is.factor(cd[[pathology]])) {
@@ -164,6 +172,10 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
     } else {
         X = SummarizedExperiment::assays(sce)[[assay]]
     }
+    round_diff = mean(abs(X - round(X)))
+    if (round_diff > 0) {
+        warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
+    }
     if (factorize_pathology) {
         cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
     }
@@ -229,6 +241,10 @@ deg.deseq2 <- function(se,
         X = SummarizedExperiment::assays(se)$counts
     } else {
         X = SummarizedExperiment::assays(se)[[assay]]
+    }
+    round_diff = mean(abs(X - round(X)))
+    if (round_diff > 0) {
+        warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
     }
     if (S4Vectors::ncol(X) > 1000) {
         warning("More than 1000 samples are being called to a function under the assumption data passed in is pseudobulk")

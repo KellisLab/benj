@@ -84,6 +84,8 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
     sc.pl.rank_genes_groups_dotplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
     sc.pl.rank_genes_groups_matrixplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
     sc.pl.rank_genes_groups_heatmap(adata, save="_rgg_%s.png" % leiden, n_genes=rgg_ng)
+    with sw("Re-setting counts") as _:
+        adata.X = adata.layers["raw"].copy()
     if output is not None:
         with sw("Writing to H5AD"):
             adata.write_h5ad(output, compression="gzip", compression_opts=compression)

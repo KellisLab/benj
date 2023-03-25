@@ -42,6 +42,9 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, **kw
             annot = adata.var.loc[:, ["interval", "nearestGene", "distToGeneStart", "peakType"]].copy()
             annot.columns = ["peak", "gene", "distance", "peak_type"]
             ac.tl.add_peak_annotation(adata, annot)
+    if adata.var_names.duplicated().sum() > 0:
+        ### make sure cellranger style annotation is not duplicating peaks
+        adata = adata[:, ~adata.var_names.duplicated()].copy()
     adata.uns = benj.convert_dict(adata.uns)
     with sw("Calculating QC metrics"):
         qc_vars = []

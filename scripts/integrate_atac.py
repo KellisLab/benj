@@ -2,8 +2,9 @@
 
 def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
               leiden="overall_clust", resolution=1., prefix="",
-              dotplot=None, tsv=None, min_dist:float=0.3, compression:int=9,
+              tsv=None, min_dist:float=0.3, compression:int=9,
               min_n_cells_by_counts:int=2, cor_cutoff:float=0.8,
+              plot=[],
               qc_cols=["log1p_total_counts"], sw=None, **kwargs):
     import numpy as np
     import pandas as pd
@@ -24,21 +25,21 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
         if len(pd.unique(adata.obs[batch])) <= 1:
             batch = None
     if "raw" not in adata.layers:
-        with sw("Copying .X to .layers[\"raw\"]") as _:
+        with sw("Copying .X to .layers[\"raw\"]"):
             adata.layers["raw"] = adata.X.copy()
-    with sw("Re-calculating qc metrics") as _:
+    with sw("Re-calculating qc metrics"):
         sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True, layer="raw")
     if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
-        with sw("Filtering cells by counts >= %d" % min_n_cells_by_counts) as _:
+        with sw("Filtering cells by counts >= %d" % min_n_cells_by_counts):
             mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
-    with sw("Running TF-IDF") as _:
+    with sw("Running TF-IDF"):
         adata.X = adata.layers["raw"].copy()
         ac.pp.tfidf(adata)
-    with sw("Running LSI") as _:
+    with sw("Running LSI"):
         ac.tl.lsi(adata)
         adata.X = adata.X.astype(np.float32)
     for col in qc_cols:
-        with sw("Correlating column \"%s\" with LSI" % col) as _:
+        with sw("Correlating column \"%s\" with LSI" % col):
             from scipy.stats import pearsonr
             cor = np.zeros(len(adata.uns["lsi"]["stdev"]))
             for i in range(len(cor)):
@@ -53,37 +54,39 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
     use_rep="X_lsi"
     n_pcs=len(adata.uns["lsi"]["stdev"])
     if batch is not None and use_harmony:
-        with sw("Running Harmony") as _:
+        with sw("Running Harmony"):
             use_rep_adj = "%s_harmony" % use_rep
             sc.external.pp.harmony_integrate(adata, batch, basis=use_rep, adjusted_basis=use_rep_adj)
             use_rep = use_rep_adj
     if batch is not None and use_bbknn:
-        with sw("Running BB-KNN") as _:
+        with sw("Running BB-KNN"):
             sc.external.pp.bbknn(adata, batch, use_rep=use_rep, n_pcs=n_pcs)
     else:
-        with sw("Running nearest neighbors") as _:
+        with sw("Running nearest neighbors"):
             sc.pp.neighbors(adata, use_rep=use_rep, n_pcs=n_pcs)
-    with sw("Computing UMAP") as _:
+    with sw("Computing UMAP"):
         sc.tl.umap(adata, min_dist=min_dist)
-    with sw("Plotting") as _:
+    with sw("Plotting"):
         if plot is not None:
             plot = np.union1d(plot, ["log1p_total_counts", "TSSEnrichment", "tss_score"])
         else:
             plot = ["log1p_total_counts", "TSSEnrichment", "tss_score"]
         for col in plot:
-            if col in adata.obs.columns or col in adata.var.index:
+            if col in adata.obs.columns:
+                sc.pl.umap(adata, color=col, save="_%s.png" % col)
+            elif col in adata.var.index:
                 ac.pl.umap(adata, color=col, save="_%s.png" % col, use_raw=False)
-    with sw("Clustering cells") as _:
+    with sw("Clustering cells"):
         sc.tl.leiden(adata, key_added=leiden, resolution=resolution)
         adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
     if tsv is not None:
-        with sw("Writing TSV") as _:
+        with sw("Writing TSV"):
             cols = np.intersect1d([leiden, "majority_voting", "predicted_labels"], adata.obs.columns)
             adata.obs.loc[:, cols].to_csv(tsv, sep="\t")
-    with sw("Plotting %s" % leiden) as _:
+    with sw("Plotting %s" % leiden):
         sc.pl.umap(adata, color=leiden, save="_%s_beside.png" % leiden)
         sc.pl.umap(adata, color=leiden, save="_%s_ondata.png" % leiden, legend_loc="on data", legend_fontsize=4)
-    with sw("Writing to H5AD") as _:
+    with sw("Writing to H5AD"):
         adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata
 
@@ -92,7 +95,7 @@ if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--input", dest="h5ad", required=True)
-    ap.add_argument("-o", "--output")
+    ap.add_argument("-o", "--output", required=True)
     ap.add_argument("-t", "--tsv")
     ap.add_argument("-b", "--batch", type=str, default=None)
     ap.add_argument("-p", "--plot", nargs="+")
@@ -104,7 +107,6 @@ if __name__ == "__main__":
     ap.add_argument("--use-harmony", dest="use_harmony", action="store_true")
     ap.add_argument("--no-use-bbknn", dest="use_bbknn", action="store_false")
     ap.add_argument("--use-bbknn", dest="use_bbknn", action="store_true")
-    ap.add_argument("--dotplot", nargs="+")
     ap.add_argument("--qc-cols", nargs="+", default=["log1p_total_counts"])
     ap.add_argument("--min-dist", type=float, default=0.5)
     ap.add_argument("--compression", type=int, default=9)

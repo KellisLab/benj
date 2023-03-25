@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., dotplot=None, celltypist=None, tsv=None, rgg_ng=5, prefix="", **kwargs):
+def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., min_dist:float=0.5, dotplot=None, celltypist=None, tsv=None, rgg_ng=5, prefix="", compression:int=9, **kwargs):
     import scanpy as sc
     import pandas as pd
     import numpy as np
@@ -33,7 +33,7 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
         sc.external.pp.bbknn(adata, batch_key=batch, use_rep=rep)
     else:
         sc.pp.neighbors(adata, use_rep=rep)
-    sc.tl.umap(adata)
+    sc.tl.umap(adata, min_dist=min_dist)
     if plot is not None:
         plot = np.union1d(["biosample", "pathology", "log1p_total_counts"], plot)
     else:
@@ -66,7 +66,7 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
     sc.pl.rank_genes_groups_matrixplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
     sc.pl.rank_genes_groups_heatmap(adata, save="_rgg_%s.png" % leiden, n_genes=rgg_ng)
     if output is not None:
-        adata.write_h5ad(output, compression="gzip")
+        adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata
 
 
@@ -91,6 +91,8 @@ if __name__ == "__main__":
     ap.add_argument("--use-bbknn", dest="use_bbknn", action="store_true")
     ap.add_argument("--dotplot", nargs="+")
     ap.add_argument("--celltypist")
+    ap.add_argument("--compression", type=int, default=9)
+    ap.add_argument("--min-dist", type=float, default=0.5)
     ap.set_defaults(use_combat=True, use_harmony=True, use_bbknn=True)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     adata = benj.parse_anndata(**args)

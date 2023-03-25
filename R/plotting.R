@@ -52,6 +52,7 @@ htSortMatrix <- function(M, method="euclidean", ratio=0.5, cutoff=0.25, sort=c(1
 #'
 #' @param M matrix to pass
 #' @param ux millimeters per grid
+#' @param sort Axes to sort upon. Be careful as the matrix is re-sorted before plotting with htSortMatrix
 #' @export
 autoHeatmap <- function(M, ux=1.5, sort=c(1, 2), method="euclidean", dimname_fontsize=3.5, ratio=0.5, cutoff=0.25, ...) {
     M = htSortMatrix(M, method=method, ratio=ratio, cutoff=cutoff, sort=sort)
@@ -70,9 +71,10 @@ autoHeatmap <- function(M, ux=1.5, sort=c(1, 2), method="euclidean", dimname_fon
 #' @param pltprefix Prefix for images
 #' @param w Width in inches
 #' @param h Height in inches
+#' @param extra Function to call after draw, before figure is saved
 #' @param dpi DPI of PNG
 #' @export
-saveHeatmap <- function(ht, pltprefix, w, h, dpi=600, extra=NULL, ...) {
+saveHeatmap <- function(ht, pltprefix, w=7, h=7, dpi=600, extra=NULL, ...) {
     pdf(paste0(pltprefix, ".pdf"), width=w, height=h)
     ComplexHeatmap::draw(ht, ht_gap=grid::unit(0.5, "mm"), ...)
     if (is.function(extra)) {
@@ -96,14 +98,20 @@ saveHeatmap <- function(ht, pltprefix, w, h, dpi=600, extra=NULL, ...) {
 #' @param h Height in inches
 #' @param dpi DPI of PNG
 #' @export
-saveGGplot <- function(gp, pltprefix, w, h, dpi=600) {
+saveGGplot <- function(gp, pltprefix, w=7, h=7, dpi=600) {
     ggplot2::ggsave(paste0(pltprefix, ".pdf"), gp, units="in", dpi=dpi, width=w, height=h)
     ggplot2::ggsave(paste0(pltprefix, ".png"), gp, units="in", dpi=dpi, width=w, height=h)
     print(pltprefix)
 }
 
 #' Draw triangles in heatmap
-#'
+#' Pass cell_fun=ht_triangle_split(...) to Heatmap()
+#' @param mat.ul Upper left matrix
+#' @param mat.lr Lower right matrix
+#' @param col.ul Upper left color
+#' @param col.lr Lower right color
+#' @param lwd lwd for grid::gpar
+#' @param ... Arguments to grid::gpar
 #' @export
 ht_triangle_split <- function(mat.ul, mat.lr, col.ul, col.lr, lwd=0, ...) {
     return(function(j, i, x, y, width, height, fill) {
@@ -122,12 +130,12 @@ ht_triangle_split <- function(mat.ul, mat.lr, col.ul, col.lr, lwd=0, ...) {
 }
 
 #' Draw asterisks
-#'
+#' Pass cell_fun=ht_asterisks(...) to Heatmap()
 #' @param p.matrix P value matrix, unsorted
 #' @param gp graphic parameters from grid::gpar(). Recommended to set fontsize
 #' @param ... Arguments to grid::grid.text
 #' @export
-htAsterisks <- function(p.matrix, gp, ...) {
+ht_asterisks <- function(p.matrix, gp, ...) {
     return(function(j, i, x, y, w, h, fill) {
         if (is.na(p.matrix[i, j]) | is.nan(p.matrix[i, j])) {
         } else if (p.matrix[i, j] < 0.001) {
@@ -140,9 +148,20 @@ htAsterisks <- function(p.matrix, gp, ...) {
     })
 }
 
-                                        #ht_dotplot <- function(pct,
+#' Draw volcano plot
+#' @param df dataframe to pass
+#' @param label Text label for points
+#' @param title Tile for plot
+#' @param threshold.FDR FDR threshold for plotting text
+#' @param threshold.log2FC Log2FC threshold for plotting text
+#' @param force Force parameter for ggrepel:::geom_text_repel()
+#' @param max.overlaps Max overlaps for ggrepel::geom_text_repel()
+#' @param quantile.log2FC If less than 1, quantile clip log2FC to fit inside smaller plot area
 #' @export
-volcano <- function(df, threshold.FDR=0.99999, threshold.log2FC=0.5, label="gene", title="Volcano plot of", force=1, max.overlaps = getOption("ggrepel.max.overlaps", default = 10), quantile.log2FC=1) {
+volcano <- function(df, label="gene", title="Volcano plot of",
+                    threshold.FDR=0.99999, threshold.log2FC=0.5,
+                    force=1, max.overlaps = getOption("ggrepel.max.overlaps", default = 10),
+                    quantile.log2FC=1) {
     require(ggplot2)
     df$log2FC = qclip(df$log2FC, quantile.log2FC)
     df$FDR = vclip(df$FDR, min=1e-300)

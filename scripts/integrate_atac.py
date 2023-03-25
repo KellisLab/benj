@@ -3,8 +3,8 @@
 def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
               leiden="overall_clust", resolution=1., prefix="",
               dotplot=None, tsv=None, min_dist:float=0.3, compression:int=9,
-              min_n_cells_by_counts:int=2,
-              qc_cols=["log1p_total_counts"], **kwargs):
+              min_n_cells_by_counts:int=2, cor_cutoff:float=0.8,
+              qc_cols=["log1p_total_counts"], sw=None, **kwargs):
     import numpy as np
     import pandas as pd
     import scanpy as sc
@@ -21,8 +21,11 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
         cdf = cdf[cdf >= 3].index.values
         if len(np.setdiff1d(pd.unique(adata.obs[batch]), cdf)) > 0:
             mu.pp.filter_obs(adata, batch, lambda x: x.isin(cdf.index))
-        if len(pd.unique(adata.obs[batch])) == 0:
+        if len(pd.unique(adata.obs[batch])) <= 1:
             batch = None
+    if "raw" not in adata.layers:
+        with sw("Copying .X to .layers[\"raw\"]") as _:
+            adata.layers["raw"] = adata.X.copy()
     with sw("Re-calculating qc metrics") as _:
         sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True, layer="raw")
     if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
@@ -63,6 +66,10 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
     with sw("Computing UMAP") as _:
         sc.tl.umap(adata, min_dist=min_dist)
     with sw("Plotting") as _:
+        if plot is not None:
+            plot = np.union1d(plot, ["log1p_total_counts", "TSSEnrichment", "tss_score"])
+        else:
+            plot = ["log1p_total_counts", "TSSEnrichment", "tss_score"]
         for col in plot:
             if col in adata.obs.columns or col in adata.var.index:
                 ac.pl.umap(adata, color=col, save="_%s.png" % col, use_raw=False)
@@ -92,6 +99,7 @@ if __name__ == "__main__":
     ap.add_argument("-r", "--resolution", default=1., type=float)
     ap.add_argument("-l", "--leiden", default="overall_clust")
     ap.add_argument("--prefix", default="C")
+    ap.add_argument("--cor-cutoff", type=float, default=0.8)
     ap.add_argument("--no-use-harmony", dest="use_harmony", action="store_false")
     ap.add_argument("--use-harmony", dest="use_harmony", action="store_true")
     ap.add_argument("--no-use-bbknn", dest="use_bbknn", action="store_false")

@@ -4,6 +4,7 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
               leiden="overall_clust", resolution=1., prefix="",
               tsv=None, min_dist:float=0.3, compression:int=9,
               min_n_cells_by_counts:int=2, cor_cutoff:float=0.8,
+              max_iter_harmony:int=50,
               plot=[],
               qc_cols=["log1p_total_counts"], sw=None, **kwargs):
     import numpy as np
@@ -14,9 +15,6 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
     import benj
     if sw is None:
         sw = benj.stopwatch()
-    if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
-        with sw("Filtering cells by counts >= %d" % min_n_cells_by_counts):
-            mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
     if batch not in adata.obs.columns:
         batch = None
     if batch is not None:
@@ -34,6 +32,9 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
             adata.layers["raw"] = adata.X.copy()
     with sw("Re-calculating qc metrics"):
         sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True, layer="raw")
+    if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
+        with sw("Filtering cells by counts >= %d" % min_n_cells_by_counts):
+            mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
     with sw("Running TF-IDF"):
         adata.X = adata.layers["raw"].copy()
         ac.pp.tfidf(adata)
@@ -58,7 +59,7 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
     if batch is not None and use_harmony:
         with sw("Running Harmony"):
             use_rep_adj = "%s_harmony" % use_rep
-            sc.external.pp.harmony_integrate(adata, batch, basis=use_rep, adjusted_basis=use_rep_adj)
+            sc.external.pp.harmony_integrate(adata, batch, basis=use_rep, adjusted_basis=use_rep_adj, max_iter_harmony=max_iter_harmony)
             use_rep = use_rep_adj
     if batch is not None and use_bbknn:
         with sw("Running BB-KNN"):
@@ -111,6 +112,7 @@ if __name__ == "__main__":
     ap.add_argument("--use-bbknn", dest="use_bbknn", action="store_true")
     ap.add_argument("--qc-cols", nargs="+", default=["log1p_total_counts"])
     ap.add_argument("--min-dist", type=float, default=0.5)
+    ap.add_argument("--max-iter-harmony", type=int, default=50)
     ap.add_argument("--compression", type=int, default=9)
     ap.set_defaults(use_harmony=True, use_bbknn=False)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])

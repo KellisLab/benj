@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scaling=False, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., min_dist:float=0.5, dotplot=None, celltypist=None, tsv=None, rgg_ng=5, prefix="", sw=None, compression:int=9, **kwargs):
+def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scaling=False, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., min_dist:float=0.5, dotplot=None, celltypist=None, tsv=None, rgg_ng=5, max_iter_harmony:int=50, prefix="", sw=None, compression:int=9, **kwargs):
     import scanpy as sc
     import pandas as pd
     import numpy as np
@@ -39,7 +39,7 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scali
         sc.pp.pca(adata)
     if batch is not None and use_harmony:
         with sw("Running Harmony"):
-            sc.external.pp.harmony_integrate(adata, batch, max_iter_harmony=50)
+            sc.external.pp.harmony_integrate(adata, batch, max_iter_harmony=max_iter_harmony)
             rep = "X_pca_harmony"
     else:
         rep = "X_pca"
@@ -117,6 +117,7 @@ if __name__ == "__main__":
     ap.add_argument("--celltypist")
     ap.add_argument("--compression", type=int, default=9)
     ap.add_argument("--min-dist", type=float, default=0.5)
+    ap.add_argument("--max-iter-harmony", type=int, default=50)
     ap.set_defaults(use_combat=False, use_harmony=True, use_bbknn=False, use_scaling=False)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     adata = benj.parse_anndata(**args)

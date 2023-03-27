@@ -38,7 +38,7 @@ def parse_anndata(**args):
         import pandas as pd
         for fname in args["annotation"]:
             if os.path.exists(fname):
-                annot = pd.read_csv(fname, index_col=0, sep="\t")
+                annot = pd.read_csv(fname, index_col=0, sep="\t", low_memory=False)
                 obs = obs.loc[annot.index.values,:].copy()
                 for cn in annot.columns.values:
                     obs[cn] = annot[cn].values

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., min_dist:float=0.5, dotplot=None, celltypist=None, tsv=None, rgg_ng=5, prefix="", sw=None, compression:int=9, **kwargs):
+def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scaling=False, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., min_dist:float=0.5, dotplot=None, celltypist=None, tsv=None, rgg_ng=5, prefix="", sw=None, compression:int=9, **kwargs):
     import scanpy as sc
     import pandas as pd
     import numpy as np
@@ -32,7 +32,7 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=True, use_harmon
     if batch is not None and use_combat:
         with sw("Running ComBat"):
             sc.pp.combat(adata, batch)
-    else:
+    elif use_scaling:
         with sw("Scaling data"):
             sc.pp.scale(adata, max_value=10)
     with sw("Running PCA"):
@@ -111,11 +111,13 @@ if __name__ == "__main__":
     ap.add_argument("--use-harmony", dest="use_harmony", action="store_true")
     ap.add_argument("--no-use-bbknn", dest="use_bbknn", action="store_false")
     ap.add_argument("--use-bbknn", dest="use_bbknn", action="store_true")
+    ap.add_argument("--no-use-scaling", dest="use_scaling", action="store_false")
+    ap.add_argument("--use-scaling", dest="use_scaling", action="store_true")
     ap.add_argument("--dotplot", nargs="+")
     ap.add_argument("--celltypist")
     ap.add_argument("--compression", type=int, default=9)
     ap.add_argument("--min-dist", type=float, default=0.5)
-    ap.set_defaults(use_combat=True, use_harmony=True, use_bbknn=True)
+    ap.set_defaults(use_combat=False, use_harmony=True, use_bbknn=False, use_scaling=False)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     adata = benj.parse_anndata(**args)
     integrate(adata, **args)

@@ -14,6 +14,9 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
     import benj
     if sw is None:
         sw = benj.stopwatch()
+    if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
+        with sw("Filtering cells by counts >= %d" % min_n_cells_by_counts):
+            mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
     if batch not in adata.obs.columns:
         batch = None
     if batch is not None:
@@ -24,14 +27,13 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
             mu.pp.filter_obs(adata, batch, lambda x: x.isin(list(cdf)))
         if len(pd.unique(adata.obs[batch])) <= 1:
             batch = None
+        else:
+            adata.obs[batch] = adata.obs[batch].values.astype(str)
     if "raw" not in adata.layers:
         with sw("Copying .X to .layers[\"raw\"]"):
             adata.layers["raw"] = adata.X.copy()
     with sw("Re-calculating qc metrics"):
         sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True, layer="raw")
-    if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
-        with sw("Filtering cells by counts >= %d" % min_n_cells_by_counts):
-            mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
     with sw("Running TF-IDF"):
         adata.X = adata.layers["raw"].copy()
         ac.pp.tfidf(adata)

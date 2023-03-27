@@ -21,7 +21,7 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
         cdf = adata.obs.groupby(batch).count().iloc[:, 0]
         cdf = cdf[cdf >= 3].index.values
         if len(np.setdiff1d(pd.unique(adata.obs[batch]), cdf)) > 0:
-            mu.pp.filter_obs(adata, batch, lambda x: x.isin(cdf.index))
+            mu.pp.filter_obs(adata, batch, lambda x: x.isin(list(cdf)))
         if len(pd.unique(adata.obs[batch])) <= 1:
             batch = None
     if "raw" not in adata.layers:

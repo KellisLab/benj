@@ -44,6 +44,7 @@ def parse_anndata(**args):
                     obs[cn] = annot[cn].values
             else:
                 print("Warning: File", fname, "does not exist")
+        flag = np.repeat(True, obs.shape[0])
     if args.get("subset") and isinstance(args["subset"], list):
         for ss in args["subset"]:
             S = [s.strip() for s in ss.split("=")]

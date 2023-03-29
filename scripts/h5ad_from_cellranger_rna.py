@@ -38,8 +38,8 @@ def run(h5, output, sample:str=None, use_muon:bool=True, compression:int=9, **kw
             adata = adata[I, vdata.var_names].copy()
             adata.layers = vdata[I, :].layers.copy()
     if os.path.isfile(bcfile):
-        filtered_barcodes = pd.read_csv(bcfile)[0].values
-        adata.obs["filtered"] = adata.obs_names.isin(filtered_barcodes)
+        filtered_barcodes = pd.read_csv(bcfile, header=None, sep="\t")[0].values
+        adata.obs["filtered"] = adata.obs_names.isin(filtered_barcodes).astype(str)
     if sample is not None:
         adata.obs.index = ["%s#%s" % (sample, bc) for bc in adata.obs_names]
         adata.obs[kwargs.get("sample_name", "Sample")] = sample

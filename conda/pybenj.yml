@@ -96,3 +96,4 @@ dependencies:
       - mofapy2
       #- cellphonedb ### requires sklearn=0.24.0
       - pychromvar
+      - bbknn ### for some reason the bioconda bbknn doesn't work

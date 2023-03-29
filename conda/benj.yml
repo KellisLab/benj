@@ -10,186 +10,184 @@ name: benj
 channels:
   - conda-forge
   - bioconda
-  - r
 
 dependencies:
   ## Must have
-  - anndata>=0.8.0
-  - scanpy>=1.9.3
-  - muon
-  - pandas>=1.5.0
-  - numpy>=1.21.6
-  - numba>=0.56.3
-  - cython
-  - scikit-learn>=1.2.0
-  - statsmodels
-  - pip
-  - git
-  - tqdm
-  - h5py>=3
-  - rpy2
+  - conda-forge::anndata>=0.8.0
+  - conda-forge::scanpy>=1.9.3
+  - conda-forge::muon
+  - conda-forge::pandas>=1.5.0
+  - conda-forge::numpy>=1.21.6
+  - conda-forge::numba>=0.56.3
+  - conda-forge::cython
+  - conda-forge::scikit-learn>=1.2.0
+  - conda-forge::statsmodels
+  - conda-forge::pip
+  - conda-forge::git
+  - conda-forge::tqdm
+  - conda-forge::h5py>=3
+  - conda-forge::rpy2
   ## r
-  - r-base>=4.2.2
-  - r-devtools
-  - r-biocmanager
-  - r-matrix
-  - r-tidyverse
-  - r-readxl
-  - r-writexl
-  - r-seriation
-  - r-gridExtra
-  - r-filelock
-  - r-pryr
-  - r-circlize
-  - bioconductor-singlecellexperiment
-  - bioconductor-rhdf5
-  - bioconductor-rhdf5filters
-  - bioconductor-complexheatmap
-  - bioconductor-genomicfeatures
-  - bioconductor-rtracklayer
-  - snakemake
-  - nextflow
-  - r-cairo
-  - cairo
-  - r-gsl
-  - r-rcppgsl
-  - gsl
-  - r-hdf5r
+  - conda-forge::r-base>=4.2.2
+  - conda-forge::r-devtools
+  - conda-forge::r-biocmanager
+  - conda-forge::r-matrix
+  - conda-forge::r-tidyverse
+  - conda-forge::r-readxl
+  - conda-forge::r-writexl
+  - conda-forge::r-seriation
+  - conda-forge::r-gridExtra
+  - conda-forge::r-filelock
+  - conda-forge::r-pryr
+  - conda-forge::r-circlize
+  - bioconda::bioconductor-singlecellexperiment
+  - bioconda::bioconductor-rhdf5
+  - bioconda::bioconductor-rhdf5filters
+  - bioconda::bioconductor-complexheatmap
+  - bioconda::bioconductor-genomicfeatures
+  - bioconda::bioconductor-rtracklayer
+  - bioconda::snakemake
+  - bioconda::nextflow
+  - conda-forge::r-cairo
+  - conda-forge::cairo
+  - conda-forge::r-gsl
+  - conda-forge::r-rcppgsl
+  - conda-forge::gsl
+  - conda-forge::r-hdf5r
   ## other
-  - bioawk
-  - jupyter
-  - nbconvert
-  - snakemake
-  - nextflow
+  - bioconda::bioawk
+  - conda-forge::jupyter
+  - conda-forge::nbconvert
+  - bioconda::snakemake
+  - bioconda::nextflow
   ## plots
-  - seaborn
-  - matplotlib
-  - adjusttext
+  - conda-forge::seaborn
+  - conda-forge::matplotlib<3.7
+  - conda-forge::adjusttext
   ## networks
-  - umap-learn>=0.3.10
-  - leidenalg
-  - python-infomap
-  - python-igraph
-  - networkx
-  - fa2
+  - conda-forge::umap-learn>=0.3.10
+  - conda-forge::leidenalg
+  - conda-forge::python-infomap
+  - conda-forge::python-igraph
+  - conda-forge::networkx
+  - conda-forge::fa2
   ## ml
-  - xgboost
-  - ngboost
-  - pytorch-cpu
+  - conda-forge::xgboost
+  - conda-forge::ngboost
+  - conda-forge::pytorch-cpu
   #- py-opencv
   ## genomics
-  - pyranges
-  - pybedtools
-  - gtfparse
-  - pytabix
-  - pysam
-  - pyjaspar
-  - pybiomart
+  - bioconda::pyranges
+  - bioconda::pybedtools
+  - bioconda::gtfparse
+  - bioconda::pytabix
+  - bioconda::pysam
+  - bioconda::pyjaspar
+  - bioconda::pybiomart
   ### bioconductor
-  - bioconductor-motifmatchr
-  - bioconductor-tfbstools
-  - bioconductor-jaspar2022
-  - bioconductor-chromvar
-  - bioconductor-annotationdbi
-  - bioconductor-go.db
-  - bioconductor-do.db
-  - bioconductor-org.hs.eg.db
-  - bioconductor-org.mm.eg.db
-  - bioconductor-genomeinfodb
-  - bioconductor-bsgenome
-  #- bioconductor-bsgenome.hsapiens.ucsc.hg38
-  - bioconductor-bsgenome.mmusculus.ucsc.mm10
-  - bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
-  - bioconductor-txdb.mmusculus.ucsc.mm10.knowngene
-  - bioconductor-ensdb.hsapiens.v86
-  - bioconductor-rgreat
-  - bioconductor-clusterprofiler
-  - bioconductor-variantannotation
-  - bioconductor-gviz
-  - bioconductor-geoquery
-  - r-seurat
-  - r-harmony
-  - r-signac
-  #- r-seuratdisk # icu error forces R below 4.1
-  - r-monocle3
-  - gxx_linux-64
-  - gcc_linux-64
+  - bioconda::bioconductor-motifmatchr
+  - bioconda::bioconductor-tfbstools
+  - bioconda::bioconductor-jaspar2022
+  - bioconda::bioconductor-chromvar
+  - bioconda::bioconductor-annotationdbi
+  - bioconda::bioconductor-go.db
+  - bioconda::bioconductor-do.db
+  - bioconda::bioconductor-org.hs.eg.db
+  - bioconda::bioconductor-org.mm.eg.db
+  - bioconda::bioconductor-genomeinfodb
+  - bioconda::bioconductor-bsgenome
+  # - bioconductor-bsgenome.hsapiens.ucsc.hg38
+  - bioconda::bioconductor-bsgenome.mmusculus.ucsc.mm10
+  - bioconda::bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
+  - bioconda::bioconductor-txdb.mmusculus.ucsc.mm10.knowngene
+  - bioconda::bioconductor-ensdb.hsapiens.v86
+  - bioconda::bioconductor-rgreat
+  - bioconda::bioconductor-clusterprofiler
+  - bioconda::bioconductor-variantannotation
+  - bioconda::bioconductor-gviz
+  - bioconda::bioconductor-geoquery
+  - conda-forge::r-seurat
+  - bioconda::r-harmony
+  - bioconda::r-signac
+  # - r-seuratdisk # icu error forces R below 4.1
+  - bioconda::r-monocle3
+  - conda-forge::gxx_linux-64
+  - conda-forge::gcc_linux-64
   ### deg
-  - bioconductor-deseq2
-  - bioconductor-ruvseq
-  - bioconductor-limma
-  - bioconductor-sva
-  - bioconductor-edger
-  - bioconductor-mast
-  - bioconductor-scde
-  - bioconductor-scdd
-  - bioconductor-emdomics
-  - bioconductor-desingle
-  - bioconductor-monocle
+  - bioconda::bioconductor-deseq2
+  - bioconda::bioconductor-ruvseq
+  - bioconda::bioconductor-limma
+  - bioconda::bioconductor-sva
+  - bioconda::bioconductor-edger
+  - bioconda::bioconductor-mast
+  # - bioconda::bioconductor-scde
+  # - bioconda::bioconductor-scdd
+  # - bioconda::bioconductor-emdomics
+  # - bioconda::bioconductor-desingle
+  # - bioconductor-monocle
   ### extra
-  - r-nloptr
-  - r-nlme
-  - r-mass
-  - r-rfast
-  - r-trust
-  - r-rcpp>=1.0.7 ## nebula
-  - r-rcppziggurat
-  - r-rcppeigen
-  - r-caret
-  - r-glmnet
-  - r-rmagic
-  - r-leiden
-  - r-glasso
-  - r-pracma
-  - r-precrec
-  - r-shiny
+  - conda-forge::r-nloptr
+  - conda-forge::r-nlme
+  - conda-forge::r-mass
+  - conda-forge::r-rfast
+  - conda-forge::r-trust
+  - conda-forge::r-rcpp>=1.0.7 ## nebula
+  - conda-forge::r-rcppziggurat
+  - conda-forge::r-rcppeigen
+  - conda-forge::r-caret
+  - conda-forge::r-glmnet
+  - conda-forge::r-rmagic
+  - conda-forge::r-leiden
+  - conda-forge::r-glasso
+  - conda-forge::r-pracma
+  - conda-forge::r-precrec
+  - conda-forge::r-vgam
+  - conda-forge::r-shiny
   ### archr
-  - r-rhandsontable
-  - r-shinythemes
+  - conda-forge::r-rhandsontable
+  - conda-forge::r-shinythemes
   ### plotting
-  - r-ggpubr
-  - r-ggrastr
-  - r-ggrepel
-  - r-uwot
-  - r-rtsne
-  - r-igraph
-  - r-cowplot
-  - r-patchwork
+  - conda-forge::r-ggpubr
+  - conda-forge::r-ggrastr
+  - conda-forge::r-ggrepel
+  - conda-forge::r-uwot
+  - conda-forge::r-rtsne
+  - conda-forge::r-igraph
+  - conda-forge::r-cowplot
+  - conda-forge::r-patchwork
   ### jupyter
-  - jupyter
-  - nbconvert
-  - python>=3.8
-  - r-irkernel
+  - conda-forge::python>=3.8
+  - conda-forge::r-irkernel
   ### anndata reticulate
-  - r-anndata
+  - bioconda::r-anndata
   ## single cell
-  - scrublet
-  - harmonypy
-  - bbknn
-  - mnnpy
-  - celltypist
-  - velocyto.py
-  - scvelo
-  - multivelo
-  - mudata
-  - scglue
-  - bamnostic
+  - bioconda::scrublet
+  - bioconda::harmonypy
+  - bioconda::bbknn
+  - bioconda::mnnpy
+  - bioconda::celltypist
+  - bioconda::velocyto.py
+  - bioconda::scvelo
+  - bioconda::multivelo
+  - conda-forge::mudata
+  - bioconda::scglue
+  - conda-forge::bamnostic
   ## for snapatac2
-  - pytables>=3.6.1
-  - natsort
-  - boltons
-  - pyarrow
-  - plotly>=5.6.0
-  - polars==0.13.*
-  - pooch>=1.6.0
-  - retworkx
+  - conda-forge::pytables>=3.6.1
+  - conda-forge::natsort
+  - conda-forge::boltons
+  - conda-forge::pyarrow
+  - conda-forge::plotly>=5.6.0
+  - conda-forge::polars==0.13.*
+  - conda-forge::pooch>=1.6.0
+  - conda-forge::retworkx
   ## for magic
-  - scprep
-  - graphtools
+  - bioconda::scprep
+  - conda-forge::graphtools
   ## for scalex
-  - dunamai
-  - nbsphinx
-  - tbb
+  - conda-forge::dunamai
+  - conda-forge::nbsphinx
+  - conda-forge::tbb
   #- episcanpy
   - pip:
       - snapatac2
@@ -198,5 +196,5 @@ dependencies:
       #- scopen
       - ctxcore
       - mofapy2
-      - cellphonedb
+      # - cellphonedb ### requires sklearn==0.24.0
       - pychromvar

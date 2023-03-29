@@ -8,86 +8,85 @@ name: pybenj
 channels:
   - conda-forge
   - bioconda
-  - r
 
 dependencies:
   ## Must have
-  - python>=3.8
-  - anndata>=0.8.0
-  - scanpy>=1.9.3
-  - muon
-  - pandas>=1.5.0
-  - numpy>=1.16.0
-  - numba
-  - cython
-  - scikit-learn>=1.2.0
-  - statsmodels
-  - pip
-  - git
-  - tqdm
-  - h5py>=3
-  - bioawk
-  - jupyter
-  - nbconvert
-  - snakemake
-  - nextflow
-  - rpy2
+  - conda-forge::python>=3.8
+  - conda-forge::anndata>=0.8.0
+  - conda-forge::scanpy>=1.9.3
+  - conda-forge::muon
+  - conda-forge::pandas>=1.5.0
+  - conda-forge::numpy>=1.16.0
+  - conda-forge::numba
+  - conda-forge::cython
+  - conda-forge::scikit-learn>=1.2.0
+  - conda-forge::statsmodels
+  - conda-forge::pip
+  - conda-forge::git
+  - conda-forge::tqdm
+  - conda-forge::h5py>=3
+  - bioconda::bioawk
+  - conda-forge::jupyter
+  - conda-forge::nbconvert
+  - bioconda::snakemake
+  - bioconda::nextflow
+  - conda-forge::rpy2
   ## plots
-  - seaborn
-  - matplotlib
-  - adjusttext
+  - conda-forge::seaborn
+  - conda-forge::matplotlib<3.7
+  - conda-forge::adjusttext
   ## networks
-  - umap-learn>=0.3.10
-  - leidenalg
-  - python-infomap
-  - python-igraph
-  - networkx
-  - fa2
+  - conda-forge::umap-learn>=0.3.10
+  - conda-forge::leidenalg
+  - conda-forge::python-infomap
+  - conda-forge::python-igraph
+  - conda-forge::networkx
+  - conda-forge::fa2
   ## ml
-  - xgboost
-  - ngboost
-  - pytorch-cpu
+  - conda-forge::xgboost
+  - conda-forge::ngboost
+  - conda-forge::pytorch-cpu
   #- py-opencv
   ## genomics
-  - pyranges
-  - pybedtools
-  - gtfparse
-  - pytabix
-  - pysam
-  - pyjaspar
-  - pybiomart
+  - bioconda::pyranges
+  - bioconda::pybedtools
+  - bioconda::gtfparse
+  - bioconda::pytabix
+  - bioconda::pysam
+  - bioconda::pyjaspar
+  - bioconda::pybiomart
   ## single cell
-  - scrublet
-  - harmonypy
-  - bbknn
-  - mnnpy
-  - celltypist
-  - velocyto.py
-  - scvelo
-  - multivelo
-  - mudata
-  - scglue
-  - bamnostic
+  - bioconda::scrublet
+  - bioconda::harmonypy
+  - bioconda::bbknn
+  - bioconda::mnnpy
+  - bioconda::celltypist
+  - bioconda::velocyto.py
+  - bioconda::scvelo
+  - bioconda::multivelo
+  - conda-forge::mudata
+  - bioconda::scglue
+  - conda-forge::bamnostic
   ## for snapatac2
-  - pytables>=3.6.1
-  - natsort
-  - boltons
-  - pyarrow
-  - plotly>=5.6.0
-  - polars==0.13.*
-  - pooch>=1.6.0
-  - retworkx
+  - conda-forge::pytables>=3.6.1
+  - conda-forge::natsort
+  - conda-forge::boltons
+  - conda-forge::pyarrow
+  - conda-forge::plotly>=5.6.0
+  - conda-forge::polars==0.13.*
+  - conda-forge::pooch>=1.6.0
+  - conda-forge::retworkx
   ## for magic
-  - scprep
-  - graphtools
+  - bioconda::scprep
+  - conda-forge::graphtools
   ## for scalex
-  - dunamai
-  - nbsphinx
-  - tbb
+  - conda-forge::dunamai
+  - conda-forge::nbsphinx
+  - conda-forge::tbb
   #- episcanpy
   ## for build
-  - gcc_linux-64
-  - gxx_linux-64
+  - conda-forge::gcc_linux-64
+  - conda-forge::gxx_linux-64
   - pip:
       - snapatac2
       - magic-impute
@@ -95,5 +94,5 @@ dependencies:
       #- scopen
       - ctxcore
       - mofapy2
-      - cellphonedb
+      #- cellphonedb ### requires sklearn=0.24.0
       - pychromvar

@@ -49,7 +49,9 @@ def parse_anndata(**args):
         for ss in args["subset"]:
             S = [s.strip() for s in ss.split("=")]
             if len(S) == 2 and S[0] in obs.columns:
-                flag &= obs[S[0]].isin(S[1].split(args["split"])).values
+                sval = S[1].split(args["split"])
+                sval = np.asarray(sval, dtype=obs[S[0]].dtype)
+                flag &= obs[S[0]].isin(sval).values
                 if np.sum(flag) == 0:
                     raise RuntimeError("%s not in %s" % (S[1].split(args["split"]), S[0]))
     if args.get("min") and isinstance(args["min"], list):

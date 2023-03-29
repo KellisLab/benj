@@ -12,7 +12,7 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scali
         cdf = adata.obs.groupby(batch).count().iloc[:, 0]
         cdf = cdf[cdf >= 3].index.values
         if len(np.setdiff1d(pd.unique(adata.obs[batch]), cdf)) > 0:
-            adata = adata[adata.obs[batch].isin(cdf.index), :].copy()
+            adata = adata[adata.obs[batch].isin(cdf), :].copy()
         if len(pd.unique(adata.obs[batch])) == 0:
             batch = None
     print("Working with %d cells" % adata.shape[0])

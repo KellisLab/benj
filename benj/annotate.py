@@ -12,7 +12,7 @@ def annotate(adata, **kwargs):
     ct = celltypist.annotate(adata, **ctargs)
     return ct
 
-def annotate_clusters_from_vote(obs, cluster, annot, newlabel, exclude=None):
+def annotate_clusters_from_vote(obs, cluster, annot, newlabel, exclude=None, sort_by_frac=True):
     import pandas as pd
     from scipy.stats import hypergeom
     import numpy as np
@@ -33,7 +33,11 @@ def annotate_clusters_from_vote(obs, cluster, annot, newlabel, exclude=None):
         df["atotal"],
         df["ctotal"]
     ) / np.log(10)
-    df = df.sort_values("mlog10p", ascending=False)
+    df["frac"] = df["count"] / df["ctotal"]
+    if sort_by_frac:
+        df = df.sort_values("frac", ascending=False)
+    else:
+        df = df.sort_values("mlog10p", ascending=False)
     df = df.drop_duplicates(cluster)
     df.index = df[cluster].values
     obs[newlabel] = df.loc[obs[cluster].values, annot].values

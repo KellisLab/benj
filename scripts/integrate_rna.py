@@ -73,7 +73,7 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scali
         cols = np.intersect1d([leiden, "majority_voting", "predicted_labels"], adata.obs.columns)
         adata.obs.loc[:, cols].to_csv(tsv, sep="\t")
     sc.pl.umap(adata, color=leiden, save="_%s_beside.png" % leiden)
-    sc.pl.umap(adata, color=leiden, save="_%s_ondata.png" % leiden, legend_loc="on data")
+    sc.pl.umap(adata, color=leiden, save="_%s_ondata.png" % leiden, legend_loc="on data", legend_fontsize=2)
     if dotplot is not None:
         sc.pl.dotplot(adata, var_names=dotplot, groupby=leiden, save="%s.png" % leiden, standard_scale="var")
     for vv in np.intersect1d(["pct_counts_mt", "doublet_score", "log1p_total_counts"], adata.obs.columns):
@@ -85,9 +85,9 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scali
         sc.pl.rank_genes_groups_dotplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
         sc.pl.rank_genes_groups_matrixplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
         sc.pl.rank_genes_groups_heatmap(adata, save="_rgg_%s.png" % leiden, n_genes=rgg_ng)
-    with sw("Re-setting counts") as _:
-        adata.X = adata.layers["raw"].copy()
     if output is not None:
+        with sw("Re-setting counts") as _:
+            adata.X = adata.layers["raw"].copy()
         with sw("Writing to H5AD"):
             adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     ap.add_argument("--no-rank-genes", dest="use_rgg", action="store_false")
     ap.add_argument("--rank-genes", dest="use_rgg", action="store_true")
     ap.add_argument("--max-iter-harmony", type=int, default=50)
-    ap.set_defaults(use_combat=False, use_harmony=True, use_bbknn=False, use_scaling=False, use_rgg=True)
+    ap.set_defaults(use_combat=False, use_harmony=False, use_bbknn=True, use_scaling=False, use_rgg=True)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     adata = benj.parse_anndata(**args)
     integrate(adata, **args)

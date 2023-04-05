@@ -146,7 +146,7 @@ read_h5ad_var <- function(h5ad, base="/") {
 #' @param var_index A named vector of variable (gene) indices
 #' @return A sparse matrix
 .get_sparse <- function(h5, matrix, obs_index, var_index) {
-    indptr = rhdf5::h5read(h5, paste0(matrix, "/indptr"))
+    indptr = rhdf5::h5read(h5, paste0(matrix, "/indptr"), bit64conversion="bit64")
     if (is.null(obs_index)) {
         obs_index = seq(1, length(indptr)-1)
     }

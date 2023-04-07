@@ -76,7 +76,7 @@ read_h5ad_var <- function(h5ad, base="/") {
 #' @param obs Either NULL (all data), a vector of valid UMIs, or a dataframe of .obs with UMI rownames
 #' @param subset A list of column-value(s) mappings to subset OBS to
 #' @return A list of the dataframe (df) and the integer index with df's rownames as names
-.parse_h5ad_obs <- function(h5ad, obs=NULL, subset=list(), base="/") {
+.parse_h5ad_obs <- function(h5ad, obs=NULL, subset=list(), base="/", refactor=TRUE) {
     obs_df = read_h5ad_obs(h5ad, base=base)
     obs_index = 1:nrow(obs_df)
     if (!is.null(obs)) {
@@ -102,6 +102,11 @@ read_h5ad_var <- function(h5ad, base="/") {
             } else {
                 warning(paste0("Column ", cn, " is not in .obs"))
             }
+        }
+    }
+    for (cn in colnames(obs_df)) {
+        if (refactor & is.factor(obs_df[[cn]]) & (min(table(obs_df[[cn]]))==0)) {
+            obs_df[[cn]] = as.factor(as.character(obs_df[[cn]]))
         }
     }
     names(obs_index) = rownames(obs_df)
@@ -244,8 +249,8 @@ read_h5ad_var <- function(h5ad, base="/") {
 #' @param layer A vector of layer(s) to subset
 #' @return A SingleCellExperiment object filled with assays
 #' @export
-read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE, obsp=TRUE, varp=TRUE, base="/", subset=list()) {
-    obs = .parse_h5ad_obs(h5ad, obs, subset=subset, base=base)
+read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE, obsp=TRUE, varp=TRUE, base="/", subset=list(), refactor=TRUE) {
+    obs = .parse_h5ad_obs(h5ad, obs, subset=subset, base=base, refactor=refactor)
     var = .parse_h5ad_var(h5ad, var, base=paste0(base, ifelse(raw, "/raw/", "/")))
     if (raw) {
         assays = list(counts=.parse_h5ad_X(h5ad, paste0(base, "/raw/X"),

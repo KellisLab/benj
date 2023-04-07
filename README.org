@@ -35,23 +35,45 @@ make
 pip install .
 #+END_SRC
 * RNA integration/subtyping framework
+** H5AD from CellRanger RNA
+From a list of sample names and filtered_feature_bc_matrix.h5 files in a file called "items.txt", you can enter a SLURM script as follows to build H5AD for each:
 #+BEGIN_SRC bash
-  function integrate {
-      cls=${1:-overall}
-      shift
-      integrate_rna.py -i concatenated.h5ad \
-		       -o "${cls}/${cls}.h5ad" \
-		       -t "${cls}/${cls}_clust.tsv.gz" \
-		       -f "${cls}" \
-		       -b "batch" \
-		       -l "${cls}_clust" \
-		       --hvg 5000 \
-		       --dotplot Mbp Pdgfra Aif1 Gfap Flt1 Pdgfrb Syt1 Slc17a7 Gad1 \
-		       "$@"
-  }
-  integrate overall
-  integrate exc -a ./overall_clust/overall_clust.tsv.gz --subset overall_clust=C1,C2,C3 --plot overall_clust
-  integrate exc_L23 -a ./exc_clust/exc_clust.tsv.gz --subset exc_clust=C0,C2,C3 --plot overall_clust exc_clust
+#!/usr/bin/env bash
+#SBATCH -p kellis
+#SBATCH --array=1-106%10
+#SBATCH --nice=10000
+cd /path/to/items/dir
+export SAMPLE=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $1 }')
+export H5=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $2 }')
+export OUTPUT="${SAMPLE}.h5ad"
+if [ -f "${OUTPUT}" ]; then
+    echo "File ${OUTPUT} already created."
+else
+    source /home/benjames/src/conda_init.sh
+    conda activate pybenj
+    `type -P time` h5ad_from_cellranger_rna.py --h5 "${H5}" --sample "${SAMPLE}" --output "${OUTPUT}"
+fi
+#+END_SRC
+** Aggregation
+
+** Integration process
+#+BEGIN_SRC bash
+      function integrate {
+	  cls=${1:-overall}
+	  shift
+	  integrate_rna.py -i concatenated.h5ad \
+			   -o "${cls}/${cls}.h5ad" \
+			   -t "${cls}/${cls}_clust.tsv.gz" \
+			   -f "${cls}" \
+			   -b "batch" \
+			   -l "${cls}_clust" \
+			   --hvg 5000 \
+			   --dotplot Mbp Pdgfra Aif1 Gfap Flt1 Pdgfrb Syt1 Slc17a7 Gad1 \
+			   "$@"
+      }
+      integrate overall
+      integrate exc -a ./overall_clust/overall_clust.tsv.gz --subset overall_clust=C1,C2,C3 --plot overall_clust
+      integrate exc_L23 -a ./exc_clust/exc_clust.tsv.gz --subset exc_clust=C0,C2,C3 --plot overall_clust exc_clust
 
 
 #+END_SRC

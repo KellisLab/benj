@@ -135,6 +135,18 @@ read_h5ad_var <- function(h5ad, base="/") {
     return(list(df=var_df, index=var_index))
 }
 
+
+#' Take indptr from H5AD and turn into a dense index
+#' Take in indptr assuming it is integer64
+#' But use regular integer in rep() as number of compressed indices is not likely going to overflow
+.decompress_indptr <- function(indptr, obs_index=NULL) {
+    return(do.call(c, lapply(seq(1, length(indptr)-1), function(i) {
+        begin = indptr[i] + 1
+        end = indptr[i + 1]
+        rep(match(i, obs_index), as.integer(end - begin + 1))
+    })))
+}
+
 #' Parse a sparse matrix given indices
 #'
 #' THis function takes a matrix and a list of indices to transform
@@ -155,13 +167,8 @@ read_h5ad_var <- function(h5ad, base="/") {
     }
     VI = match(rhdf5::h5read(h5, paste0(matrix, "/indices")) + 1,
                     var_index)
-    data = rhdf5::h5read(h5, paste0(matrix, "/data"))
-    OI = as.integer(rep(NA, length(VI)))
-    for (i in obs_index) {
-        begin = indptr[i] + 1
-        end = indptr[i + 1]
-        OI[begin:end] = match(i, obs_index)
-    }
+    data = rhdf5::h5read(h5, paste0(matrix, "/data"), bit64conversion="bit64")
+    OI = .decompress_indptr(indptr, obs_index)
     flag = (!is.na(OI)) & (!is.na(VI))
     return(Matrix::sparseMatrix(i=VI[flag],
                                 j=OI[flag],

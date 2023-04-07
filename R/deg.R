@@ -89,7 +89,8 @@ deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=10, assay=N
     } else {
         X = SummarizedExperiment::assays(pb)[[assay]]
     }
-    round_diff = mean(abs(X - round(X)))
+    round_diff = abs(X - round(X))
+    round_diff = mean(round_diff[!is.na(round_diff)])
     if (round_diff > 0) {
         warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
     }

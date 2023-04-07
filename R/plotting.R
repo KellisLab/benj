@@ -21,7 +21,17 @@ set_ht_opt <- function(htsc=2.5) {
         ANNOTATION_LEGEND_PADDING = grid::unit(2 / htsc, 'mm'))
 }
 
+savePlot <- function(p, pltprefix, w=7, h=7, dpi=600, ...){
+  p <- substitute(p)
+  pdf(paste0(pltprefix, ".pdf"), res=dpi, width=w, height=h, units="in")
+  eval(p)
+  dev.off()
 
+  png(paste0(pltprefix, ".png"), res=dpi, width=w, height=h, units="in")
+  eval(p)
+  dev.off()
+  print(pltprefix)
+}
 #' @export
 htSortMatrix <- function(M, method="euclidean", ratio=0.5, cutoff=0.25, sort=c(1,2)) {
     if (is.logical(sort)) {

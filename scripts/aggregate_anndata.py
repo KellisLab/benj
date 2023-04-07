@@ -3,7 +3,7 @@
 def add_cell_cycle_info(adata, cell_cycle):
     return 0
 
-def run(metadata, output, directory=".", sample_key="Sample", cell_cycle=None, gtf=None, min_cells_per_sample:int=30, compression:int=9, use_scrublet:bool=True):
+def run(metadata, output, directory=".", sample_key="Sample", cell_cycle=None, gtf=None, min_cells_per_sample:int=30, compression:int=9, use_scrublet:bool=True, qc_vars=[], **kwargs):
     import os
     from tqdm.auto import tqdm
     import pandas as pd
@@ -30,6 +30,8 @@ def run(metadata, output, directory=".", sample_key="Sample", cell_cycle=None, g
     with sw("Concatenating AnnData objects"):
         adata = anndata.concat(tbl, merge="same", uns_merge="same")
     with sw("Calculating statistics"):
+        if qc_vars is None:
+            qc_vars=[]
         sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=[])
     if use_scrublet:
         with sw("Scrublet"):

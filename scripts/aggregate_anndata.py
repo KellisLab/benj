@@ -8,6 +8,7 @@ def run(metadata, output, directory=".", sample_key="Sample", cell_cycle=None, g
     from tqdm.auto import tqdm
     import pandas as pd
     import numpy as np
+    import anndata
     import scanpy as sc
     import benj
     md = pd.read_csv(metadata, sep="\t", index_col=0)

@@ -20,7 +20,7 @@ def run(metadata, output, directory=".", sample_key="Sample", cell_cycle=None, g
             if os.path.isfile(fname):
                 adata = sc.read(fname)
                 for cn in md.columns:
-                    adata.obs[cn] = md.loc[sample, cn].values
+                    adata.obs[cn] = md.loc[sample, cn]
                 if adata.shape[0] >= min_cells_per_sample:
                     tbl[sample] = adata
                 else:

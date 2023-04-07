@@ -35,6 +35,10 @@ make
 pip install .
 #+END_SRC
 * RNA integration/subtyping framework
+The overall strategy is
+- Load per-sample H5AD from cellranger H5, including velocyto loom. Barcodes are renamed to "Sample#barcode-1" to make multiomic ATAC+GEX analysis easier, as ArchR uses this format.
+- Concatenate all H5AD, add metadata, and run scrublet to remove doublets.
+- Integrate cell type iteratively
 ** H5AD from CellRanger RNA
 From a list of sample names and filtered_feature_bc_matrix.h5 files in a file called "items.txt", you can enter a SLURM script as follows to build H5AD for each:
 #+BEGIN_SRC bash
@@ -54,8 +58,11 @@ else
     `type -P time` h5ad_from_cellranger_rna.py --h5 "${H5}" --sample "${SAMPLE}" --output "${OUTPUT}"
 fi
 #+END_SRC
-** Aggregation
-
+** Aggregation from list of H5AD and sample metadata
+Now is when sample metadata is included. For every sample in metadata index, the H5AD is read in from the directory.
+#+BEGIN_SRC bash
+aggregate_anndata.py --metadata /path/to/md.tsv -d /path/to/h5ad/dir/ -o concatenated.h5ad
+#+END_SRC
 ** Integration process
 #+BEGIN_SRC bash
       function integrate {
@@ -75,17 +82,77 @@ fi
       integrate exc -a ./overall_clust/overall_clust.tsv.gz --subset overall_clust=C1,C2,C3 --plot overall_clust
       integrate exc_L23 -a ./exc_clust/exc_clust.tsv.gz --subset exc_clust=C0,C2,C3 --plot overall_clust exc_clust
 
-
 #+END_SRC
-* TODO Upgrades
-1. heatmap legend size
-2. repel
-3. easy volcano plots
-4. heatmap annotations
-5. colorRamp2 log transform
-6. easy manhattan plot
-7. examples
+* ATAC integration
+The ATAC integration pipeline is very similar to the RNA integration pipeline.
 
+As a brief overview, this pipeline uses both ArchR and muon. ArchR is currently better at QC, peaks, and motifs, and muon is better at primary analysis (cell types, UMAPs, multiomics).
+
+So, the same barcodes (ArchR format, "Sample#barcode-1") is used to ensure no mixup.
+
+The steps consist of:
+** Create initial arrow files in R, and add ArchR metadata:
+#+BEGIN_SRC R
+  library(ArchR)
+  addArchRGenome("hg38")
+  geneAnnotation = benj::createGeneAnnotationGFF("/path/to/cellranger/refdata/genes/genes.gtf", OrgDb=org.Hs.eg.db::org.Hs.eg.db, dataSource="cellranger", organism="Homo sapiens")
+  ArrowFiles=createArrowFiles(..., geneAnnotation=geneAnnotation)
+  proj = createArchRProject(ArrowFiles, outputDirectory="ArchR", geneAnnotation=geneAnnotation)
+  gzf = gzfile("ArchR_metadata.tsv.gz", "w")
+  write.table(as.data.frame(proj@cellColData), gzf, sep="\t")
+  close(gzf)
+  saveArchRProject(proj, "ArchR")
+#+END_SRC
+** Use muon to count fragments using a peak set
+#+BEGIN_SRC bash
+#!/usr/bin/env bash
+## gen_job usage: gen_job -m MEM -p PROC -t HOURS -d DIR -e CONDA_ENV -c CSV -s CSV_SEP -n CSV_COL_NUMBER -x MAXJOBS_AT_ONCE -r RUN_CMD
+#SBATCH -p kellis
+#SBATCH --array=1-106%10
+#SBATCH --nice=10000
+cd /home/benjames/data/SCORCH/1.Mash_BA9_NAc/ATAC
+export SAMPLE=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $1 }')
+export FRAG=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $2 }')
+export META="/path/to/archr_annotation.tsv.gz"
+export PEAKS="/path/to/atac_peak_annotation.tsv.gz"
+export OUTPUT="${SAMPLE}.h5ad"
+if [ -f "${OUTPUT}" ]; then
+    echo "File ${OUTPUT} already exists"
+else
+    source /home/benjames/src/conda_init.sh
+    conda activate pybenj
+    `type -P time` h5ad_from_archr_annotation.py --fragments "${FRAG}" --sample "${SAMPLE}" --cell-metadata "${META}" --peaks "${PEAKS}" --output "${OUTPUT}"
+fi
+#+END_SRC
+** Aggregation from a list of H5AD and sample metadata
+Now is when sample metadata is included. For every sample in metadata index, the H5AD is read in from the directory.
+#+BEGIN_SRC bash
+aggregate_anndata.py --metadata /path/to/md.tsv -d /path/to/h5ad/dir/ -o concatenated.h5ad
+#+END_SRC
+** Integration process
+Very similar to RNA integration process. But, use sample level batch correction.
+#+BEGIN_SRC bash
+      function integrate {
+	  cls=${1:-overall}
+	  shift
+	  integrate_atac.py -i concatenated.h5ad \
+			   -o "${cls}/${cls}.h5ad" \
+			   -t "${cls}/${cls}_clust.tsv.gz" \
+			   -f "${cls}" \
+			   -b "Sample" \
+			   -l "${cls}_clust" \
+			   "$@"
+      }
+      integrate overall
+      integrate exc -a ./overall_clust/overall_clust.tsv.gz --subset overall_clust=C1,C2,C3 --plot overall_clust
+      integrate exc_L23 -a ./exc_clust/exc_clust.tsv.gz --subset exc_clust=C0,C2,C3 --plot overall_clust exc_clust
+#+END_SRC bash
+** Subtype peaks/overall re-done peaks
+From the integrated ATAC, load in the =*_clust.tsv.gz= files, and addGroupCoverages in ArchR, then call new peaks.
+Then, you can iteratively improve the integration.
+* Multiome workflow
+- Currently, you should process 1) RNA first, using RNA subtyping framework.
+- Then, process ATAC alone as single-omic. But, in the integrate() function, add an annotation for the
 * Datasets
 
 | Link                                                                                                                                    | MD5sum                           |

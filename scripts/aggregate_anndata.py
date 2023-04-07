@@ -11,7 +11,7 @@ def run(metadata, output, directory=".", sample_key="Sample", cell_cycle=None, g
     import scanpy as sc
     import benj
     md = pd.read_csv(metadata, sep="\t", index_col=0)
-    tbl = []
+    tbl = {}
     sw = benj.stopwatch()
     bad = []
     with sw("Reading H5AD files"):

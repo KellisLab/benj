@@ -23,8 +23,12 @@ deg.edger <- function(se, pathology, case, control, covariates=c(),
     } else {
         X = SummarizedExperiment::assays(se)[[assay]]
     }
-    round_diff = mean(abs(X - round(X)))
-    if (round_diff > 0) {
+    if ("matrix" %in% class(X)) {
+        round_diff = all(0 == zapsmall(abs(round(X) - X)))
+    } else {
+        round_diff = all(0 == zapsmall(abs(round(X@x) - X@x)))
+    }
+    if (!round_diff) {
         warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
     }
     if (S4Vectors::ncol(X) > 1000) {
@@ -89,9 +93,12 @@ deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=10, assay=N
     } else {
         X = SummarizedExperiment::assays(pb)[[assay]]
     }
-    round_diff = abs(X - round(X))
-    round_diff = mean(round_diff[!is.na(round_diff)])
-    if (round_diff > 0) {
+        if ("matrix" %in% class(X)) {
+        round_diff = all(0 == zapsmall(abs(round(X) - X)))
+    } else {
+        round_diff = all(0 == zapsmall(abs(round(X@x) - X@x)))
+    }
+    if (!round_diff) {
         warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
     }
     cd = SummarizedExperiment::colData(pb)
@@ -171,8 +178,12 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
     } else {
         X = SummarizedExperiment::assays(sce)[[assay]]
     }
-    round_diff = mean(abs(X - round(X)))
-    if (round_diff > 0) {
+    if ("matrix" %in% class(X)) {
+        round_diff = all(0 == zapsmall(abs(round(X) - X)))
+    } else {
+        round_diff = all(0 == zapsmall(abs(round(X@x) - X@x)))
+    }
+    if (!round_diff) {
         warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
     }
     if (factorize_pathology) {
@@ -241,8 +252,12 @@ deg.deseq2 <- function(se,
     } else {
         X = SummarizedExperiment::assays(se)[[assay]]
     }
-    round_diff = mean(abs(X - round(X)))
-    if (round_diff > 0) {
+    if ("matrix" %in% class(X)) {
+        round_diff = all(0 == zapsmall(abs(round(X) - X)))
+    } else {
+        round_diff = all(0 == zapsmall(abs(round(X@x) - X@x)))
+    }
+    if (!round_diff) {
         warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
     }
     if (S4Vectors::ncol(X) > 1000) {

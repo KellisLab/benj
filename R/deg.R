@@ -155,9 +155,7 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
                          pathology=pathology,
                          NRUV=NRUV,
                          covariates=covariates,
-                         assay=assay,
-                         cpm.cutoff=cpm.cutoff,
-                         cpm.count=cpm.count)
+                         assay=assay)
         cd = SummarizedExperiment::colData(sce)
         cd.pb = SummarizedExperiment::colData(se_make_pseudobulk(sce, sample))
         if (ruv.remove.subjectlevel) {

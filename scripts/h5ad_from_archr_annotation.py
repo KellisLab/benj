@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, **kwargs):
+def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blacklist=None, **kwargs):
+    import os
     import pandas as pd
     import numpy as np
     import anndata
     from muon import atac as ac
     import scanpy as sc
+    import pyranges
     import benj
     sw = benj.stopwatch()
     with sw("Reading cell metadata"):
@@ -29,6 +31,19 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, **kw
         pk["interval"] = pk.index.values.astype(str)
         if "peakType" in pk.columns:
             pk = pd.concat([pk, pd.get_dummies(pk["peakType"]) > 0], axis=1)
+    if blacklist is not None and os.path.exists(blacklist):
+        with sw("Reading blacklist"):
+            bl = pd.read_csv(blacklist, sep="\t", header=None).iloc[:, [0,1,2]]
+            bl = pyranges.from_dict({"Chromosome": bl[0].values,
+                                     "Start": bl[1].values,
+                                     "End": bl[2].values})
+            pkgr = pyranges.from_dict({"Chromosome": pk["seqnames"].values,
+                                       "Start": pk["start"].values,
+                                       "End": pk["end"].values,
+                                       "name": pk.index.values})
+            badnames = pd.unique(pkgr.join(bl).df["name"])
+            if len(badnames) > 0: ### Only set if bad peaks exist!
+                pk["blacklist"] = pk.index.isin(badnames)
     adata = anndata.AnnData(obs=cm)
     ac.tl.locate_fragments(adata, fragments)
     with sw("Counting peaks"):
@@ -50,7 +65,16 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, **kw
         qc_vars = []
         if "peakType" in pk.columns:
             qc_vars = list(set(pk.columns) & set(pk["peakType"]))
+        if "blacklist" in pk.columns:
+            qc_vars.append("blacklist")
         sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=None)
+    if "blacklist" in qc_vars:
+        with sw("Zeroing blacklisted peaks and recalculating QC metrics"):
+            qc_vars.remove("blacklist")
+            I = np.ravel(np.where(adata.var["blacklist"].values))
+            adata.X[:, I] = 0
+            adata.X.eliminate_zeros()
+            sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=None)
     with sw("Writing to H5AD"):
         adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return 0
@@ -64,6 +88,7 @@ if __name__ == "__main__":
     ap.add_argument("--peaks", required=True)
     ap.add_argument("--peaks-bed", dest="bed", action="store_true")
     ap.add_argument("--peaks-tsv", dest="bed", action="store_false")
+    ap.add_argument("-b", "--blacklist")
     ap.add_argument("-o", "--output", required=True)
     ap.add_argument("--compression", type=int, default=9)
     ap.set_defaults(bed=False)

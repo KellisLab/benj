@@ -1,0 +1,23 @@
+### Anaconda environment for analysis
+### To install,
+###    mamba env create --file=cpdb.yml
+
+name: cpdb
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - conda-forge::pandas>=1.5.0
+  - conda-forge::numpy>=1.21.6
+  - conda-forge::numpy_groupies>=0.9.15
+  - conda-forge::requests>=2.25
+  - conda-forge::scikit-learn==0.24
+  - conda-forge::anndata>=0.8
+  - conda-forge::tqdm>=4.3,<5.0
+  - conda-forge::pip
+  - bioconda::geosketch==1.2
+  - pip:
+      - ktplotspy>=0.1.4
+      - cellphonedb

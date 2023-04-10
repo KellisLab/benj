@@ -1,0 +1,20 @@
+### Anaconda environment for analysis
+### To install,
+###    mamba env create --file=cellbender.yml
+
+name: cellbender
+
+channels:
+  - conda-forge
+  - bioconda
+  - pytorch
+dependencies:
+  - conda-forge::python==3.7
+  - conda-forge::pytables
+  - conda-forge::pip
+  - conda-forge::anndata>=0.7
+  - conda-forge::h5py<3.2
+  - pytorch::pytorch
+  - pytorch::torchvision
+  - pip:
+      - CellBender

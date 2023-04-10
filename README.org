@@ -153,8 +153,33 @@ Then, you can iteratively improve the integration.
 * Multiome workflow
 - Currently, you should process 1) RNA first, using RNA subtyping framework.
 - Then, process ATAC alone as single-omic. But, in the integrate() function, add an annotation for the
-* Datasets
+* LMod modules
+To use, in your =~/.bash_profile=, put
+#+BEGIN_SRC bash
+module use /path/to/benj/modules
+#+END_SRC
+** Conda integration is at [[modules/lmod-conda]]
+** Genome files
+*** ENCODE Exclusion list regions
+| Genome | URL                                                                           |
+|--------+-------------------------------------------------------------------------------|
+| hg19   | https://www.encodeproject.org/files/ENCFF001TDO/@@download/ENCFF001TDO.bed.gz |
+| hg38   | https://www.encodeproject.org/files/ENCFF356LFX/@@download/ENCFF356LFX.bed.gz |
+| mm10   | https://www.encodeproject.org/files/ENCFF547MET/@@download/ENCFF547MET.bed.gz |
 
+*** GENCODE GTF
+| Genome     | URL                                                                                                                     |
+|------------+-------------------------------------------------------------------------------------------------------------------------|
+| hg38 GTF   | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_43/gencode.v43.annotation.gtf.gz                      |
+| hg19 GTF   | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_43/GRCh37_mapping/gencode.v43lift37.annotation.gtf.gz |
+| GRCm39 GTF | https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M32/gencode.vM32.annotation.gtf.gz                    |
+*** 10X references
+- https://support.10xgenomics.com/single-cell-multiome-atac-gex/software/downloads/latest
+- https://support.10xgenomics.com/single-cell-gene-expression/software/downloads/latest
+- https://support.10xgenomics.com/single-cell-atac/software/downloads/latest
+*** RepeatMasker
+Download from https://genome.ucsc.edu/cgi-bin/hgTables
+* Datasets
 | Link                                                                                                                                    | MD5sum                           |
 |-----------------------------------------------------------------------------------------------------------------------------------------+----------------------------------|
 | https://cf.10xgenomics.com/samples/cell-arc/2.0.0/pbmc_granulocyte_sorted_10k/pbmc_granulocyte_sorted_10k_filtered_feature_bc_matrix.h5 | df86844b99161b9487090d91e644745e |

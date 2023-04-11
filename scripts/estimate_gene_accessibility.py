@@ -28,6 +28,7 @@ def estimate_and_rank(adata, gtf:str,
 
 if __name__ == "__main__":
     import argparse
+    import benj
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--input", dest="h5ad", required=True)
     ap.add_argument("-o", "--output", required=True)

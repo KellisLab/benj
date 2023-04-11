@@ -1,4 +1,7 @@
 
+from typing import Union, Optional, Dict
+from ._compat import Literal
+
 def extract_rank_genes_groups(adata, key="rank_genes_groups_filtered", group_name="group", gene_name="names", pval_cutoff=0.05):
     import pandas as pd
     import numpy as np
@@ -17,6 +20,18 @@ def extract_rank_genes_groups(adata, key="rank_genes_groups_filtered", group_nam
             xf = pd.DataFrame(adata.uns[key][subkey])
             df[subkey] = xf.values[R, C]
     return df
+
+def marker_peak_overlap(rgg, mk):
+    from sklearn.metrics import jaccard_score
+    out = {}
+    for k, v in dict(mk).items():
+        outk = {}
+        for rk, rv in dict(tuple(rgg.groupby("group")["genes"])).items():
+            sm = set(v)
+            sr = set(rv)
+            outk[rk] = len(sm & sr) / len(sm | sr)
+        out[k] = outk
+    return pd.DataFrame(out)
 
 def score_genes_by_rgg(adata, rgg):
     import numpy as np

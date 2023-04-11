@@ -104,6 +104,10 @@ The steps consist of:
   saveArchRProject(proj, "ArchR")
 #+END_SRC
 ** Use muon to count fragments using a peak set
+
+If you don't have a previous peak annotation, use a tile BED file.
+Usually the =cellranger-arc aggr= pipeline provides a good peak BED that is calculated early in the process, so =cellranger= can be quit after the BED
+
 #+BEGIN_SRC bash
   #!/usr/bin/env bash
   #SBATCH -p kellis
@@ -112,7 +116,7 @@ The steps consist of:
   cd /home/benjames/data/SCORCH/1.Mash_BA9_NAc/ATAC
   export SAMPLE=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $1 }')
   export FRAG=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $2 }')
-  export META="/path/to/archr_annotation.tsv.gz"
+  export META="/path/to/ArchR_metadata.tsv.gz"
   export PEAKS="/path/to/atac_peak_annotation.tsv.gz"
   export OUTPUT="${SAMPLE}.h5ad"
   if [ -f "${OUTPUT}" ]; then
@@ -127,6 +131,17 @@ The steps consist of:
 Now is when sample metadata is included. For every sample in metadata index, the H5AD is read in from the directory.
 #+BEGIN_SRC bash
 aggregate_anndata.py --metadata /path/to/md.tsv -d /path/to/h5ad/dir/ -o concatenated.h5ad
+#+END_SRC
+** Gene estimation
+Using ArchR style gene estimation, except use the peak set instead of tile matrix.
+
+#+BEGIN_SRC bash
+estimate_gene_accessibility -i concatenated.h5ad -o gacc.h5ad --gtf /path/to/cellranger/genes/genes.gtf.gz
+#+END_SRC
+
+Or, if you have annotations already (or after annotations!) you can rank genes and plot:
+#+BEGIN_SRC bash
+estimate_gene_accessibility -i concatenated.h5ad -o gacc.h5ad --gtf /path/to/cellranger/genes/genes.gtf.gz --groupby CellType
 #+END_SRC
 ** Integration process
 Very similar to RNA integration process. But, use sample level batch correction.
@@ -146,6 +161,7 @@ Very similar to RNA integration process. But, use sample level batch correction.
       integrate exc -a ./overall_clust/overall_clust.tsv.gz --subset overall_clust=C1,C2,C3 --plot overall_clust
       integrate exc_L23 -a ./exc_clust/exc_clust.tsv.gz --subset exc_clust=C0,C2,C3 --plot overall_clust exc_clust
 #+END_SRC bash
+
 ** Subtype peaks/overall re-done peaks
 From the integrated ATAC, load in the =*_clust.tsv.gz= files, and addGroupCoverages in ArchR, then call new peaks.
 Then, you can iteratively improve the integration.

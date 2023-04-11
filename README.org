@@ -42,21 +42,21 @@ The overall strategy is
 ** H5AD from CellRanger RNA
 From a list of sample names and filtered_feature_bc_matrix.h5 files in a file called "items.txt", you can enter a SLURM script as follows to build H5AD for each:
 #+BEGIN_SRC bash
-#!/usr/bin/env bash
-#SBATCH -p kellis
-#SBATCH --array=1-106%10
-#SBATCH --nice=10000
-cd /path/to/items/dir
-export SAMPLE=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $1 }')
-export H5=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $2 }')
-export OUTPUT="${SAMPLE}.h5ad"
-if [ -f "${OUTPUT}" ]; then
-    echo "File ${OUTPUT} already created."
-else
-    source /home/benjames/src/conda_init.sh
-    conda activate pybenj
-    `type -P time` h5ad_from_cellranger_rna.py --h5 "${H5}" --sample "${SAMPLE}" --output "${OUTPUT}"
-fi
+  #!/usr/bin/env bash
+  #SBATCH -p kellis
+  #SBATCH --array=1-106%10
+  #SBATCH --nice=10000
+  cd /path/to/items/dir
+  export SAMPLE=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $1 }')
+  export H5=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $2 }')
+  export OUTPUT="${SAMPLE}.h5ad"
+  if [ -f "${OUTPUT}" ]; then
+      echo "File ${OUTPUT} already created."
+  else
+      module load lmod-conda
+      conda activate pybenj
+      `type -P time` h5ad_from_cellranger_rna.py --h5 "${H5}" --sample "${SAMPLE}" --output "${OUTPUT}"
+  fi
 #+END_SRC
 ** Aggregation from list of H5AD and sample metadata
 Now is when sample metadata is included. For every sample in metadata index, the H5AD is read in from the directory.
@@ -105,24 +105,23 @@ The steps consist of:
 #+END_SRC
 ** Use muon to count fragments using a peak set
 #+BEGIN_SRC bash
-#!/usr/bin/env bash
-## gen_job usage: gen_job -m MEM -p PROC -t HOURS -d DIR -e CONDA_ENV -c CSV -s CSV_SEP -n CSV_COL_NUMBER -x MAXJOBS_AT_ONCE -r RUN_CMD
-#SBATCH -p kellis
-#SBATCH --array=1-106%10
-#SBATCH --nice=10000
-cd /home/benjames/data/SCORCH/1.Mash_BA9_NAc/ATAC
-export SAMPLE=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $1 }')
-export FRAG=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $2 }')
-export META="/path/to/archr_annotation.tsv.gz"
-export PEAKS="/path/to/atac_peak_annotation.tsv.gz"
-export OUTPUT="${SAMPLE}.h5ad"
-if [ -f "${OUTPUT}" ]; then
-    echo "File ${OUTPUT} already exists"
-else
-    source /home/benjames/src/conda_init.sh
-    conda activate pybenj
-    `type -P time` h5ad_from_archr_annotation.py --fragments "${FRAG}" --sample "${SAMPLE}" --cell-metadata "${META}" --peaks "${PEAKS}" --output "${OUTPUT}"
-fi
+  #!/usr/bin/env bash
+  #SBATCH -p kellis
+  #SBATCH --array=1-106%10
+  #SBATCH --nice=10000
+  cd /home/benjames/data/SCORCH/1.Mash_BA9_NAc/ATAC
+  export SAMPLE=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $1 }')
+  export FRAG=$(< "items.txt" awk -v TASK=${SLURM_ARRAY_TASK_ID} 'NR == TASK { print $2 }')
+  export META="/path/to/archr_annotation.tsv.gz"
+  export PEAKS="/path/to/atac_peak_annotation.tsv.gz"
+  export OUTPUT="${SAMPLE}.h5ad"
+  if [ -f "${OUTPUT}" ]; then
+      echo "File ${OUTPUT} already exists"
+  else
+      module load lmod-conda
+      conda activate pybenj
+      `type -P time` h5ad_from_archr_annotation.py --fragments "${FRAG}" --sample "${SAMPLE}" --cell-metadata "${META}" --peaks "${PEAKS}" --output "${OUTPUT}"
+  fi
 #+END_SRC
 ** Aggregation from a list of H5AD and sample metadata
 Now is when sample metadata is included. For every sample in metadata index, the H5AD is read in from the directory.
@@ -156,9 +155,13 @@ Then, you can iteratively improve the integration.
 * LMod modules
 To use, in your =~/.bash_profile=, put
 #+BEGIN_SRC bash
-module use /path/to/benj/modules
+module use /path/to/this/repo/modules
 #+END_SRC
+and re-login to view changes.
+
 ** Conda integration is at [[modules/lmod-conda]]
+To change the default Conda root directory, replace =~/data/miniconda3= with your conda root directory.
+
 ** Genome files
 *** ENCODE Exclusion list regions
 | Genome | URL                                                                           |

@@ -72,7 +72,9 @@ def parse_anndata(**args):
         ss = args["subsample"]
         flag = np.ravel(np.where(flag))
         flag = np.random.choice(flag, len(flag)//args["subsample"], replace=False)
-    adata = adata[obs.index.values[flag], :].to_memory()
+    adata = adata[obs.index.values[flag], :]
+    if args.get("backed") is None:
+        adata = adata.to_memory()
     for cn in np.setdiff1d(obs.columns, adata.obs.columns):
         adata.obs[cn] = obs[cn]
     return adata

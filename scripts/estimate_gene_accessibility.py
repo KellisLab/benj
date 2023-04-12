@@ -52,6 +52,9 @@ if __name__ == "__main__":
     ap.add_argument("--layer", type=str, default=None)
     ap.add_argument("--compression", type=int, default=9)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
-    adata = benj.parse_anndata(**args)
+    sw = benj.stopwatch()
+    with sw("Reading H5AD"):
+        adata = benj.parse_anndata(**args)
     gdata = estimate_and_rank(adata, **args)
-    gdata.write_h5ad(args["output"], compression="gzip", compression_opts=args.get("compression", 9))
+    with sw("Writing H5AD"):
+        gdata.write_h5ad(args["output"], compression="gzip", compression_opts=args.get("compression", 9))

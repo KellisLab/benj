@@ -82,7 +82,7 @@ def estimate_genes_archr(adata, gtf:str,
             X = adata.layers[layer]
         else:
             X = adata.X
-        gdata = anndata.AnnData(X.dot(S), obs=adata.obs, var=gf.loc[:, ["gene_id", "gene_name"]], dtype=np.float32)
+        gdata = anndata.AnnData(X.dot(S), obs=adata.obs, var=gf.loc[:, ["gene_id", "gene_name"]], dtype=np.float32, obsm=adata.obsm)
     gdata.var_names = gdata.var["gene_name"].values
     gdata.var_names_make_unique()
     del gdata.var["gene_name"]

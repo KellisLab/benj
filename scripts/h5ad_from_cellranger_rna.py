@@ -29,7 +29,7 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, **kwargs):
         import scvelo as scv
         ld = [x for x in os.listdir(vdir) if x.endswith(".loom")]
         if len(ld) != 1:
-            warn("number of loom in %s is not 1" % V)
+            warn("number of loom in %s is not 1" % vdir)
         else:
             with sw("Reading loom"):
                 vdata = scv.read_loom(os.path.join(vdir, ld[0]))

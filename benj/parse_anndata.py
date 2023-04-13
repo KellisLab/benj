@@ -50,7 +50,10 @@ def parse_anndata(**args):
             S = [s.strip() for s in ss.split("=")]
             if len(S) == 2 and S[0] in obs.columns:
                 sval = S[1].split(args["split"])
-                sval = np.asarray(sval, dtype=obs[S[0]].dtype)
+                dt = obs[S[0]].dtype
+                if dt.name == "category":
+                    dt = str
+                sval = np.asarray(sval, dtype=dt)
                 flag &= obs[S[0]].isin(sval).values
                 if np.sum(flag) == 0:
                     raise RuntimeError("%s not in %s" % (S[1].split(args["split"]), S[0]))

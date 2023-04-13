@@ -31,6 +31,7 @@ dependencies:
   - bioconda::snakemake
   - bioconda::nextflow
   - conda-forge::rpy2
+  - conda-forge::pyjulia
   ## plots
   - conda-forge::seaborn
   - conda-forge::matplotlib<3.7
@@ -60,7 +61,7 @@ dependencies:
   - bioconda::harmonypy
   - bioconda::bbknn
   - bioconda::mnnpy
-  - bioconda::celltypist
+  - bioconda::celltypist>=1.3.0
   - bioconda::velocyto.py
   - bioconda::scvelo
   - bioconda::multivelo

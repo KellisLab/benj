@@ -39,6 +39,7 @@ dependencies:
   - conda-forge::r-rcppgsl
   - conda-forge::gsl
   - conda-forge::r-hdf5r
+  - conda-forge::r-juliacall
   ### bioconductor
   - bioconda::bioconductor-motifmatchr
   - bioconda::bioconductor-tfbstools

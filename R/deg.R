@@ -152,7 +152,7 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
                        offset="total_counts", assay=NULL, model="NBGMM",
                        filter_only_case_control=FALSE, factorize_pathology=TRUE,
                        ruv.remove.subjectlevel=TRUE,
-                       cpm.cutoff=1, cpm.count=10, NRUV=10, reml=1) {
+                       cpc=0.01, NRUV=10, reml=1) {
     if (filter_only_case_control) {
         sce = sce[,SummarizedExperiment::colData(sce)[[pathology]] %in% c(case, control)]
     }
@@ -205,7 +205,7 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
                          cd[[sample]],
                          design,
                          offset=offset,
-                         model=model, reml=reml)
+                         model=model, reml=reml, cpc=cpc)
     ### Now to parse output
     name.case = paste0(pathology, case)
     name.control = paste0(pathology, control)
@@ -224,6 +224,7 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
     neb_df$algorithm = neb$algorithm
     neb_df$case = case
     neb_df$control = control
+    neb_df$logCPM = edgeR::cpm(Matrix::rowSums(X), log=TRUE)
     return(neb_df[order(neb_df$FDR),])
 }
 

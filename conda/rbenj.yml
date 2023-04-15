@@ -3,6 +3,7 @@
 ###    mamba env create --file=rbenj.yml
 ### then, devtools::install_github(c("GreenleafLab/ArchR", "lhe17/nebula", "mojaveazure/seurat-disk"), ref="master", repos = BiocManager::repositories(), upgrade="never")
 ### then, ArchR::installExtraPackages()
+### then, BiocManager::install("BSgenome.Hsapiens.UCSC.hg38")
 ### then devtools::install_github("cole-trapnell-lab/cicero-release", ref = "monocle3", upgrade="never")
 ### then make -j10 in benj directory to install benj
 name: rbenj

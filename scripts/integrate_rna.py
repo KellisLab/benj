@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scaling=False, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., min_dist:float=0.5, dotplot=None, celltypist=None, tsv=None, rgg_ng=5, max_iter_harmony:int=50, prefix="", sw=None, use_rgg:bool=True, compression:int=9, **kwargs):
+def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scaling=False, use_harmony=True, use_bbknn=True, plot=None, leiden="overall_clust", resolution=1., min_dist:float=0.5, dotplot=None, celltypist=None, tsv=None, rgg_ng=5, max_iter_harmony:int=50, prefix="", sw=None, use_rgg:bool=True, target_sum:int=None, compression:int=9, **kwargs):
     import scanpy as sc
     import pandas as pd
     import numpy as np
@@ -23,7 +23,11 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scali
         with sw("Copying .X to .layers[\"raw\"]"):
             adata.layers["raw"] = adata.X.copy()
     with sw("Normalizing data"):
-        sc.pp.normalize_total(adata, target_sum=10000)
+        if target_sum is not None and target_sum > 0:
+            sc.pp.normalize_total(adata, target_sum=target_sum)
+        else:
+            print("Using median normalization")
+            sc.pp.normalize_total(adata)
         sc.pp.log1p(adata)
         adata.raw = adata
     if hvg > 0:
@@ -115,6 +119,7 @@ if __name__ == "__main__":
     ap.add_argument("--no-use-scaling", dest="use_scaling", action="store_false")
     ap.add_argument("--use-scaling", dest="use_scaling", action="store_true")
     ap.add_argument("--dotplot", nargs="+")
+    ap.add_argument("--target-sum", type=int, default=0)
     ap.add_argument("--celltypist")
     ap.add_argument("--compression", type=int, default=9)
     ap.add_argument("--min-dist", type=float, default=0.5)

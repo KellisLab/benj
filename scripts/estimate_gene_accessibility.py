@@ -47,7 +47,7 @@ if __name__ == "__main__":
     ap.add_argument("--min-downstream", type=int, default=1000)
     ap.add_argument("--gene-upstream", type=int, default=5000)
     ap.add_argument("--gene-downstream", type=int, default=0)
-    ap.add_argument("--target-sum", type=int, default=10000)
+    ap.add_argument("--target-sum", type=int, default=0)
     ap.add_argument("--gene-scale-factor", type=float, default=5.)
     ap.add_argument("--layer", type=str, default=None)
     ap.add_argument("--compression", type=int, default=9)

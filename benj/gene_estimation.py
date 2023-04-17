@@ -13,7 +13,7 @@ def estimate_genes_archr(adata, gtf:str,
                          max_downstream:int=100000,
                          gene_upstream:int=5000,
                          gene_downstream:int=0,
-                         target_sum:int=1000,
+                         target_sum:int=None,
                          gene_scale_factor:float=5.,
                          peak_column:str=None, ## If not provided, will use peak index
                          layer:str=None):
@@ -87,5 +87,8 @@ def estimate_genes_archr(adata, gtf:str,
     gdata.var_names_make_unique()
     del gdata.var["gene_name"]
     gdata.var.columns = ["gene_ids"]
-    sc.pp.normalize_total(gdata, target_sum=target_sum)
+    if target_sum is not None and target_sum > 0:
+        sc.pp.normalize_total(gdata, target_sum=target_sum)
+    else:
+        sc.pp.normalize_total(gdata)
     return gdata

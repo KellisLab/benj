@@ -224,7 +224,7 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
     neb_df$algorithm = neb$algorithm
     neb_df$case = case
     neb_df$control = control
-    neb_df$logCPM = edgeR::cpm(Matrix::rowSums(X), log=TRUE)
+    neb_df$logCPM = edgeR::cpm(Matrix::rowSums(X), log=TRUE)[neb_df$gene,]
     return(neb_df[order(neb_df$FDR),])
 }
 

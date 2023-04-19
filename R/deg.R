@@ -71,6 +71,7 @@ deg.edger <- function(se, pathology, case, control, covariates=c(),
     tbl$method = method
     tbl$case = case
     tbl$control = control
+    tbl$logCPM = edgeR::cpm(Matrix::rowSums(X), log=TRUE)[tbl$gene,]
     return(tbl[order(tbl$FDR),])
 }
 
@@ -278,5 +279,6 @@ deg.deseq2 <- function(se,
                         c("log2FC", "FDR"), colnames(df))
     df$case = case
     df$control = control
-    return(df[order(df$FDR),])
+    df$logCPM = edgeR::cpm(Matrix::rowSums(X), log=TRUE)[df$gene,]
+    return(as.data.frame(df[order(df$FDR),]))
 }

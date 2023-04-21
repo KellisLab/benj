@@ -40,7 +40,8 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
         ac.pp.tfidf(adata)
     with sw("Running LSI"):
         ac.tl.lsi(adata)
-        adata.X = adata.X.astype(np.float32)
+        adata.X = adata.layers["raw"].copy()
+        del adata.layers["raw"]
     for col in qc_cols:
         with sw("Correlating column \"%s\" with LSI" % col):
             from scipy.stats import pearsonr

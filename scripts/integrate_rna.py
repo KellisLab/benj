@@ -92,6 +92,7 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scali
     if output is not None:
         with sw("Re-setting counts") as _:
             adata.X = adata.layers["raw"].copy()
+            del adata.layers["raw"]
         with sw("Writing to H5AD"):
             adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata

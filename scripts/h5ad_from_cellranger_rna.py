@@ -2,7 +2,7 @@
 
 def get_tss(tss:str):
     import pandas as pd
-    tss = pd.read_csv(tsv, sep="\t", header=None)
+    tss = pd.read_csv(tss, sep="\t", header=None)
     tss.columns = ["Chromosome", "Start", "End", "gene_id", "score", "strand"]
     df = tss.groupby(["Chromosome", "gene_id", "strand"]).agg(left=("Start", "min"),
                                                               right=("End", "max")).reset_index()

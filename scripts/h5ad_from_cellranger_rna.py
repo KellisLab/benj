@@ -77,7 +77,7 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, bcfile:str
         adata.obs.index = ["%s#%s" % (sample, bc) for bc in adata.obs_names]
         adata.obs[kwargs.get("sample_name", "Sample")] = sample
     with sw("Converting counts to int"):
-        X = convert_X(adata.X)
+        adata.X = convert_X(adata.X)
     for layer in adata.layers.keys():
         with sw("Converting layer[\"%s\"] to int" % layer):
             adata.layers[layer] = convert_X(adata.layers[layer])

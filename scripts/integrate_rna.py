@@ -62,17 +62,23 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scali
     for col in plot:
         if col in adata.obs.columns or col in adata.var.index:
             sc.pl.umap(adata, color=col, save="_%s.png" % col)
-    if celltypist is not None:
-        ct = benj.annotate(adata.raw.to_adata(), majority_voting=True, model=celltypist)
-        for cn in ct.predicted_labels.columns:
-            adata.obs[cn] = ct.predicted_labels[cn]
-        newlabel = "%s_voting" % leiden
-        obs = benj.annotate_clusters_from_vote(adata.obs, leiden, "majority_voting", newlabel)
-        adata.obs[newlabel] = obs[newlabel]
-        del ct, obs
     with sw("Running Leiden"):
         sc.tl.leiden(adata, resolution=resolution, key_added=leiden)
         adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
+    if celltypist is not None:
+        with sw("Annotating from CellTypist"):
+            from celltypist import annotate
+            if target_sum == 10000:
+                ct = annotate(adata.raw.to_adata(), majority_voting=True, over_clustering=leiden, model=celltypist)
+            else:
+                xdata = anndata.AnnData(adata.layers["raw"], obs=adata.obs, var=adata.var, obsp=adata.obsp)
+                sc.pp.normalize_total(xdata, target_sum=10000)
+                sc.pp.log1p(xdata)
+                ct = annotate(xdata, majority_voting=True, over_clustering=leiden, model=celltypist)
+                del xdata
+            for cn in ct.predicted_labels.columns:
+                adata.obs[cn] = ct.predicted_labels[cn]
+            del ct
     if tsv is not None:
         cols = np.intersect1d([leiden, "majority_voting", "predicted_labels"], adata.obs.columns)
         adata.obs.loc[:, cols].to_csv(tsv, sep="\t")
@@ -96,7 +102,6 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scali
         with sw("Writing to H5AD"):
             adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata
-
 
 if __name__ == "__main__":
     import benj

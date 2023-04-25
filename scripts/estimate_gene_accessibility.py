@@ -7,12 +7,14 @@ def estimate_and_rank(adata, gtf:str,
                       max_downstream:int=100000,
                       gene_upstream:int=5000,
                       gene_downstream:int=0,
-                      target_sum:int=1000,
+                      target_sum:int=10000,
                       gene_scale_factor:float=5.,
                       layer:str=None,
                       groupby:str=None,
                       method:str="wilcoxon",
                       plot:Iterable[str]=None,
+                      celltypist:str=None,
+                      over_clustering:str=None,
                       **kwargs):
     import scanpy as sc
     from benj.gene_estimation import estimate_genes_archr
@@ -23,6 +25,14 @@ def estimate_and_rank(adata, gtf:str,
                                  target_sum=target_sum, gene_scale_factor=gene_scale_factor,
                                  layer=layer)
     sc.pp.log1p(gdata)
+    if celltypist is not None:
+        from celltypist import annotate
+        if over_clustering is not None:
+            ct = annotate(gdata, majority_voting=True, over_clustering=over_clustering, model=celltypist)
+        else:
+            ct = annotate(gdata, majority_voting=True, model=celltypist)
+        for cn in ct.predicted_labels.columns:
+            gdata.obs[cn] = ct.predicted_labels[cn]
     if groupby is not None:
         sc.tl.rank_genes_groups(gdata, groupby=groupby, method=method, pts=True)
     if plot is None:
@@ -51,6 +61,8 @@ if __name__ == "__main__":
     ap.add_argument("--gene-scale-factor", type=float, default=5.)
     ap.add_argument("--layer", type=str, default=None)
     ap.add_argument("--compression", type=int, default=9)
+    ap.add_argument("--celltypist", default=None)
+    ap.add_argument("--over-clustering", default=None, help="Overclustering column e.g. leiden used for assigning cell type")
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     sw = benj.stopwatch()
     with sw("Reading H5AD"):

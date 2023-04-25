@@ -3,7 +3,6 @@
 ###    mamba env create --file=rbenj.yml
 ### then, devtools::install_github(c("GreenleafLab/ArchR", "lhe17/nebula", "mojaveazure/seurat-disk"), ref="master", repos = BiocManager::repositories(), upgrade="never")
 ### then, ArchR::installExtraPackages()
-### then, BiocManager::install("BSgenome.Hsapiens.UCSC.hg38")
 ### then devtools::install_github("cole-trapnell-lab/cicero-release", ref = "monocle3", upgrade="never")
 ### then make -j10 in benj directory to install benj
 name: rbenj
@@ -53,7 +52,7 @@ dependencies:
   - bioconda::bioconductor-org.mm.eg.db
   - bioconda::bioconductor-genomeinfodb
   - bioconda::bioconductor-bsgenome
-  # - bioconductor-bsgenome.hsapiens.ucsc.hg38
+  - bioconda::bioconductor-bsgenome.hsapiens.ucsc.hg38
   - bioconda::bioconductor-bsgenome.mmusculus.ucsc.mm10
   - bioconda::bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
   - bioconda::bioconductor-txdb.mmusculus.ucsc.mm10.knowngene
@@ -63,6 +62,7 @@ dependencies:
   - bioconda::bioconductor-variantannotation
   - bioconda::bioconductor-gviz
   - bioconda::bioconductor-geoquery
+  - bioconda::bioconductor-rols
   - conda-forge::r-seurat
   - bioconda::r-harmony
   - bioconda::r-signac
@@ -100,6 +100,7 @@ dependencies:
   - conda-forge::r-precrec
   - conda-forge::r-vgam
   - conda-forge::r-shiny
+  - conda-forge::r-dendextend
   ### archr
   - conda-forge::r-rhandsontable
   - conda-forge::r-shinythemes

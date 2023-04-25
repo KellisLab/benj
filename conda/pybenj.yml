@@ -12,7 +12,7 @@ channels:
 dependencies:
   ## Must have
   - conda-forge::python>=3.8
-  - conda-forge::anndata>=0.8.0
+  - conda-forge::anndata>=0.9.1
   - conda-forge::scanpy>=1.9.3
   - conda-forge::muon
   - conda-forge::pandas>=1.5.0
@@ -94,7 +94,7 @@ dependencies:
       - scalex
       #- scopen
       - ctxcore
-      - mofapy2
+      # - mofapy2 ### requires anndata<0.9
       #- cellphonedb ### requires sklearn=0.24.0
       - pychromvar
       - bbknn ### for some reason the bioconda bbknn doesn't work

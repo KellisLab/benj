@@ -3,7 +3,6 @@
 ###    mamba env create --file=benj.yml
 ### then, devtools::install_github(c("GreenleafLab/ArchR", "lhe17/nebula", "mojaveazure/seurat-disk"), ref="master", repos = BiocManager::repositories(), upgrade="never")
 ### then, ArchR::installExtraPackages()
-### then, BiocManager::install("BSgenome.Hsapiens.UCSC.hg38")
 ### then devtools::install_github("cole-trapnell-lab/cicero-release", ref = "monocle3", upgrade="never")
 ### then make -j10 in benj directory to install benj
 ### then pip install . in benj directory to install benj (python)
@@ -16,7 +15,7 @@ channels:
 
 dependencies:
   ## Must have
-  - conda-forge::anndata>=0.8.0
+  - conda-forge::anndata>=0.9.1
   - conda-forge::scanpy>=1.9.3
   - conda-forge::muon
   - conda-forge::pandas>=1.5.0
@@ -101,7 +100,7 @@ dependencies:
   - bioconda::bioconductor-org.mm.eg.db
   - bioconda::bioconductor-genomeinfodb
   - bioconda::bioconductor-bsgenome
-  # - bioconductor-bsgenome.hsapiens.ucsc.hg38
+  - bioconda::bioconductor-bsgenome.hsapiens.ucsc.hg38
   - bioconda::bioconductor-bsgenome.mmusculus.ucsc.mm10
   - bioconda::bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
   - bioconda::bioconductor-txdb.mmusculus.ucsc.mm10.knowngene
@@ -111,6 +110,7 @@ dependencies:
   - bioconda::bioconductor-variantannotation
   - bioconda::bioconductor-gviz
   - bioconda::bioconductor-geoquery
+  - bioconda::bioconductor-rols
   - conda-forge::r-seurat
   - bioconda::r-harmony
   - bioconda::r-signac
@@ -148,6 +148,7 @@ dependencies:
   - conda-forge::r-precrec
   - conda-forge::r-vgam
   - conda-forge::r-shiny
+  - conda-forge::r-dendextend
   ### archr
   - conda-forge::r-rhandsontable
   - conda-forge::r-shinythemes
@@ -200,7 +201,7 @@ dependencies:
       - scalex
       #- scopen
       - ctxcore
-      - mofapy2
+      # - mofapy2 ### requires anndata<0.9
       # - cellphonedb ### requires sklearn==0.24.0
       - pychromvar
       - bbknn ### for some reason the bioconda bbknn doesn't work

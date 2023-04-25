@@ -2,7 +2,13 @@
 def convert_dict(dct):
     import anndata
     from collections import OrderedDict
-    if type(dct) not in [OrderedDict, anndata.compat._overloaded_dict.OverloadedDict]:
+    odlist = [OrderedDict]
+    try:
+        from anndata.compat._overloaded_dict import OverloadedDict
+        odlist.append(OverloadedDict)
+    except ModuleNotFoundError:
+        pass
+    if type(dct) not in odlist:
         return dct
     return {k: convert_dict(v) for k, v in dct.items()}
 

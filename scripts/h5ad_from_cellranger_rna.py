@@ -10,6 +10,30 @@ def get_tss(tss:str):
     df.index = df["gene_id"].values
     return df
 
+def convert_X(X, dtype_tbl=None):
+    import numpy as np
+    import scipy.sparse
+    if dtype_tbl is None:
+        dtype_tbl = {np.iinfo(np.int8).max: np.int8,
+                     np.iinfo(np.int16).max: np.int16,
+                     np.iinfo(np.int32).max: np.int32,
+                     np.iinfo(np.int64).max: np.int6}
+    if scipy.sparse.issparse(X):
+        D = X.data
+    else:
+        D = X
+    if isinstance(X.dtype, (int, np.integer)):
+        data_max = np.abs(D).max()
+        for dtype_max in sorted(dtype_tbl.keys()):
+            if data_max < dtype_max:
+                return X.astype(dtype_tbl[dtype_max])
+    elif np.allclose(D, np.round(D)):
+        data_max = np.abs(D).max()
+        for dtype_max in sorted(dtype_tbl.keys()):
+            if data_max < dtype_max:
+                return X.astype(dtype_tbl[dtype_max])
+    return X
+
 def run(h5, output, sample:str=None, compression:int=9, tss:str=None, bcfile:str=None, use_velocyto:bool=True, **kwargs):
     import os
     from warnings import warn
@@ -53,7 +77,10 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, bcfile:str
         adata.obs.index = ["%s#%s" % (sample, bc) for bc in adata.obs_names]
         adata.obs[kwargs.get("sample_name", "Sample")] = sample
     with sw("Converting counts to int"):
-        adata.X = adata.X.astype(np.int32)
+        X = convert_X(adata.X)
+    for layer in adata.layers.keys():
+        with sw("Converting layer[\"%s\"] to int" % layer):
+            adata.layers[layer] = convert_X(adata.layers[layer])
     adata.var["mt"] = adata.var_names.str.startswith(("MT-", "mt-"))
     adata.var["ribo"] = adata.var_names.str.startswith(("RPS", "RPL", "Rps", "Rpl"))
     with sw("Calculating QC metrics"):

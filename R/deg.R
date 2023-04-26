@@ -87,8 +87,11 @@ deg.edger <- function(se, pathology, case, control, covariates=c(),
 #' @param cpm.frac Number of observations passing CPM cutoff for filter
 #' @param norm edgeR norm method for calcNormFactors
 #' @export
-deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=10, assay=NULL, cpm.cutoff=10, cpm.frac=0.25, norm="TMM") {
+deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=3, assay=NULL, cpm.cutoff=10, cpm.frac=0.25, norm="TMM", filter_only_case_control=TRUE) {
     pb = se_make_pseudobulk(sce, sample)
+    if (filter_only_case_control) {
+        pb = pb[,SummarizedExperiment::colData(pb)[[pathology]] %in% c(case, control)]
+    }
     if (is.null(assay)) {
         X = SummarizedExperiment::assays(pb)$counts
     } else {

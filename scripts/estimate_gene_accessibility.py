@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
 from typing import Iterable
 
-
-def get_tss(tss:str):
-    import pandas as pd
-    tss = pd.read_csv(tss, sep="\t", header=None)
-    tss.columns = ["Chromosome", "Start", "End", "gene_id", "score", "strand"]
-    df = tss.groupby(["Chromosome", "gene_id", "strand"]).agg(left=("Start", "min"),
-                                                              right=("End", "max")).reset_index()
-    df["interval"] = df["Chromosome"] + ":" + df["left"].astype(str) + "-" + df["right"].astype(str)
-    df.index = df["gene_id"].values
-    return df
-
 def estimate_and_rank(adata, gtf:str,
                       min_upstream:int=1000,
                       max_upstream:int=100000,
@@ -31,7 +20,7 @@ def estimate_and_rank(adata, gtf:str,
                       **kwargs):
     import os
     import scanpy as sc
-    from benj.gene_estimation import estimate_genes_archr
+    from benj.gene_estimation import estimate_genes_archr, add_interval
     gdata = estimate_genes_archr(adata, gtf=gtf,
                                  min_upstream=min_upstream, max_upstream=max_upstream,
                                  min_downstream=min_downstream, max_downstream=max_downstream,
@@ -39,8 +28,7 @@ def estimate_and_rank(adata, gtf:str,
                                  target_sum=target_sum, gene_scale_factor=gene_scale_factor,
                                  layer=layer)
     if tss is not None and os.path.exists(tss):
-        tss = get_tss(tss)
-        gdata.var["interval"] = [tss["interval"].get(g, "NA") for g in gdata.var["gene_ids"]]
+        add_interval(gdata.var, tss)
     sc.pp.log1p(gdata)
     if celltypist is not None:
         from celltypist import annotate

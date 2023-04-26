@@ -82,7 +82,7 @@ def estimate_genes_archr(adata, gtf:str,
             X = adata.layers[layer]
         else:
             X = adata.X
-        gdata = anndata.AnnData(X.dot(S), obs=adata.obs, var=gf.loc[:, ["gene_id", "gene_name"]], dtype=np.float32, obsm=adata.obsm)
+        gdata = anndata.AnnData(X.dot(S), obs=adata.obs, var=gf.loc[:, ["gene_id", "gene_name"]], dtype=np.float32, obsm=adata.obsm, obsp=adata.obsp)
     gdata.var_names = gdata.var["gene_name"].values
     gdata.var_names_make_unique()
     del gdata.var["gene_name"]
@@ -92,3 +92,22 @@ def estimate_genes_archr(adata, gtf:str,
     else:
         sc.pp.normalize_total(gdata)
     return gdata
+
+def get_tss(tss:str):
+    import pandas as pd
+    tss = pd.read_csv(tss, sep="\t", header=None)
+    tss.columns = ["Chromosome", "Start", "End", "gene_id", "score", "strand"]
+    df = tss.groupby(["Chromosome", "gene_id", "strand"]).agg(left=("Start", "min"),
+                                                              right=("End", "max")).reset_index()
+    df["interval"] = df["Chromosome"] + ":" + df["left"].astype(str) + "-" + df["right"].astype(str)
+    df.index = df["gene_id"].values
+    return df
+
+def add_interval(var, tss:str, inplace=True):
+    tf = get_tss(tss)
+    interval = [tf["interval"].get(g, "NA") for g in var["gene_ids"]]
+    if inplace:
+        var["interval"] = interval
+    else:
+        import pandas as pd
+        return pd.Series(interval, index=var.index, name="interval")

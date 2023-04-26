@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
 
-def get_tss(tss:str):
-    import pandas as pd
-    tss = pd.read_csv(tss, sep="\t", header=None)
-    tss.columns = ["Chromosome", "Start", "End", "gene_id", "score", "strand"]
-    df = tss.groupby(["Chromosome", "gene_id", "strand"]).agg(left=("Start", "min"),
-                                                              right=("End", "max")).reset_index()
-    df["interval"] = df["Chromosome"] + ":" + df["left"].astype(str) + "-" + df["right"].astype(str)
-    df.index = df["gene_id"].values
-    return df
-
 def convert_X(X, dtype_tbl=None):
     import numpy as np
     import scipy.sparse
@@ -63,8 +53,8 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, bcfile:str
         adata = sc.read_10x_h5(h5, gex_only=True)
         adata.var_names_make_unique()
     if tss is not None and os.path.exists(tss):
-        tss = get_tss(tss)
-        adata.var["interval"] = [tss["interval"].get(g, "NA") for g in adata.var["gene_ids"]]
+        from benj.gene_estimation import add_interval
+        add_interval(adata.var, tss)
     if vdata is not None:
         with sw("Adding spliced/unspliced counts"):
             I = np.intersect1d(vdata.obs_names, adata.obs_names)

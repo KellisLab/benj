@@ -29,6 +29,7 @@ def estimate_and_rank(adata, gtf:str,
                       over_clustering:str=None,
                       tss:str=None,
                       **kwargs):
+    import os
     import scanpy as sc
     from benj.gene_estimation import estimate_genes_archr
     gdata = estimate_genes_archr(adata, gtf=gtf,

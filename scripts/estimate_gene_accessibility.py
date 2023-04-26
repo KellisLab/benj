@@ -50,12 +50,12 @@ def estimate_and_rank(adata, gtf:str,
             ct = annotate(gdata, majority_voting=True, model=celltypist)
         for cn in ct.predicted_labels.columns:
             gdata.obs[cn] = ct.predicted_labels[cn]
-    if groupby is not None:
-        sc.tl.rank_genes_groups(gdata, groupby=groupby, method=method, pts=True)
     if plot is None:
         plot = []
     for item in plot:
         sc.pl.umap(gdata, color=item, save="_%s.png" % item)
+    if groupby is not None:
+        sc.tl.rank_genes_groups(gdata, groupby=groupby, method=method, pts=True)
     return gdata
 
 

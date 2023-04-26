@@ -87,12 +87,9 @@ deg.edger <- function(se, pathology, case, control, covariates=c(),
 #' @param cpm.frac Number of observations passing CPM cutoff for filter
 #' @param norm edgeR norm method for calcNormFactors
 #' @export
-deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=3, assay=NULL, cpm.cutoff=10, cpm.frac=0.25, norm="TMM", filter_only_case_control=TRUE) {
+deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=3, assay=NULL, cpm.cutoff=10, cpm.frac=0.25, norm="TMM") {
     require(dplyr)
     pb = se_make_pseudobulk(sce, sample)
-    if (filter_only_case_control) {
-        pb = pb[,SummarizedExperiment::colData(pb)[[pathology]] %in% c(case, control)]
-    }
     if (is.null(assay)) {
         X = SummarizedExperiment::assays(pb)$counts
     } else {
@@ -111,7 +108,12 @@ deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=3, assay=NU
         warning(paste0("Converting ", pathology, " to factor"))
     }
     cd = as.data.frame(as.data.frame(cd) %>% mutate(across(where(is.factor), as.character)))
-    cd = cd[apply(cd, 2, function(x) { ifelse(is.character(x) & (x %in% covariates), length(unqiue(x)) > 1, TRUE) })]
+    bad.cols = sapply(intersect(covariates, colnames(cd)), function(cn) {
+        print(paste0(cn, length(unique(cd[[cn]]))))
+        ifelse(is.character(cd[[cn]]) & (length(unique(cd[[cn]])) == 1),
+               cn, NA)
+    })
+    cd = cd[setdiff(colnames(cd), bad.cols)]
     cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
     dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
     to_keep = Matrix::rowMeans(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.frac

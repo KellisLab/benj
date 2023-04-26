@@ -110,7 +110,8 @@ deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=3, assay=NU
     if (!is.character(cd[[pathology]]) | !is.factor(cd[[pathology]])) {
         warning(paste0("Converting ", pathology, " to factor"))
     }
-    as.data.frame(cd) %>% mutate(across(where(is.factor), as.character)) -> cd
+    cd = as.data.frame(as.data.frame(cd) %>% mutate(across(where(is.factor), as.character)))
+    cd = cd[apply(cd, 2, function(x) { ifelse(is.character(x) & (x %in% covariates), length(unqiue(x)) > 1, TRUE) })]
     cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
     dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
     to_keep = Matrix::rowMeans(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.frac

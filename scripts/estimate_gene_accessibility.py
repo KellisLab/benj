@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
 from typing import Iterable
+
+
+def get_tss(tss:str):
+    import pandas as pd
+    tss = pd.read_csv(tss, sep="\t", header=None)
+    tss.columns = ["Chromosome", "Start", "End", "gene_id", "score", "strand"]
+    df = tss.groupby(["Chromosome", "gene_id", "strand"]).agg(left=("Start", "min"),
+                                                              right=("End", "max")).reset_index()
+    df["interval"] = df["Chromosome"] + ":" + df["left"].astype(str) + "-" + df["right"].astype(str)
+    df.index = df["gene_id"].values
+    return df
+
 def estimate_and_rank(adata, gtf:str,
                       min_upstream:int=1000,
                       max_upstream:int=100000,
@@ -15,6 +27,7 @@ def estimate_and_rank(adata, gtf:str,
                       plot:Iterable[str]=None,
                       celltypist:str=None,
                       over_clustering:str=None,
+                      tss:str=None,
                       **kwargs):
     import scanpy as sc
     from benj.gene_estimation import estimate_genes_archr
@@ -24,6 +37,9 @@ def estimate_and_rank(adata, gtf:str,
                                  gene_upstream=gene_upstream, gene_downstream=gene_downstream,
                                  target_sum=target_sum, gene_scale_factor=gene_scale_factor,
                                  layer=layer)
+    if tss is not None and os.path.exists(tss):
+        tss = get_tss(tss)
+        gdata.var["interval"] = [tss["interval"].get(g, "NA") for g in gdata.var["gene_ids"]]
     sc.pp.log1p(gdata)
     if celltypist is not None:
         from celltypist import annotate
@@ -40,6 +56,7 @@ def estimate_and_rank(adata, gtf:str,
     for item in plot:
         sc.pl.umap(gdata, color=item, save="_%s.png" % item)
     return gdata
+
 
 if __name__ == "__main__":
     import argparse
@@ -62,6 +79,7 @@ if __name__ == "__main__":
     ap.add_argument("--layer", type=str, default=None)
     ap.add_argument("--compression", type=int, default=9)
     ap.add_argument("--celltypist", default=None)
+    ap.add_argument("--tss", help="TSS.bed file from refdata-cellranger-arc-*/regions/tss.bed used to generate \"interval\" field")
     ap.add_argument("--over-clustering", default=None, help="Overclustering column e.g. leiden used for assigning cell type")
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     sw = benj.stopwatch()

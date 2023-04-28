@@ -52,6 +52,7 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, bcfile:str
     with sw("Reading H5"):
         adata = sc.read_10x_h5(h5, gex_only=True)
         adata.var_names_make_unique()
+        adata.obs.index = [x.split("#")[-1] for x in adata.obs_names] ### remove cellbender index
     if tss is not None and os.path.exists(tss):
         from benj.gene_estimation import add_interval
         add_interval(adata.var, tss)
@@ -64,11 +65,7 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, bcfile:str
         filtered_barcodes = pd.read_csv(bcfile, header=None, sep="\t")[0].values
         adata.obs["filtered"] = adata.obs_names.isin(filtered_barcodes).astype(str)
     if sample is not None:
-        if not adata.obs_names.str.match(r"^[^#]#[ACGT]+[-]1$").all():
-            ### already have barcodes
-            adata.obs.index = ["%s#%s" % (sample, bc) for bc in adata.obs_names]
-            if not adata.obs_names.str.startswith(sample).all():
-                print("Warning: Barcodes are not starting with sample", sample)
+        adata.obs.index = ["%s#%s" % (sample, bc) for bc in adata.obs_names]
         adata.obs[kwargs.get("sample_name", "Sample")] = sample
     with sw("Converting counts to int"):
         adata.X = convert_X(adata.X)

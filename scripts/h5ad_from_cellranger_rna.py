@@ -64,7 +64,11 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, bcfile:str
         filtered_barcodes = pd.read_csv(bcfile, header=None, sep="\t")[0].values
         adata.obs["filtered"] = adata.obs_names.isin(filtered_barcodes).astype(str)
     if sample is not None:
-        adata.obs.index = ["%s#%s" % (sample, bc) for bc in adata.obs_names]
+        if not adata.obs_names.str.match(r"^[^#]#[ACGT]+[-]1$").all():
+            ### already have barcodes
+            adata.obs.index = ["%s#%s" % (sample, bc) for bc in adata.obs_names]
+            if not adata.obs_names.str.startswith(sample).all():
+                print("Warning: Barcodes are not starting with sample", sample)
         adata.obs[kwargs.get("sample_name", "Sample")] = sample
     with sw("Converting counts to int"):
         adata.X = convert_X(adata.X)

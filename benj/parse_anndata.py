@@ -24,6 +24,7 @@ def setup_args_anndata(ap):
 
 def parse_anndata(**args):
     import os
+    import logging
     import numpy as np
     h5ad = args.get("h5ad", args.get("input", ""))
     if os.path.exists(h5ad):
@@ -81,4 +82,7 @@ def parse_anndata(**args):
         adata = adata.to_memory()
     for cn in np.setdiff1d(obs.columns, adata.obs.columns):
         adata.obs[cn] = obs[cn]
+    logger = logging.getLogger(args.get("logger", "benj"))
+    logging.basicConfig(level=logging.INFO)
+    logger.info("Read %d cells" % adata.shape[0])
     return adata

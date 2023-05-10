@@ -23,12 +23,9 @@ setuptools.setup(name="benj",
                      # "python-igraph",
                      # "leidenalg",
                      "tqdm",
-                     # "infomap>=2.5.0",
-                     # "gtfparse",
-                     # "pytabix",
                      "pyranges",
                  ],
                  packages=setuptools.find_packages("."),
                  test_suite="test",
-                 scripts=glob("scripts/*.py"),
+                 scripts=glob("scripts/*.py") + glob("scripts/*.sh")
                  )

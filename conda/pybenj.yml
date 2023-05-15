@@ -36,6 +36,8 @@ dependencies:
   - conda-forge::seaborn
   - conda-forge::matplotlib<3.7
   - conda-forge::adjusttext
+  - conda-forge::vega
+  - conda-forge::altair
   ## networks
   - conda-forge::umap-learn>=0.3.10
   - conda-forge::leidenalg

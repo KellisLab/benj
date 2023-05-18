@@ -60,8 +60,9 @@ dependencies:
   - conda-forge::r-juliacall
   ## other
   - bioconda::bioawk
-  - conda-forge::jupyter
+  - conda-forge::jupyterlab
   - conda-forge::nbconvert
+  - conda-forge::openai
   - bioconda::snakemake
   - bioconda::nextflow
   ## plots

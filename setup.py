@@ -11,7 +11,7 @@ setuptools.setup(name="benj",
                  install_requires=[
                      "numpy",
                      "scipy",
-                     "sklearn",
+                     "scikit-learn",
                      "numba",
                      "anndata>=0.8.0",
                      "pandas",

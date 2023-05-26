@@ -78,6 +78,9 @@ def integrate(adata, output=None, batch=None, hvg=0, use_combat=False, use_scali
                 del xdata
             for cn in ct.predicted_labels.columns:
                 adata.obs[cn] = ct.predicted_labels[cn]
+            for col in np.intersect1d(ct.predicted_labels.columns, ["majority_voting", "predicted_labels"]):
+                sc.pl.umap(adata, color=col, save="_%s_beside.png" % col)
+                sc.pl.umap(adata, color=col, save="_%s_ondata.png" % col, legend_loc="on data", legend_fontsize=2)
             del ct
     if tsv is not None:
         cols = np.intersect1d([leiden, "majority_voting", "predicted_labels"], adata.obs.columns)

@@ -1,4 +1,5 @@
 
+
 #' Aggregate bulk RNA-seq into SummarizedExperiment
 #' @param dname Directory name containing bulk RNA-seq data e.g. 230210Kel
 #' @param use_gene_names Use gene names instead of Ensembl ids for genes
@@ -117,6 +118,28 @@ read_star <- function(star.prefix, index="/net/bmc-lab5/data/kellis/group/Benjam
     return(se)
 }
 
+#' List BMC filenames in batch directory
+#' @param df Dataframe with rownames for sample names, and colnames for colData columns
+#' @param seq.dir Outer directory where sample names are located
+#' @param extra Boolean indicating whether BMC style suffixes should be added
+#' @export
+bulk_aggregate_star <- function(df, seq.dir, extra=TRUE) {
+    sample.dir.list = sapply(rownames(df), function(rn) {
+        sample.dir = list.files(paste0(seq.dir, "/"),
+                                pattern=paste0("^", rn,
+                                               ifelse(extra, "-[A-Z0-9]+", ""),
+                                               "$"),
+                                full.names=TRUE)
+        stopifnot(length(sample.dir) == 1)
+        return(sample.dir)
+    })
+    stopifnot(length(sample.dir.list) == nrow(df))
+    se = read_star(setNames(paste0(sample.dir.list, "/"), rownames(df)))
+    for (i in seq_along(colnames(df))) {
+        SummarizedExperiment::colData(se)[[ colnames(df)[i] ]] = df[[ i ]]
+    }
+    return(se)
+}
 
 #' @export
 plotPCA <- function(se, title, method="TMM", top=500, cpm.frac=0.25, cpm.cutoff=100, gene.selection="common", correct=FALSE, use_label=TRUE, force=0.2, text.size=4, max.overlaps=10) {

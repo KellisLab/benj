@@ -168,6 +168,69 @@ Then, you can iteratively improve the integration.
 * Multiome workflow
 - Currently, you should process 1) RNA first, using RNA subtyping framework.
 - Then, process ATAC alone as single-omic. But, in the integrate() function, add an annotation for the
+* Computing environment
+** Conda
+I currently have the file =~/src/conda_init.sh= on Luria as:
+#+BEGIN_SRC bash
+#!/usr/bin/env bash
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/net/bmc-lab5/data/kellis/group/Benjamin/software/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/net/bmc-lab5/data/kellis/group/Benjamin/software/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "/net/bmc-lab5/data/kellis/group/Benjamin/software/miniconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/net/bmc-lab5/data/kellis/group/Benjamin/software/miniconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+#+END_SRC
+which should allow anyone with group access to use the benj/pybenj/rbenj environments as updated.
+
+** Config files
+In =~/.bashrc= of *BOTH* the host and all clients/desktops you want to connect from, set
+#+BEGIN_SRC bash
+export JUPYTER_LURIA_PREFIX=110
+#+END_SRC
+or some number above 80.
+This will help if anyone else is using the port number on Luria.
+
+*** SSH config
+The simple SSH config here =~/.ssh/config= should keep things simple.
+Please use an SSH key to make things easy.
+#+BEGIN_SRC conf
+Host luria.mit.edu
+    HostName 10.159.3.125
+    User your_kerb
+    PubkeyAcceptedKeyTypes +ssh-rsa
+
+Match exec "echo %h | grep -qE '^b[0-9]+$'"
+    HostName %h
+    ProxyJump luria.mit.edu
+    User your_kerb
+#+END_SRC
+** Launching a job
+Then, to launch a Jupyter job on Luria,
+#+BEGIN_SRC bash
+sbatch jupyter_luria.sh benj
+#+END_SRC
+to launch a jupyter lab in the environment named "benj".
+
+Look at the hostname of the just-launched job via
+#+BEGIN_SRC bash
+squeue -u ${USER}
+#+END_SRC
+for example, b3, and connect on your laptop/desktop with:
+#+BEGIN_SRC bash
+jupyter_luria.sh b3
+#+END_SRC
+
+Then, you should go in your web browser and connect to [[https://localhost:XXXX/]] where =XXXX= is the port output by the script.
+
+If you have trouble connecting, try running =jupyter lab password= in a compute node to use password-based login instead of token-based.
 * LMod modules
 To use, in your =~/.bash_profile=, put
 #+BEGIN_SRC bash
@@ -178,7 +241,7 @@ and re-login to view changes.
 ** Conda integration is at [[modules/lmod-conda]]
 To change the default Conda root directory, replace =~/data/miniconda3= with your conda root directory.
 
-** Genome files
+* Genome files
 *** ENCODE Exclusion list regions
 | Genome | URL                                                                           |
 |--------+-------------------------------------------------------------------------------|

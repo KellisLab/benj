@@ -78,7 +78,7 @@ def integrate(adata, output=None, batch=None, use_harmony=True, use_bbknn=False,
         for col in plot:
             if col in adata.obs.columns:
                 sc.pl.umap(adata, color=col, save="_%s.png" % col)
-            elif col in adata.var.index:
+            elif "atac" in adata.uns and "peak_annotation" in adata.uns["atac"] and col in adata.uns["atac"]["peak_annotation"].index:
                 ac.pl.umap(adata, color=col, save="_%s.png" % col, use_raw=False)
     with sw("Clustering cells"):
         sc.tl.leiden(adata, key_added=leiden, resolution=resolution)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     ap.add_argument("--min-dist", type=float, default=0.5)
     ap.add_argument("--max-iter-harmony", type=int, default=50)
     ap.add_argument("--compression", type=int, default=9)
-    ap.set_defaults(use_harmony=True, use_bbknn=False)
+    ap.set_defaults(use_harmony=False, use_bbknn=True)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     adata = benj.parse_anndata(**args)
     integrate(adata, **args)

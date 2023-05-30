@@ -212,6 +212,28 @@ Match exec "echo %h | grep -qE '^b[0-9]+$'"
     ProxyJump luria.mit.edu
     User your_kerb
 #+END_SRC
+** SystemD config
+If you are on GNU/Linux that uses SystemD, you could use the following per-user service file, =~/.config/systemd/user/jupyter_luria@.service=:
+#+BEGIN_SRC conf
+[Unit]
+Description=jupyter_luria.sh "%I"
+After=network.target
+
+[Service]
+ExecStart=%h/.local/bin/jupyter_luria.sh %i
+Restart=on-failure
+RestartSec=5s
+Environment="JUPYTER_LURIA_PREFIX=95"
+
+[Install]
+WantedBy=default.target
+#+END_SRC
+
+assuming jupyter_luria.sh is in =~/.local/bin/= (you can find this out with =type -P jupyter_luria.sh=),
+and the JUPYTER_LURIA_PREFIX is the same as on the Luria server.
+
+Then, =systemctl --user daemon-reload= and =systemctl --user start jupyter_luria@b3= should connect you to b3.
+
 ** Launching a job
 Then, to launch a Jupyter job on Luria,
 #+BEGIN_SRC bash

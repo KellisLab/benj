@@ -8,3 +8,4 @@ from .rgg import *
 from .mu import *
 from .setup_scanpy import setup_scanpy as sc_setup
 from .mudata import parse_mudata
+from .integration import *

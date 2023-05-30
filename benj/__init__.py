@@ -9,3 +9,4 @@ from .mu import *
 from .setup_scanpy import setup_scanpy as sc_setup
 from .mudata import parse_mudata
 from .integration import *
+from .utils import convert_X, index_of

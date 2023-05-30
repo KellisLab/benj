@@ -50,7 +50,7 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
         adata = ac.tl.count_fragments_features(adata, pk.rename({"seqnames": "Chromosome", "start": "Start", "end": "End"}, axis=1), extend_upstream=0, extend_downstream=0)
     ac.tl.locate_fragments(adata, fragments)
     with sw("Converting counts to int"):
-        adata.X = adata.X.astype(np.int16)
+        adata.X = benj.convert_X(adata.X)
     adata.obs.index = old_index
     if len(set(adata.var.columns) & set(["interval", "nearestGene", "distToGeneStart", "peakType"])) == 4:
         with sw("Adding peak annotation"):

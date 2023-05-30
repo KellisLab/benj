@@ -1,4 +1,27 @@
 
+def convert_X(X, dtype_tbl=None):
+    import numpy as np
+    import scipy.sparse
+    if dtype_tbl is None:
+        dtype_tbl = {np.iinfo(np.int8).max: np.int8,
+                     np.iinfo(np.int16).max: np.int16,
+                     np.iinfo(np.int32).max: np.int32,
+                     np.iinfo(np.int64).max: np.int64}
+    if scipy.sparse.issparse(X):
+        D = X.data
+    else:
+        D = X
+    if isinstance(X.dtype, (int, np.integer)):
+        data_max = np.abs(D).max()
+        for dtype_max in sorted(dtype_tbl.keys()):
+            if data_max < dtype_max:
+                return X.astype(dtype_tbl[dtype_max])
+    elif np.allclose(D, np.round(D)):
+        data_max = np.abs(D).max()
+        for dtype_max in sorted(dtype_tbl.keys()):
+            if data_max < dtype_max:
+                return X.astype(dtype_tbl[dtype_max])
+    return X
 
 def is_norm_log(adata, target_sum=10000):
     from scipy.special import logsumexp

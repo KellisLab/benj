@@ -76,6 +76,8 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
             plot = ["log1p_total_counts", "TSSEnrichment", "tss_score"]
         for col in plot:
             if col in adata.obs.columns:
+                if adata.obs[col].dtype.name == "category" and kwargs.get("recategorize", True):
+                    adata.obs[col] = adata.obs[col].values.astype(str)
                 sc.pl.umap(adata, color=col, save="_%s.png" % col)
             elif "atac" in adata.uns and "peak_annotation" in adata.uns["atac"] and col in adata.uns["atac"]["peak_annotation"].index:
                 ac.pl.umap(adata, color=col, save="_%s.png" % col, use_raw=False)

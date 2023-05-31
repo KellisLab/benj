@@ -8,7 +8,7 @@ if __name__ == "__main__":
         ap = argparse.ArgumentParser()
         ap.add_argument("-i", "--input", dest="csv", nargs="+")
         ap.add_argument("-o", "--output", required=True)
-        ap.add_argument("-s", "--sep", default=",")
+        ap.add_argument("-s", "--sep", default="\t")
         args = vars(ap.parse_args())
         out = {}
         for csv in args["csv"]:

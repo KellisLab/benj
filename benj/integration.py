@@ -91,6 +91,9 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
         sc.pl.umap(adata, color=leiden, save="_%s_beside.png" % leiden)
         sc.pl.umap(adata, color=leiden, save="_%s_ondata.png" % leiden, legend_loc="on data", legend_fontsize=4)
     with sw("Writing to H5AD"):
+        for col in adata.obs.columns:
+            if np.all(adata.obs[col].isna()):
+                del adata.obs[col] ### will fail
         adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata
 

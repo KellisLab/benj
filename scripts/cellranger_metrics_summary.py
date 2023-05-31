@@ -4,6 +4,7 @@
 if __name__ == "__main__":
         import argparse
         import sys, os
+        import pandas as pd
         ap = argparse.ArgumentParser()
         ap.add_argument("-i", "--input", dest="csv", nargs="+")
         ap.add_argument("-o", "--output", required=True)

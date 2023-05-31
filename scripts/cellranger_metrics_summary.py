@@ -15,4 +15,4 @@ if __name__ == "__main__":
                 outs_path = os.path.dirname(csv)
                 sample_path = os.path.dirname(outs_path)
                 out[os.path.basename(sample_path)] = pd.read_csv(csv, thousands=",")
-        pd.concat(out).reset_index(level=1, drop=True).to_csv(args["output"], sep=sep)
+        pd.concat(out).reset_index(level=1, drop=True).to_csv(args["output"], sep=args["sep"])

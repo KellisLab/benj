@@ -59,7 +59,11 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
     if batch is not None and use_harmony:
         with sw("Running Harmony"):
             use_rep_adj = "%s_harmony" % use_rep
-            sc.external.pp.harmony_integrate(adata, batch, basis=use_rep, adjusted_basis=use_rep_adj, max_iter_harmony=max_iter_harmony)
+            try:
+                import symphonypy as sp
+                sp.pp.harmony_integrate(adata, batch, ref_basis_source=use_rep, ref_basis_adjusted=use_rep_adj, ref_basis_loadings="LSI", max_iter_harmony=max_iter_harmony)
+            except ImportError:
+                sc.external.pp.harmony_integrate(adata, batch, basis=use_rep, adjusted_basis=use_rep_adj, max_iter_harmony=max_iter_harmony)
             use_rep = use_rep_adj
     if batch is not None and use_bbknn:
         with sw("Running BB-KNN"):
@@ -147,7 +151,11 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
         sc.pp.pca(adata)
     if batch is not None and use_harmony:
         with sw("Running Harmony"):
-            sc.external.pp.harmony_integrate(adata, batch, max_iter_harmony=max_iter_harmony)
+            try:
+                import symphonypy as sp
+                sp.pp.harmony_integrate(adata, batch, max_iter_harmony=max_iter_harmony)
+            except ImportError:
+                sc.external.pp.harmony_integrate(adata, batch, max_iter_harmony=max_iter_harmony)
             rep = "X_pca_harmony"
     else:
         rep = "X_pca"

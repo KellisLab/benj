@@ -51,7 +51,8 @@ def parse_anndata(**args):
         for ss in args["subset"]:
             S = [s.strip() for s in ss.split("=")]
             if len(S) == 2 and S[0] in obs.columns:
-                sval = S[1].split(args["split"])
+                from ast import literal_eval
+                sval = [literal_eval(x) for x in S[1].split(args["split"])]
                 dt = obs[S[0]].dtype
                 if dt.name == "category":
                     dt = str

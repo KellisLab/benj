@@ -148,7 +148,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
         with sw("Scaling data"):
             sc.pp.scale(adata, max_value=10)
     with sw("Running PCA"):
-        sc.pp.pca(adata, zero_center=~use_scaling & ~use_combat)
+        sc.pp.pca(adata, zero_center=not (use_scaling or use_combat))
     if batch is not None and use_harmony:
         with sw("Running Harmony"):
             try:

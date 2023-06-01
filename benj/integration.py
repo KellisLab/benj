@@ -104,6 +104,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
                   rgg_ng:int=5, max_iter_harmony:int=50, prefix:str="C",
                   sw=None, use_rgg:bool=True, target_sum:int=None, compression:int=9, **kwargs):
     import scanpy as sc
+    import anndata
     import pandas as pd
     import numpy as np
     if sw is None:

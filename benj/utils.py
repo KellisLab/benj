@@ -4,8 +4,11 @@ def convert_X(X, dtype_tbl=None):
     import scipy.sparse
     if dtype_tbl is None:
         dtype_tbl = {np.iinfo(np.int8).max: np.int8,
+                     np.iinfo(np.uint8).max: np.uint8,
                      np.iinfo(np.int16).max: np.int16,
+                     np.iinfo(np.uint16).max: np.uint16,
                      np.iinfo(np.int32).max: np.int32,
+                     np.iinfo(np.uint32).max: np.uint32,
                      np.iinfo(np.int64).max: np.int64}
     if scipy.sparse.issparse(X):
         D = X.data

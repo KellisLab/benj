@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blacklist=None, **kwargs):
+def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blacklist=None, max_value:int=127, **kwargs):
     import os
     import pandas as pd
     import numpy as np
@@ -48,6 +48,9 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
     ac.tl.locate_fragments(adata, fragments)
     with sw("Counting peaks"):
         adata = ac.tl.count_fragments_features(adata, pk.rename({"seqnames": "Chromosome", "start": "Start", "end": "End"}, axis=1), extend_upstream=0, extend_downstream=0)
+    if max_value > 0:
+        with sw("Clipping peak counts to %d" % max_value):
+            adata.X.data = adata.X.data.clip(0, max_value)
     ac.tl.locate_fragments(adata, fragments)
     with sw("Converting counts to int"):
         adata.X = benj.convert_X(adata.X)
@@ -90,6 +93,7 @@ if __name__ == "__main__":
     ap.add_argument("--peaks-tsv", dest="bed", action="store_false")
     ap.add_argument("-b", "--blacklist")
     ap.add_argument("-o", "--output", required=True)
+    ap.add_argument("--max-value", type=int, default=127)
     ap.add_argument("--compression", type=int, default=9)
     ap.set_defaults(bed=False)
     args = vars(ap.parse_args())

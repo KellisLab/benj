@@ -55,3 +55,56 @@ def weighted_pearson_correlation(A, B, wt=None):
     denom = np.sqrt(Am_sum_sq * Bm_sum_sq)
     cor = np.divide(numer, denom, out=np.zeros_like(numer), where=denom != 0)
     return cor
+
+def pseudobulk_valid_columns(obs, inv):
+    ### find cols that don't change within cols
+    from functools import reduce
+    import numpy as np
+    import pandas as pd
+    from tqdm.auto import tqdm
+    goodcols = set(obs.columns.values)
+    for i in tqdm(np.arange(np.max(inv)+1)):
+        df = obs.loc[i == inv, list(goodcols)]
+        flag = df.apply(pd.Series.nunique, axis=0) == 1
+        goodcols &= set(df.columns.values[flag])
+    return list(goodcols)
+
+def pseudobulk(adata, cols, which:str="sum", dense:bool=True):
+    import numpy as np
+    import scipy.sparse
+    import pandas as pd
+    from functools import reduce
+    from tqdm.auto import tqdm
+    import anndata
+    ug, gidx, ginv, gcnt = np.unique(adata.obs.groupby(cols).ngroup(), return_inverse=True, return_counts=True, return_index=True)
+    cols = pseudobulk_valid_columns(adata.obs, ginv)
+    if which == "sum":
+        S = scipy.sparse.csr_matrix((np.ones_like(ginv), (ginv, np.arange(len(ginv)))),
+                                    shape=(len(ug), adata.shape[0]))
+    elif which == "mean":
+        S = scipy.sparse.csr_matrix(((1/gcnt)[ginv], (ginv, np.arange(len(ginv)))),
+                                    shape=(len(ug), adata.shape[0]))
+    else:
+        raise ValueError("Which is not supported")
+    obs = adata.obs.loc[:, cols].iloc[gidx, :]
+    if adata.isbacked:
+        if dense:
+            PX = np.zeros(shape=(S.shape[0], adata.shape[1]), dtype=S.dtype)
+        else:
+            PX = scipy.sparse.lil_matrix((S.shape[0], adata.shape[1]), dtype=S.dtype)
+        for X, start, end in tqdm(adata.chunked_X()):
+            X = scipy.sparse.coo_matrix(X)
+            X = scipy.sparse.csr_matrix((X.data, (X.row + start, X.col)), adata.shape)
+            PX += S.dot(X)
+        if dense:
+            PX = np.asarray(PX)
+        elif scipy.sparse.issparse(PX):
+            PX = PX.tocsr()
+    else:
+        PX = S.dot(adata.X)
+        if dense and scipy.sparse.issparse(PX):
+            PX = np.asarray(PX.todense())
+    return anndata.AnnData(X=convert_X(PX),
+                           obs=obs,
+                           var=adata.var,
+                           layers={k: convert_X(S.dot(adata.layers[k])) for k in adata.layers.keys()})

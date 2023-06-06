@@ -13,7 +13,7 @@ all: document data source_package binary_package packages test install pkgdown #
 .PHONY: document data source_package binary_package packages targets all install test pkgdown #drat
 
 inst/extdata/10x/%.csv: inst/extdata/10x
-	$(shell wget "https://cdn.10xgenomics.com/raw/upload/v1655151897/support/in-line documents/$(@F)" -O $@)
+	$(shell wget --no-check-certificate "https://cdn.10xgenomics.com/raw/upload/v1655151897/support/in-line documents/$(@F)" -O $@)
 
 inst/extdata/10x: inst/extdata
 	$(shell	mkdir inst/extdata/10x)

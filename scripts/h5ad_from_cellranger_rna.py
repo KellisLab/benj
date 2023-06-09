@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-def run(h5, output, sample:str=None, compression:int=9, tss:str=None, bcfile:str=None, use_velocyto:bool=True, **kwargs):
+def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:str=None, bcfile:str=None, use_velocyto:bool=True, **kwargs):
     import os
     from warnings import warn
     import numpy as np
@@ -32,6 +32,13 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, bcfile:str
     if tss is not None and os.path.exists(tss):
         from benj.gene_estimation import add_interval
         add_interval(adata.var, tss)
+    qc_vars = ["mt", "ribo"]
+    if gene_info is not None and os.path.exists(gene_info):
+        from benj.gene_estimation import add_gene_info
+        add_gene_info(adata.var, gene_info)
+        if "protein_coding" in adata.var["gene_type"]:
+            adata.var["pc"] = adata.var["gene_type"] == "protein_coding"
+            qc_vars += ["pc"]
     if vdata is not None:
         with sw("Adding spliced/unspliced counts"):
             I = np.intersect1d(vdata.obs_names, adata.obs_names)
@@ -51,7 +58,7 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, bcfile:str
     adata.var["mt"] = adata.var_names.str.startswith(("MT-", "mt-"))
     adata.var["ribo"] = adata.var_names.str.startswith(("RPS", "RPL", "Rps", "Rpl"))
     with sw("Calculating QC metrics"):
-        sc.pp.calculate_qc_metrics(adata, qc_vars=["mt", "ribo"], inplace=True, percent_top=[])
+        sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=[])
     with sw("Writing H5AD"):
         adata.uns = benj.convert_dict(adata.uns)
         adata.write_h5ad(output, compression="gzip", compression_opts=compression)
@@ -65,6 +72,7 @@ if __name__ == "__main__":
     ap.add_argument("--output", required=True)
     ap.add_argument("--compression", type=int, default=9, help="GZIP compression used for H5AD. 9 is very good for single samples")
     ap.add_argument("--tss", help="TSS.bed file from refdata-cellranger-arc-*/regions/tss.bed used to generate \"interval\" field")
+    ap.add_argument("--gene-info", help="geneInfo.tab from a STAR index to set \"gene_type\" field and \"protein_coding\" field")
     ap.add_argument("--use-velocyto", dest="use_velocyto", action="store_true", help="Look for ../velocyto/*.loom from the H5 provided, if available.")
     ap.add_argument("--no-use-velocyto", dest="use_velocyto", action="store_false", help="Do not look for velocyto loom even if available")
     ap.add_argument("--bc-file", dest="bcfile", help="Adds a column \"filtered\" that determines whether a barcode is included")

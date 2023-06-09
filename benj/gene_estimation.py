@@ -111,3 +111,14 @@ def add_interval(var, tss:str, inplace=True):
     else:
         import pandas as pd
         return pd.Series(interval, index=var.index, name="interval")
+
+def add_gene_info(var, gene_info:str=None, inplace=True):
+    """Add a STAR geneInfo.tab file to .var"""
+    import pandas as pd
+    df = pd.read_csv(gene_info, sep="\t", skiprows=[0], header=None)
+    df.index = df[0].values
+    gi = [df[2].get(g, "NA") for g in var["gene_ids"]]
+    if inplace:
+        var["gene_type"] = gi
+    else:
+        return pd.Series(gi, index=var.index, name="gene_type")

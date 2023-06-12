@@ -36,7 +36,7 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:
     if gene_info is not None and os.path.exists(gene_info):
         from benj.gene_estimation import add_gene_info
         add_gene_info(adata.var, gene_info)
-        if "protein_coding" in adata.var["gene_type"]:
+        if "protein_coding" in adata.var["gene_type"].values:
             adata.var["pc"] = adata.var["gene_type"] == "protein_coding"
             qc_vars += ["pc"]
     if vdata is not None:

@@ -42,6 +42,7 @@ dependencies:
   - conda-forge::r-filelock
   - conda-forge::r-pryr
   - conda-forge::r-circlize
+  - conda-forge::r-optparse
   - bioconda::bioconductor-singlecellexperiment
   - bioconda::bioconductor-rhdf5
   - bioconda::bioconductor-rhdf5filters

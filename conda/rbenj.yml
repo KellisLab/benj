@@ -40,6 +40,7 @@ dependencies:
   - conda-forge::gsl
   - conda-forge::r-hdf5r
   - conda-forge::r-juliacall
+  - conda-forge::r-optparse
   ### bioconductor
   - bioconda::bioconductor-motifmatchr
   - bioconda::bioconductor-tfbstools

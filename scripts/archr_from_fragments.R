@@ -11,18 +11,19 @@ get_args <- function() {
     return(optparse::parse_args(optparse::OptionParser(option_list=option_list)))
 }
 
-run <- function(aggr, tss, output, gene_annotation=NA, help=FALSE) {
+run <- function(aggr, tss, output, gene_annotation=NA, help=FALSE, threads=as.integer(Sys.getenv("OMP_NUM_THREADS", "16"))) {
     require(ArchR)
     addArchRGenome("hg38")
+    addArchRThreads(threads)
     df = read.csv(aggr)
     if (is.na(gene_annotation) | !file.exists(gene_annotation)) {
         gene_annotation = getGeneAnnotation()
     } else {
         gene_annotation = readRDS(gene_annotation)
     }
-    ArrowFiles = createArrowFiles(setNames(df$atac_fragments, df$library_id), minTSS=tss, geneAnnotation=gene_annotation)
+    ArrowFiles = createArrowFiles(setNames(df$atac_fragments, df$library_id), minTSS=tss, geneAnnotation=gene_annotation, force=TRUE)
     proj = ArchRProject(ArrowFiles, "ArchR", copyArrows=FALSE, geneAnnotation=gene_annotation)
-    data.table::fwrite(getCellColData(proj), output, row.names=TRUE)
+    data.table::fwrite(as.data.frame(getCellColData(proj)), output, row.names=TRUE, sep="\t")
     unlink("ArchR", recursive=TRUE)
 }
 

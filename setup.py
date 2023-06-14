@@ -27,5 +27,5 @@ setuptools.setup(name="benj",
                  ],
                  packages=setuptools.find_packages("."),
                  test_suite="test",
-                 scripts=glob("scripts/*.py") + glob("scripts/*.sh")
+                 scripts=glob("scripts/*.py") + glob("scripts/*.sh") + glob("scripts/*.R")
                  )

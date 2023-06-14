@@ -55,7 +55,7 @@ fi
 
 nsample=$(wc -l < ${batchdir}/aggr.csv)
 echo "#!/usr/bin/env bash"
-echo "#SBATCH --array=1-$((nsample-1))%10"
+echo "#SBATCH --array=1-$((nsample-1))%5"
 echo "#SBATCH -J velocyto"
 echo "cd ${batchdir}"
 BENJ_CONDA_DIR=$(dirname $(dirname $CONDA_EXE))
@@ -79,7 +79,9 @@ EOF
 echo "conda activate ${CONDA_DEFAULT_ENV}"
 echo ""
 echo "SAMPLEDIR=\$(< aggr.csv awk -F, -v TASK=\$((SLURM_ARRAY_TASK_ID + 1)) 'NR == TASK { print \$1 }')"
-echo "OUTDIR=\$(dirname \$SAMPLEDIR)"
+echo "OUTDIR=\"\$SAMPLEDIR/outs/\""
+echo "echo Sampledir: \"\${SAMPLEDIR}\""
+echo "echo Outdir: \"\${OUTDIR}\""
 echo "REFDATA=\$(awk -F'= ' '/reference_path/{gsub(/[\" ,]/, \"\", \$2); print \$2}' \"\${SAMPLEDIR}/_invocation\")"
 echo "GTF=\$(mktemp --suffix .gtf)"
 echo "zcat \"\${REFDATA}/genes/genes.gtf.gz\" > \"\$GTF\""

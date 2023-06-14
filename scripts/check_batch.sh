@@ -4,12 +4,12 @@ batchdir=""
 atac=true
 splice=true
 rna=true
-
+tss=1
 
 
 # The options in getopt format
-OPTIONS=b:aAsSrR
-LONGOPTS=batch:,use-atac,no-use-atac,use-splice,no-use-splice,use-rna,no-use-rna
+OPTIONS=b:aAsSrRt:
+LONGOPTS=batch:,use-atac,no-use-atac,use-splice,no-use-splice,use-rna,no-use-rna,--tss:
 
 ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
 if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
@@ -49,6 +49,15 @@ while true; do
 	    rna=false
 	    shift
 	    ;;
+	-t|--tss)
+	    tss="$2"
+            # Checking if the provided argument is a floating-point number
+            if ! [[ "$tss" =~ ^[+-]?[0-9]+\.?[0-9]*$ ]]; then
+                echo "Error: --tss requires a floating-point number"
+                exit 1
+            fi
+            shift 2
+	    ;;
         --)
             shift
             break
@@ -72,9 +81,10 @@ fi
 #     batchdir="$HOME/data6/${batch}/"
 # fi
 
-if [[ ! -d "${batchdir}" ]]; then
+if ! [[ -d "${batchdir}" ]]; then
     echo "Batch dir ${batchdir} does not exist"
 fi
+
 function die() {
     if [ "$?" -ne 0 ]; then
         echo "${batchdir}: $1"
@@ -126,9 +136,9 @@ if [[ "$atac" == "true" ]]; then
     zcat "${batchdir}/ArrowFiles/archr_metadata.tsv.gz" | head -n1 | grep -Fwq "TSSEnrichment" || die "TSSEnrichment is not in a column in archr metadata"
     tsscol=$(zcat "${batchdir}/ArrowFiles/archr_metadata.tsv.gz" | head -n1 | tr '\t' '\n' | awk '$0 == "TSSEnrichment" { print NR }')
     mintss=$(zcat "${batchdir}/ArrowFiles/archr_metadata.tsv.gz" | cut -f "${tsscol}" | tail -n+2 | sort -g | head -n1)
-    tss_lt_11=$(echo "$mintss < 1.1" | bc)
-    if [[ $tss_lt_11 -eq 0 ]]; then
-	die "Minimum TSS enrichment is ${mintss}"
+    mintss_lt_tss=$(echo "$mintss <= $tss" | bc)
+    if [[ $mintss_lt_tss -eq 0 ]]; then
+	die "Minimum TSS enrichment is ${mintss}, while it should be ${tss}"
     fi
 fi
 exit 0

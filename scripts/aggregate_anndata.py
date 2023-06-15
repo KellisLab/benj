@@ -36,7 +36,8 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
                 raise RuntimeError("Sample %s.h5ad did not exist in the directories: %s" % (sample, ",".join(directory)))
     if bad:
         print("Bad samples: ", ",".join(bad))
-    with sw("Concatenating AnnData objects"):
+    total_cells = np.sum([adata.shape[0] for _, adata in tbl.items()])
+    with sw("Concatenating %d cells into one AnnData object" % total_cells):
         adata = anndata.concat(tbl, merge="same", uns_merge="same")
     with sw("Calculating statistics"):
         if qc_vars is None:

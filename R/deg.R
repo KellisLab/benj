@@ -109,7 +109,7 @@ deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=3, assay=NU
     }
     cd = as.data.frame(as.data.frame(cd) %>% mutate(across(where(is.factor), as.character)))
     bad.cols = sapply(intersect(covariates, colnames(cd)), function(cn) {
-        print(paste0(cn, length(unique(cd[[cn]]))))
+        print(paste0(cn, ' ', length(unique(cd[[cn]]))))
         ifelse(is.character(cd[[cn]]) & (length(unique(cd[[cn]])) == 1),
                cn, NA)
     })
@@ -160,7 +160,7 @@ deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=3, assay=NU
 deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
                        offset="total_counts", assay=NULL, model="NBGMM",
                        filter_only_case_control=FALSE, factorize_pathology=TRUE,
-                       ruv.remove.subjectlevel=TRUE,
+                       ruv.remove.subjectlevel=FALSE,
                        cpc=0.01, NRUV=10, reml=1) {
     if (filter_only_case_control) {
         sce = sce[,SummarizedExperiment::colData(sce)[[pathology]] %in% c(case, control)]
@@ -289,4 +289,84 @@ deg.deseq2 <- function(se,
     df$control = control
     df$logCPM = edgeR::cpm(Matrix::rowSums(X), log=TRUE)[df$gene,]
     return(as.data.frame(df[order(df$FDR),]))
+}
+
+#' Run MAST on a SingleCellExperiment object
+#'
+#' @param sce SingleCellExperiment object
+#' @param sample Sample which to model dispersions
+#' @param pathology Pathology column to study
+#' @param case Case to look at within pathology column
+#' @param control Control value to look at within pathology column
+#' @param covariates Vector of covariate columns within colData(sce)
+#' @param offset Offset from which to weight cells in model
+#' @param assay Assay within sce. Default is "counts"
+#' @param model Model to pass to nebula::nebula
+#' @param filter_only_case_control logical telling whether to filter sce to only case and control values within pathology
+#' @param NRUV Number of RUVSeq::RUVr components. 0 means no RUVr components
+#' @param cpm.cutoff Cutoff of CPM to utilize for RUV
+#' @param cpm.count Number of observations passing CPM cutoff for filter for RUV
+#' @export
+deg.mast <- function(sce, sample, pathology, case, control, covariates=c(),
+                     assay=NULL,
+                     filter_only_case_control=FALSE, factorize_pathology=TRUE,
+                     ruv.remove.subjectlevel=FALSE,
+                     NRUV=2) {
+    require(MAST)
+    if (filter_only_case_control) {
+        sce = sce[,SummarizedExperiment::colData(sce)[[pathology]] %in% c(case, control)]
+    }
+    if (NRUV > 0) {
+        sce = deg.ruvseq(sce,
+                         sample=sample,
+                         pathology=pathology,
+                         NRUV=NRUV,
+                         covariates=covariates,
+                         assay=assay)
+        cd = SummarizedExperiment::colData(sce)
+        cd.pb = SummarizedExperiment::colData(se_make_pseudobulk(sce, sample))
+        if (ruv.remove.subjectlevel) {
+            covariates = setdiff(covariates, colnames(cd.pb))
+        }
+        covariates = c(covariates, colnames(cd)[grep("^RUV", colnames(cd))])
+    }
+    if (is.null(assay)) {
+        M = SingleCellExperiment::counts(sce)
+        logCPM = edgeR::cpm(Matrix::rowSums(M), log=TRUE)
+        M = log1p(M / Matrix::colSums(M) * 1e4) / log(2)
+
+    } else {
+        M = SingleCellExperiment::assays(sce)[[assay]]
+        logCPM = edgeR::cpm(Matrix::rowSums(M), log=TRUE)
+    }
+    logCPM = setNames(logCPM, rownames(M))
+    sce[[sample]] = as.factor(as.character(sce[[sample]]))
+
+    sce = sce[,order(sce[[sample]])]
+    cd = as.data.frame(SummarizedExperiment::colData(sce))
+    cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
+    cd[[pathology]] = relevel(cd[[pathology]], control)
+    sca = MAST::FromMatrix(as.matrix(M), cd, SummarizedExperiment::rowData(sce))
+    remove("M")
+    covariates = covariates[which(sapply(covariates, function(cv) {
+        if (length(unique(cd[[cv]]))==1) { return(FALSE) }
+        design = model.matrix(as.formula(paste0("~0+", cv)), data=cd)
+        A = apply(design, 2, sd)
+        sum(A) > 0
+    }))]
+    zlmCond = MAST::zlm(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), sca)
+    ## saveRDS(zlmCond, "zlmCond.rds")
+    summaryCond = MAST::summary(zlmCond, doLRT=paste0(pathology, case))
+    ## saveRDS(summaryCond, "summaryCond.rds")
+    summaryDt = summaryCond$datatable
+    fcHurdle = merge(summaryDt[summaryDt$contrast==paste0(pathology, case) & summaryDt$component=='H',c("primerid", "Pr(>Chisq)")], #hurdle P values
+                     summaryDt[summaryDt$contrast==paste0(pathology, case) & summaryDt$component=='logFC', c("primerid", "coef", "ci.hi", "ci.lo")], by='primerid') #logFC coefficients
+    fcHurdle$FDR = p.adjust(fcHurdle$`Pr(>Chisq)`, "fdr")
+    fcHurdle$case = case
+    fcHurdle$control = control
+    fcHurdle$algorithm = "MAST"
+    colnames(fcHurdle) = gsub("^coef$", "log2FC", colnames(fcHurdle))
+    colnames(fcHurdle) = gsub("^primerid$", "gene", colnames(fcHurdle))
+    fcHurdle$logCPM = logCPM[fcHurdle$gene]
+    return(as.data.frame(fcHurdle[order(fcHurdle$FDR),]))
 }

@@ -3,7 +3,7 @@
 def add_cell_cycle_info(adata, cell_cycle):
     return 0
 
-def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gtf=None, min_cells_per_sample:int=30, compression:int=9, min_n_genes:int=0, use_scrublet:bool=True, qc_vars=[], **kwargs):
+def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gtf=None, min_cells_per_sample:int=30, compression:int=9, min_n_genes:int=0, min_total_counts:int=0, use_scrublet:bool=True, qc_vars=[], **kwargs):
     import os
     from tqdm.auto import tqdm
     import pandas as pd
@@ -27,6 +27,8 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
                         adata.obs[cn] = md.loc[sample, cn]
                     if "n_genes_by_counts" in adata.obs.columns and min_n_genes > 0:
                         adata = adata[adata.obs["n_genes_by_counts"] >= min_n_genes, :].copy()
+                    if "total_counts" in adata.obs.columns and min_total_counts > 0:
+                        adata = adata[adata.obs["total_counts"] >= min_total_counts, :].copy()
                     if adata.shape[0] >= min_cells_per_sample:
                         tbl[sample] = adata
                     else:
@@ -130,6 +132,7 @@ if __name__ == "__main__":
     ap.add_argument("--use-scrublet", dest="use_scrublet", action="store_true")
     ap.add_argument("--no-use-scrublet", dest="use_scrublet", action="store_false")
     ap.add_argument("--min-n-genes", type=int, default=0)
+    ap.add_argument("--min-total-counts", type=int, default=0)
     ap.add_argument("--compression", type=int, default=9)
     ap.add_argument("--backed", dest="backed", action="store_true", help="Use AnnCollection experimental API to load backed anndata objects")
     ap.add_argument("--no-backed", dest="backed", action="store_false")

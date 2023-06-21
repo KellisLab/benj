@@ -146,7 +146,7 @@ run.great <- function(gr, spt=NULL, bg=TRUE, species="hg38") {
     }
     grcol = colnames(S4Vectors::mcols(gr))
     if (!is.null(spt) & all(spt %in% grcol)) {
-        res = do.call(rbind, lapply(split(gr, S4Vectors::mcols(gr)[[spt]]), function(lr) {
+        res = dplyr::bind_rows(lapply(split(gr, S4Vectors::mcols(gr)[[spt]]), function(lr) {
             if (bg) {
                 tbl = .rgt(lr, gr)
             } else {

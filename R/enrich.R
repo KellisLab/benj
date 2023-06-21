@@ -1,7 +1,7 @@
 
 
 #' Binomial CI estimation wilson score interval
-#' as taken from Carles Boix
+#' as taken from Carles Boix;Pouya Kheradpour
 #'
 #' @param ns number successes
 #' @param n total number
@@ -109,7 +109,7 @@ enrich_overlap_custom <- function(peakSet, gr, gr.col=NULL, counts=FALSE) {
     return(SummarizedExperiment::SummarizedExperiment(assays=list(matches=motifMat), rowRanges=peakSet))
 }
 #' Enrich SummarizedExperiment by groupby column.
-#' Enrichment strategy taken from Carles Boix
+#' Enrichment strategy taken from Carles Boix/Pouya Kheradpour
 #'
 #' @param se SummarizedExperiment to enrich
 #' @param groupby Column in rowData(se) to split upon

@@ -20,9 +20,13 @@ def run(adata, output:str, genome:str, release:str="JASPAR2022", chunk_size:int=
     with sw("Computing deviations"):
         dev = pc.compute_deviations(adata, chunk_size=chunk_size)
     with sw("Copying information"):
+        tbl = {"%s.%s" % (m.matrix_id, m.name): m for m in motifs}
         dev.obsm = adata.obsm
         dev.obsp = adata.obsp
         dev.obs = adata.obs
+        dev.var["matrix_id"] = [tbl[k].matrix_id for k in dev.var_names.values]
+        dev.var.index = [tbl[k].name for k in dev.var_names.values]
+        dev.var_names_make_unique()
     with sw("Writing to disk"):
         dev.write_h5ad(output, compression="gzip", compression_opts=compression)
 
@@ -41,4 +45,3 @@ if __name__ == "__main__":
     with sw("Reading H5AD"):
         adata = benj.parse_anndata(**args)
     run(adata, **args)
-    

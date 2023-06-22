@@ -40,6 +40,9 @@ if __name__ == "__main__":
     ap.add_argument("-o", "--output", required=True)
     ap.add_argument("-i", "--input", dest="h5ad", required=True)
     ap.add_argument("-c", "--chunk-size", type=int, default=100000)
+    ap.add_argument("--backed", dest="backed", action="store_true")
+    ap.add_argument("--no-backed", dest="backed=", action="store_false")
+    ap.set_defaults(backed=True)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     sw = benj.stopwatch()
     with sw("Reading H5AD"):

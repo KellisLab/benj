@@ -1,6 +1,6 @@
 
 #' @export
-readLdscMatrix <- function(h2.dir, sep="[.]", verbose=TRUE) {
+readLdscMatrix <- function(h2.dir, sep="[.]", collapse="_", verbose=TRUE) {
     FL = list.files(h2.dir, full.names=TRUE, pattern=paste0(".+", sep, ".+[.]results$"))
     L = do.call(rbind, lapply(FL, function(x) {
         bname = gsub("[.]results$", "", basename(x))
@@ -10,8 +10,8 @@ readLdscMatrix <- function(h2.dir, sep="[.]", verbose=TRUE) {
                 print(x)
             }
             df = read.table(x, sep="\t", header=TRUE)
-            df$peaks = ss[1]
-            df$gwas = ss[2]
+            df$peaks = paste0(ss[1:(length(ss)-1)], collapse=collapse)
+            df$gwas = ss[length(ss)]
             return(df)
         } else {
             return(data.frame())

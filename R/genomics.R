@@ -7,7 +7,7 @@
 #' @param sep Suffix to name duplicates. "-" works well as it makes idempotent
 #' @return data.frame or GRanges
 #' @export
-parse.range <- function(string, ranges=TRUE, name=NULL, sep="-") {
+parse.range <- function(string, ranges=TRUE, name=NULL, sep="-", ...) {
     S = strsplit(string, "[:-]")
     df = data.frame(seqnames = sapply(S, "[[", 1),
                     start = as.integer(sapply(S, "[[", 2)),
@@ -15,7 +15,7 @@ parse.range <- function(string, ranges=TRUE, name=NULL, sep="-") {
                     row.names = make.unique(string, sep))
     if (ranges) {
         gr = with(df, GenomicRanges::GRanges(seqnames=seqnames,
-                                             ranges=IRanges::IRanges(start, end)))
+                                             ranges=IRanges::IRanges(start, end), ...))
         names(gr) = rownames(df)
         if (!is.null(name)) {
             S4Vectors::mcols(gr)[[name]] = string

@@ -109,7 +109,6 @@ def pseudobulk(adata, cols, which:str="sum", dense:bool=True):
                            var=adata.var,
                            layers={k: convert_X(S.dot(adata.layers[k])) for k in adata.layers.keys()})
 
-
 def dotplot_summarize(adata, groupby, expression_cutoff:float=0, which="mean"):
     import scanpy as sc
     sc.pp.normalize_total(adata, target_sum=10000)

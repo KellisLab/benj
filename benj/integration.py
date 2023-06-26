@@ -4,8 +4,10 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
                    tsv=None, min_dist:float=0.3, compression:int=9,
                    min_n_cells_by_counts:int=2, cor_cutoff:float=0.8,
                    max_iter_harmony:int=50,
+                   genome:str=None, release:str="JASPAR2022", species:int=-1,
                    plot=[],
                    qc_cols=["log1p_total_counts"], sw=None, **kwargs):
+    import os
     import numpy as np
     import pandas as pd
     import scanpy as sc
@@ -94,6 +96,24 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
     with sw("Plotting %s" % leiden):
         sc.pl.umap(adata, color=leiden, save="_%s_beside.png" % leiden)
         sc.pl.umap(adata, color=leiden, save="_%s_ondata.png" % leiden, legend_loc="on data", legend_fontsize=4)
+    if genome is not None and os.path.isfile(genome) and species > 0:
+        with sw("Adding peak sequence"):
+            import pychromvar as pc
+            pc.add_peak_seq(adata, genome_file=genome, delimiter=":|-")
+        with sw("Adding GC bias"):
+            import pychromvar as pc
+            pc.add_gc_bias(adata)
+        with sw("Add background peaks"):
+            import pychromvar as pc
+            pc.get_bg_peaks(adata)
+        with sw("Fetching motifs"):
+            from pyjaspar import jaspardb
+            jargs = {"collection": "CORE", "tax_group": ["vertebrates"], "species": species}
+            jdb_obj = jaspardb(release=release)
+            motifs = jdb_obj.fetch_motifs(**jargs)
+        with sw("Matching motifs"):
+            import pychromvar as pc
+            pc.match_motif(adata, motifs=motifs)
     with sw("Writing to H5AD"):
         for col in adata.obs.columns:
             if np.all(adata.obs[col].isna()):

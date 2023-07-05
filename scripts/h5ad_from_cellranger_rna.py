@@ -32,7 +32,11 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:
     if tss is not None and os.path.exists(tss):
         from benj.gene_estimation import add_interval
         add_interval(adata.var, tss)
-    qc_vars = ["mt", "ribo"]
+        if adata.var["interval"].str.startswith("chrX").any():
+            adata.var["chrX"] = adata.var["interval"].str.startswith("chrX")
+        if adata.var["interval"].str.startswith("chrY").any():
+            adata.var["chrY"] = adata.var["interval"].str.startswith("chrY")
+    qc_vars = ["mt", "ribo", "chrX", "chrY"]
     if gene_info is not None and os.path.exists(gene_info):
         from benj.gene_estimation import add_gene_info
         add_gene_info(adata.var, gene_info)
@@ -57,6 +61,7 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:
             adata.layers[layer] = benj.convert_X(adata.layers[layer])
     adata.var["mt"] = adata.var_names.str.startswith(("MT-", "mt-"))
     adata.var["ribo"] = adata.var_names.str.startswith(("RPS", "RPL", "Rps", "Rpl"))
+
     with sw("Calculating QC metrics"):
         sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=[])
     with sw("Writing H5AD"):

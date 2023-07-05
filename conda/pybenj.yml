@@ -20,6 +20,7 @@ dependencies:
   - conda-forge::numba
   - conda-forge::cython
   - conda-forge::scikit-learn>=1.2.0
+  - conda-forge::scikit-misc
   - conda-forge::statsmodels
   - conda-forge::pip
   - conda-forge::git

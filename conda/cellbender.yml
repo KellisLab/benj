@@ -8,6 +8,8 @@ channels:
   - conda-forge
   - bioconda
   - pytorch
+  - nvidia
+  
 dependencies:
   - conda-forge::python==3.7
   - conda-forge::pytables
@@ -15,6 +17,8 @@ dependencies:
   - conda-forge::anndata>=0.7
   - conda-forge::h5py<3.2
   - pytorch::pytorch
+  - pytorch::pytorch-cuda==11.7
   - pytorch::torchvision
+  - pytorch::torchaudio
   - pip:
       - CellBender

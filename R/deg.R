@@ -109,7 +109,7 @@ deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=3, assay=NU
     }
     cd = as.data.frame(as.data.frame(cd) %>% mutate(across(where(is.factor), as.character)))
     bad.cols = sapply(intersect(covariates, colnames(cd)), function(cn) {
-        print(paste0(cn, ' ', length(unique(cd[[cn]]))))
+        print(paste0("Bad covariate:", cn, ' ', length(unique(cd[[cn]]))))
         ifelse(is.character(cd[[cn]]) & (length(unique(cd[[cn]])) == 1),
                cn, NA)
     })

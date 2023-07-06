@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:str=None, bcfile:str=None, use_velocyto:bool=True, **kwargs):
+def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:str=None, bcfile:str=None, use_velocyto:bool=True, use_scrublet:bool=True,
+        min_n_genes:int=0, min_total_counts:int=0,
+        min_cells_per_sample:int=30, **kwargs):
     import os
     from warnings import warn
     import numpy as np
@@ -10,6 +12,8 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:
     sw = benj.stopwatch()
     outs_dir = os.path.dirname(h5)
     vdata = None
+    if use_scrublet:
+        min_n_genes = max(min_n_genes, 3)
     if use_velocyto:
         vdir = os.path.join(outs_dir, "velocyto")
         if not os.path.isdir(vdir):
@@ -61,9 +65,16 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:
             adata.layers[layer] = benj.convert_X(adata.layers[layer])
     adata.var["mt"] = adata.var_names.str.startswith(("MT-", "mt-"))
     adata.var["ribo"] = adata.var_names.str.startswith(("RPS", "RPL", "Rps", "Rpl"))
-
     with sw("Calculating QC metrics"):
         sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=[])
+    with sw("Filtering ultra low quality cells"):
+        if "n_genes_by_counts" in adata.obs.columns and min_n_genes > 0:
+            adata = adata[adata.obs["n_genes_by_counts"] >= min_n_genes, :].copy()
+        if "total_counts" in adata.obs.columns and min_total_counts > 0:
+            adata = adata[adata.obs["total_counts"] >= min_total_counts, :].copy()
+    if use_scrublet and adata.shape[0] > min_cells_per_sample:
+        with sw("Running Scrublet"):
+            sc.external.pp.scrublet(adata)
     with sw("Writing H5AD"):
         adata.uns = benj.convert_dict(adata.uns)
         adata.write_h5ad(output, compression="gzip", compression_opts=compression)
@@ -81,6 +92,11 @@ if __name__ == "__main__":
     ap.add_argument("--use-velocyto", dest="use_velocyto", action="store_true", help="Look for ../velocyto/*.loom from the H5 provided, if available.")
     ap.add_argument("--no-use-velocyto", dest="use_velocyto", action="store_false", help="Do not look for velocyto loom even if available")
     ap.add_argument("--bc-file", dest="bcfile", help="Adds a column \"filtered\" that determines whether a barcode is included")
-    ap.set_defaults(use_velocyto=True)
+    ap.add_argument("--min-n-genes", type=int, default=0)
+    ap.add_argument("--min-total-counts", type=int, default=0)
+    ap.add_argument("--min-cells-per-sample", type=int, default=30, help="Minimum number of cells per sample in order to include")
+    ap.add_argument("--use-scrublet", dest="use_scrublet", action="store_true")
+    ap.add_argument("--no-use-scrublet", dest="use_scrublet", action="store_false")
+    ap.set_defaults(use_velocyto=True, use_scrublet=True)
     args = vars(ap.parse_args())
     run(**args)

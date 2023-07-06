@@ -17,12 +17,15 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
     bad = []
     if use_scrublet:
         min_n_genes = max(min_n_genes, 3)
+    scrub_table = {}
     with sw("Reading H5AD files"):
         for sample in tqdm(md.index.values):
             for dname in directory:
                 fname = os.path.join(dname, "%s.h5ad" % sample)
                 if os.path.isfile(fname):
                     adata = sc.read(fname)
+                    if "scrublet" in adata.uns:
+                        scrub_table[sample] = adata.uns["scrublet"]
                     for cn in md.columns:
                         adata.obs[cn] = md.loc[sample, cn]
                     if "n_genes_by_counts" in adata.obs.columns and min_n_genes > 0:
@@ -42,6 +45,9 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
     with sw("Concatenating %d cells into one AnnData object" % total_cells):
         adata = anndata.concat(tbl, merge="same", uns_merge="same")
         del tbl
+        if len(tbl.keys()) == len(scrub_tbl.keys()):
+            adata.uns["scrublet"] = {"batches": scrub_tbl,
+                                     "batched_by": "Sample"}
     with sw("Calculating statistics"):
         if qc_vars is None:
             qc_vars=[]
@@ -49,7 +55,7 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
     if "gene_ids" in adata.var.columns:
         with sw("Finding HVGs"):
             sc.pp.highly_variable_genes(adata, batch_key="Sample", flavor="seurat_v3", n_top_genes=adata.shape[1])
-    if use_scrublet:
+    if use_scrublet and "scrublet" not in adata.uns.keys():
         with sw("Scrublet"):
             sc.external.pp.scrublet(adata, batch_key="Sample")
     with sw("Writing H5AD"):

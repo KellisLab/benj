@@ -33,14 +33,16 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:
         adata = sc.read_10x_h5(h5, gex_only=True)
         adata.var_names_make_unique()
         adata.obs.index = [x.split("#")[-1] for x in adata.obs_names] ### remove cellbender index
+    qc_vars = ["mt", "ribo"]
     if tss is not None and os.path.exists(tss):
         from benj.gene_estimation import add_interval
         add_interval(adata.var, tss)
         if adata.var["interval"].str.startswith("chrX").any():
             adata.var["chrX"] = adata.var["interval"].str.startswith("chrX")
+            qc_vars += ["chrX"]
         if adata.var["interval"].str.startswith("chrY").any():
             adata.var["chrY"] = adata.var["interval"].str.startswith("chrY")
-    qc_vars = ["mt", "ribo", "chrX", "chrY"]
+            qc_vars += ["chrY"]
     if gene_info is not None and os.path.exists(gene_info):
         from benj.gene_estimation import add_gene_info
         add_gene_info(adata.var, gene_info)

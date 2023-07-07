@@ -44,9 +44,10 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
     total_cells = np.sum([adata.shape[0] for _, adata in tbl.items()])
     with sw("Concatenating %d cells into one AnnData object" % total_cells):
         adata = anndata.concat(tbl, merge="same", uns_merge="same")
+        tk = tbl.keys()
         del tbl
-        if len(tbl.keys()) == len(scrub_tbl.keys()):
-            adata.uns["scrublet"] = {"batches": scrub_tbl,
+        if len(tk) == len(scrub_table.keys()):
+            adata.uns["scrublet"] = {"batches": scrub_table,
                                      "batched_by": "Sample"}
     with sw("Calculating statistics"):
         if qc_vars is None:

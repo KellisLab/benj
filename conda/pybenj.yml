@@ -27,6 +27,7 @@ dependencies:
   - conda-forge::tqdm
   - conda-forge::h5py>=3
   - bioconda::bioawk
+  - conda-forge::squidpy
   - conda-forge::openai
   - conda-forge::jupyterlab
   - conda-forge::nbconvert

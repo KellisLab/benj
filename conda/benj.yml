@@ -30,6 +30,7 @@ dependencies:
   - conda-forge::tqdm
   - conda-forge::h5py>=3
   - conda-forge::rpy2
+  - conda-forge::squidpy
   ## r
   - conda-forge::r-base>=4.2.2
   - conda-forge::r-devtools

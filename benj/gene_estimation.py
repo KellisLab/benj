@@ -112,6 +112,25 @@ def add_interval(var, tss:str, inplace=True):
         import pandas as pd
         return pd.Series(interval, index=var.index, name="interval")
 
+def add_gene_length(var, gtf:str=None, inplace=True):
+    import pandas as pd
+    import pyranges
+    from .timer import template
+    sw = template()
+    with sw("Reading GTF"):
+        gf = pyranges.read_gtf(gtf).df
+        gf = gf.loc[gf["Feature"] == "gene",:]
+        gf["gene_length"] = gf["End"] - gf["Start"]
+        gf.index = gf["gene_id"].values
+    gl = [gf["gene_length"].get(g, -1) for g in var["gene_ids"]]
+    gs = [gf["Strand"].get(g, "*") for g in var["gene_ids"]]
+    if not inplace:
+        var = var.copy()
+    var["gene_length"] = gl
+    var["strand"] = gs
+    if not inplace:
+        return var.loc[:, ["gene_length", "strand"]]
+
 def add_gene_info(var, gene_info:str=None, inplace=True):
     """Add a STAR geneInfo.tab file to .var"""
     import pandas as pd

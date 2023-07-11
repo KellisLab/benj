@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:str=None, bcfile:str=None, use_velocyto:bool=True, use_scrublet:bool=True,
+def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:str=None, gtf:str=None, bcfile:str=None, use_velocyto:bool=True, use_scrublet:bool=True,
         min_n_genes:int=0, min_total_counts:int=0,
         min_cells_per_sample:int=30, **kwargs):
     import os
@@ -49,6 +49,9 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:
         if "protein_coding" in adata.var["gene_type"].values:
             adata.var["pc"] = adata.var["gene_type"] == "protein_coding"
             qc_vars += ["pc"]
+    if gtf is not None and os.path.exists(gtf):
+        from benj.gene_estimation import add_gene_length
+        add_gene_length(adata.var, gtf)
     if vdata is not None:
         with sw("Adding spliced/unspliced counts"):
             I = np.intersect1d(vdata.obs_names, adata.obs_names)
@@ -91,6 +94,7 @@ if __name__ == "__main__":
     ap.add_argument("--compression", type=int, default=9, help="GZIP compression used for H5AD. 9 is very good for single samples")
     ap.add_argument("--tss", help="TSS.bed file from refdata-cellranger-arc-*/regions/tss.bed used to generate \"interval\" field")
     ap.add_argument("--gene-info", help="geneInfo.tab from a STAR index to set \"gene_type\" field and \"protein_coding\" field")
+    ap.add_argument("--gtf", help="GTF used to get gene length and strand")
     ap.add_argument("--use-velocyto", dest="use_velocyto", action="store_true", help="Look for ../velocyto/*.loom from the H5 provided, if available.")
     ap.add_argument("--no-use-velocyto", dest="use_velocyto", action="store_false", help="Do not look for velocyto loom even if available")
     ap.add_argument("--bc-file", dest="bcfile", help="Adds a column \"filtered\" that determines whether a barcode is included")

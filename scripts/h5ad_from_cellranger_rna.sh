@@ -13,16 +13,16 @@ fi
 ### find refdata from the MRO file
 refdata=$(awk -F'= ' '/reference_path/{gsub(/[" ,]/, "", $2); print $2}' "${outdir}/_invocation")
 tss="${refdata}/regions/tss.bed"
-gene_info="${refdata}/star/geneInfo.tab" 
-
+gene_info="${refdata}/star/geneInfo.tab"
+gtf="${refdata}/genes/genes.gtf.gz"
 if [[ -f "${outdir}/outs/filtered_feature_bc_matrix.h5" ]]; then
-    h5ad_from_cellranger_rna.py --h5 "${outdir}"/outs/filtered_feature_bc_matrix.h5 --sample "${sample}" --output H5AD/filtered/"${sample}.h5ad" --tss "${tss}" --gene-info "${gene_info}" $@
+    h5ad_from_cellranger_rna.py --h5 "${outdir}"/outs/filtered_feature_bc_matrix.h5 --sample "${sample}" --output H5AD/filtered/"${sample}.h5ad" --tss "${tss}" --gene-info "${gene_info}" --gtf "${gtf}" $@
 fi
 
 if [[ -f "${outdir}/outs/raw_feature_bc_matrix.h5" ]]; then
-    h5ad_from_cellranger_rna.py --h5 "${outdir}"/outs/raw_feature_bc_matrix.h5 --sample "${sample}" --output H5AD/raw/"${sample}.h5ad" --tss "${tss}" --gene-info "${gene_info}" $@
+    h5ad_from_cellranger_rna.py --h5 "${outdir}"/outs/raw_feature_bc_matrix.h5 --sample "${sample}" --output H5AD/raw/"${sample}.h5ad" --tss "${tss}" --gene-info "${gene_info}" --gtf "${gtf}" $@
 fi
 
 if [[ -f "${outdir}/outs/cellbender_filtered.h5" ]]; then
-    h5ad_from_cellranger_rna.py --h5 "${outdir}"/outs/cellbender_filtered.h5 --sample "${sample}" --output H5AD/cellbender/"${sample}.h5ad" --tss "${tss}" --gene-info "${gene_info}" $@
+    h5ad_from_cellranger_rna.py --h5 "${outdir}"/outs/cellbender_filtered.h5 --sample "${sample}" --output H5AD/cellbender/"${sample}.h5ad" --tss "${tss}" --gene-info "${gene_info}"  --gtf "${gtf}" $@
 fi

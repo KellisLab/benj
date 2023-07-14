@@ -281,5 +281,8 @@ read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE
     if (varp & !raw) {
         #print("reading varp")
     }
+    S4Vectors::metadata(sce)$subset = subset
+    S4Vectors::metadata(sce)$h5ad = h5ad
+    S4Vectors::metadata(sce)$layer = layer
     return(sce)
 }

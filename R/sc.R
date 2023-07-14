@@ -34,9 +34,42 @@ se_make_pseudobulk <- function(se, on, missing.levels=FALSE, unlevel=TRUE) {
     }
     return(SummarizedExperiment::SummarizedExperiment(assays=P,
                                                       rowData=rd,
-                                                      colData=pcd))
+                                                      colData=pcd,
+                                                      metadata=S4Vectors::metadata(se)))
 }
 
+
+#' Runs PCA on the SummarizedExperiment object
+#'
+#' @param se SummarizedExperiment
+#' @param n Number of PCs
+#' @param assay Assay to use for PCA
+#' @param retx Whether to return rotation
+#' @param center Whether to center observations
+#' @param scale. Whether to scale the data
+#' @param ... Extra parameters passed to irlba::prcomp_irlba
+#' @return Updated SummarizedExperiment object
+#' @export
+se_prcomp <- function(se, n=3, assay="TMM", retx=TRUE, center=TRUE, scale.=FALSE, ...) {
+    X = SummarizedExperiment::assays(se)[[assay]]
+    stopifnot(!is.null(X))
+    n = min(c(n, dim(se)-1))
+    pca = irlba::prcomp_irlba(X, n=n, retx=retx, center=center, scale.=scale., ...)
+    if (retx) {
+        for (cn in colnames(pca$retx)) {
+            SummarizedExperiment::rowData(se)[[cn]] = pca$rotation[,cn]
+        }
+    }
+    for (cn in colnames(pca$x)) {
+        SummarizedExperiment::colData(se)[[cn]] = pca$x[,cn]
+    }
+    SummarizedExperiment::metadata(se)$pca = list(scale=pca$scale,
+                                                  totalvar=pca$totalvar,
+                                                  sdev=pca$sdev,
+                                                  center=pca$center,
+                                                  n=n)
+    return(se)
+}
 #' Calculate qc metrics similar to Scanpy
 #'
 #' @param se SummarizedExperiment

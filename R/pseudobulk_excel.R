@@ -1,14 +1,36 @@
+#' @export
+dump.excel <- function(se, output) {
+    stopifnot(dir.exists(dirname(output)))
+    md = S4Vectors::metadata(se)
+    cd = SummarizedExperiment::colData(se)
+    rd = SummarizedExperiment::rowData(se)
+    A = list(gene_info=cbind(data.frame(gene=rownames(se)), rd),
+             sample_metadata=cbind(data.frame(name=colnames(se)), cd),
+             deg_metadata=as.data.frame(md$deg))
+    if ("subset" %in% names(md)) {
+        sf = as.data.frame(md$subset)
+        if (nrow(sf) == 0) {
+            sf = data.frame(h5ad=md$h5ad)
+        } else {
+            sf$h5ad = md$h5ad
+        }
+        A$subset = sf
+    }
+    writexl::write_xlsx(A, output)
+}
+
 
 #' @export
 load.persample.excel <- function(xlsx) {
     sheets = readxl::excel_sheets(xlsx)
-    obs = readxl::read_xlsx(xlsx, "samples")
+    obs = readxl::read_xlsx(xlsx, "sample_metadata")
     if ("genes" %in% sheets) {
-        var = readxl::read_xlsx(xlsx, "genes")
+        var = readxl::read_xlsx(xlsx, "gene_info")
     } else {
         var = NULL
     }
     qs = c("counts", sheets[grep("^Quantile ", sheets)])
+    qs = qs[qs %in% sheets]
     return(SummarizedExperiment::SummarizedExperiment(lapply(setNames(qs, qs), function(qsheet) {
         df = as.data.frame(readxl::read_xlsx(xlsx, qsheet))
         rownames(df) = df[[1]]

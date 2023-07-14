@@ -1,4 +1,198 @@
 
+
+#' Filtering of design matrix for DEG comparisons
+#' This method modifies a design matrix such that combinations or unused comparisons are removed.
+#' It also renames items with spaces because some DEG methods complain about spaces in the design matrix.
+#' @param design Design matrix.
+#' @param rename Whether to use make.names to rename columns
+#' @export
+deg.filter.design <- function(design, rename=TRUE) {
+    nzv = caret::nearZeroVar(design, saveMetrics=TRUE)
+    design = design[,!nzv$nzv | rownames(nzv) == "(Intercept)"]
+    linear_combos = caret::findLinearCombos(design)
+    if (!is.null(linear_combos$remove)) {
+        design = design[,-linear_combos$remove]
+    }
+    if (rename && ncol(design) > 1) {
+        colnames(design) = make.names(colnames(design)) ### need spaces to be removed
+    }
+    return(design)
+}
+
+
+#' When a design matrix is filtered, we need to be able to extract the covariates used for MAST::zlm.
+#' Here, we use the filtered design to find if any columns have been themselves filtered.
+#' @param design The design matrix
+#' @param covariates.used A vector of the column names used for constructing the design matrix
+#' @return A filtered list of covariates
+#' @export
+deg.extract.covariates.from.design <- function(design, covariates.used) {
+    contrasts = names(attr(design, "contrasts"))
+    return(covariates.used[covariates.used %in% c(contrasts, colnames(design))])
+}
+#' Filter outlying samples from a pseudobulk SummarizedExperiment.
+#' This method uses covariates only, and finds distance from the centroid in PCA space
+#' @param se Pseudobulked SummarizedExperiment object
+#' @param covariates Covariates that are scaled and PCA'd to compute outliers
+#' @param IQR.factor Number of IQR above 75%ile to use for exclusion of samples. Set to Inf for no exclusion
+#' @return Updated SummarizedExperiment object with bad samples removed
+#' @export
+deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes"), IQR.factor=1.5) {
+    design = model.matrix(as.formula(paste0(c("~0", covariates), collapse="+")),
+                          data=as.data.frame(SummarizedExperiment::colData(se)))
+    design = deg.filter.design(design)
+    if (ncol(design)==0) {
+        ### Remove in case no covariates are passed
+        return(se)
+    }
+    pca = prcomp(design, scale.=TRUE)$x
+    centroid = colMeans(pca)
+    distances = sqrt(rowSums((pca - centroid)^2))
+    Q1 = quantile(distances, 0.25)
+    Q3 = quantile(distances, 0.75)
+    upper_bound = Q3 + IQR.factor * (Q3 - Q1)
+    outliers = which(distances > upper_bound)
+    if (length(outliers) > 0) {
+        outliers = colnames(se)[outliers]
+        cat("Filtering", length(outliers), "outlier(s):", outliers, "\n")
+        se = se[,setdiff(colnames(se), outliers)]
+    }
+    return(se)
+}
+#' Prepare SummarizedExperiment object for DEG calling.
+#' @export
+deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_case_control=TRUE,
+                        cpm.cutoff=10, min.total.counts.per.sample=100, IQR.factor=1.5,
+                        outlier.covariates=c("log1p_total_counts", "n_genes_by_counts")) {
+    if (filter_only_case_control) {
+        se = se[,SummarizedExperiment::colData(se)[[pathology]] %in% c(case, control)]
+    }
+    stopifnot("counts" %in% names(SummarizedExperiment::assays(se)))
+    pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts")
+    stopifnot(S4Vectors::ncol(pb) <= 1000) ### we can't have uber-large sample numbers
+    if (any(SummarizedExperiment::colData(pb)$total_counts < min.total.counts.per.sample)) {
+        cd = SummarizedExperiment::colData(pb)
+        cat("Bad samples:", rownames(cd)[cd$total_counts < min.total.counts.per.sample], "\n")
+        se = se[, SummarizedExperiment::colData(se)[[sample.col]] %in% rownames(cd)[cd$total_counts >= min.total.counts.per.sample]]
+        pb = se_make_pseudobulk(se, sample.col)
+    }
+    ### Outlier detection
+    pb = deg.filter.outliers(pb, covariates=outlier.covariates, IQR.factor=IQR.factor)
+
+    ### Get minimum samples for CPM threshold to pass
+    cpm.n = min(table(SummarizedExperiment::colData(pb)[[pathology]]))
+    ### Filter genes above a cpm cutoff
+    cpm.flag = edgeR::cpm(SummarizedExperiment::assays(pb)$counts) > cpm.cutoff
+    ### Then extract across number of samples
+    cpm.flag = rownames(cpm.flag)[Matrix::rowSums(cpm.flag) >= cpm.n]
+    se = se[cpm.flag, SummarizedExperiment::colData(se)[[sample.col]] %in% colnames(pb)]
+
+### Get logCPM info
+    logCPM = edgeR::cpmByGroup(se, SummarizedExperiment::colData(se)[[pathology]], log=TRUE)
+    colnames(logCPM) = paste0("logCPM_", colnames(logCPM))
+    SummarizedExperiment::rowData(se) = cbind(SummarizedExperiment::rowData(se), as.data.frame(logCPM))
+### Check matrix
+    X = SummarizedExperiment::assays(se)$counts
+    if (inherits(X, "Matrix")) {
+        is_integer_matrix = all(X@x == round(X@x))
+    } else {
+        is_integer_matrix = all(apply(X, c(1, 2), function(x) { round(x) == x }))
+    }
+    stopifnot(is_integer_matrix)
+    S4Vectors::metadata(se)$deg = list(pathology=pathology,
+                                       case=case,
+                                       control=control,
+                                       sample_column=sample.col,
+                                       filter_only_case_control=filter_only_case_control,
+                                       cpm_cutoff=cpm.cutoff,
+                                       min_total_counts_per_sample=min.total.counts.per.sample,
+                                       IQR_factor=IQR.factor,
+                                       outlier_covariates=paste0(outlier.covariates, collapse=" + "))
+
+### Re-order to group by sample
+    SummarizedExperiment::colData(se)[[sample.col]] = as.factor(as.character(SummarizedExperiment::colData(se)[[sample.col]]))
+    se = se[,order(SummarizedExperiment::colData(se)[[sample.col]])]
+
+    ### Remove levels with no comparisons.
+    SummarizedExperiment::colData(se) = droplevels(SummarizedExperiment::colData(se))
+    return(se)
+}
+#' Run DEGs, switching on the method
+#'
+#' Note: It is recommended to save subset information in metadata(se)$subset
+#' since there is *technically* no way to recover that. However, from sample_metadata this should be inferrable.
+#' @param se SummarizedExperiment object, with integer counts in the "counts" assay.
+#' @param pathology Column in colData(se) corresponding to diagnosis or experimental condition
+#' @param case Column in colData(se) corresponding to case values, which must be in "pathology"
+#' @param control Column in colData(se) corresponding to control values in "pathology"
+#' @param covariates Covariates to be used. Non-existent variables will be removed, and RUV variables will be added (if NRUV>0).
+#' @param sample.col Sample column in colData(se) corresponding to the experiment. This is the column on which data is pseudobulked.
+#' @param method Method(s) of DEGs to be used. Valid values are DESeq2, edgerR-GLM, edgeR-QL, nebula, mast-hurdle, mast-random-effect
+#' @param output Output XLSX
+#' @param cpm.cutoff Counts per Million cutoff used for filtering lowly-expressed genes. Genes must be expressed in at least min(case, control) samples at least at this log(CPM) level to be used. This n=min(case, control) is after outlier removal and low-count data.
+#' @param NRUV Number of RUVSeq components to include
+#' @param filter_only_case_control Filter se to only case+control only. Default TRUE
+#' @param IQR.factor Number of IQR factors above 75% percentile to be removed, according to scaled PCA of outlier.covariates. Set to Inf to remove none.
+#' @param outlier.covariates Sample-level covariates which are scaled and PCA transformed, to get distances from the centroid of the PCA embedding. Outliers above 75% + IQR.factor * IQR are removed.
+#' @export
+deg <- function(se, pathology, case, control, covariates,
+                method, output=NULL,
+                sample.col="Sample", cpm.cutoff=10,
+                filter_only_case_control=TRUE, NRUV=0,
+                min.total.counts.per.sample=100, IQR.factor=1.5,
+                outlier.covariates=c("log1p_total_counts", "n_genes_by_counts")) {
+    method = match.arg(gsub(" ", "-", tolower(method)),
+                       c("deseq2", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re"), several.ok=TRUE)
+    se = deg.prepare(se, pathology=pathology,
+                     case=case, control=control,
+                     sample.col=sample.col,
+                     filter_only_case_control=filter_only_case_control,
+                     min.total.counts.per.sample=min.total.counts.per.sample,
+                     cpm.cutoff=cpm.cutoff)
+    ### RUVSeq
+    covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
+    if (NRUV > 0) {
+        se = deg.ruvseq(se, pathology=pathology, covariates=covariates, sample.col=sample.col, NRUV=NRUV)
+        covariates = c(covariates, paste0("RUV", NRUV))
+        covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
+    }
+    S4Vectors::metadata(se)$deg$covariates = paste0(covariates, collapse=" + ")
+    ### Iterate through methods
+    for (meth in method) {
+        if (meth == "deseq2") {
+            se = deg.deseq2(se, pathology=pathology,
+                            case=case, control=control,
+                            sample.col=sample.col,
+                            covariates=covariates)
+        } else if (grepl("^edger", meth)) {
+            se = deg.edger(se, pathology=pathology,
+                           case=case, control=control,
+                           sample.col=sample.col,
+                           covariates=covariates,
+                           method=ifelse(grepl("lrt$",meth), "LRT", "QL"))
+        } else if (meth == "nebula") {
+            se = deg.nebula(se, pathology=pathology,
+                            case=case, control=control,
+                            sample.col=sample.col,
+                            covariates=covariates,
+                            offset="total_counts", model="NBGMM")
+        } else if (grepl("^mast", meth)) {
+            stop("Not implemented")
+            se = deg.mast(se, pathology=pathology,
+                          case=case, control=control,
+                          sample.col=sample.col,
+                          covariates=covariates,
+                          method=ifelse(grepl("re$", meth), "RE", "Hurdle"))
+        } else {
+            stop(paste0("Invalid method ", meth))
+        }
+        if (!is.null(output)) {
+            dump.excel(se_make_pseudobulk(se, sample.col), output)
+        }
+    }
+    return(se)
+}
+
 #' Run edgeR on a SummarizedExperiment
 #'
 #' @param se SummarizedExperiment to run
@@ -7,58 +201,31 @@
 #' @param control Control string within pathology column. Example "control"
 #' @param covariates Vector of covariates to add to design matrix
 #' @param method Method used for edgeR. Either LRT or QL
-#' @param assay Assay from se to utilize
-#' @param cpm.cutoff Cutoff of CPM to utilize
-#' @param cpm.frac Fraction of samples passing CPM cutoff for filter
+#' @param sample.col Sample column to pseudobulk on
+#' @param prefix Prefix to add in rowData(se) where edgeR info is added
 #' @export
-deg.edger <- function(se, pathology, case, control, covariates=c(),
-                      method="LRT", assay=NULL, cpm.cutoff=10, cpm.frac=0.25,
-                      filter_only_case_control=FALSE) {
-    if (filter_only_case_control) {
-        se = se[,SummarizedExperiment::colData(se)[[pathology]] %in% c(case, control)]
-    }
-
-    if (is.null(assay)) {
-        X = SummarizedExperiment::assays(se)$counts
-    } else {
-        X = SummarizedExperiment::assays(se)[[assay]]
-    }
-    if ("matrix" %in% class(X)) {
-        round_diff = all(0 == zapsmall(abs(round(X) - X)))
-    } else {
-        round_diff = all(0 == zapsmall(abs(round(X@x) - X@x)))
-    }
-    if (!round_diff) {
-        warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
-    }
-    if (S4Vectors::ncol(X) > 1000) {
-        warning("More than 1000 samples are being called to a function under the assumption data passed in is pseudobulk")
-    }
-
-    cd = SummarizedExperiment::colData(se)
-    if (!is.character(cd[[pathology]]) | !is.factor(cd[[pathology]])) {
-        warning(paste0("Converting ", pathology, " to factor"))
-    }
-    cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
+deg.edger <- function(se, pathology, case, control,
+                      sample.col, covariates=NULL,
+                      method=c("LRT", "QL"), prefix="edgeR") {
+    method = match.arg(gsub("^EDGER[^A-Z]*","", toupper(method)), c("LRT", "QL"))
+    pb = se_make_pseudobulk(se, sample.col)
+    X = SummarizedExperiment::assays(pb)$counts
+    cd = as.data.frame(SummarizedExperiment::colData(pb))
+    cd[[pathology]] = relevel(as.factor(cd[[pathology]]), ref=control)
     dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
-    to_keep = Matrix::rowMeans(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.frac
-    dgel = dgel[to_keep,,keep.lib.sizes=FALSE]
     dgel = edgeR::calcNormFactors(dgel, method="TMM")
-    design = model.matrix(as.formula(paste0("~0 + ", paste0(c(pathology, covariates), collapse=" + "))),
+    design = model.matrix(as.formula(paste0(c("~0", pathology, covariates), collapse=" + ")),
                           data=cd)
-    colnames(design) = make.names(colnames(design)) ### need spaces to be removed
+    design = deg.filter.design(design)
+
     contrasts = limma::makeContrasts(contrasts=paste0(make.names(paste0(pathology, case)),
                                                       "-",
                                                       make.names(paste0(pathology, control))),
                                      levels=design)
-    if (!(method %in% c("QL", "LRT"))) {
-        method = "QL"
-        warning(paste0("Setting method to ", method))
-    }
     if (method == "QL") {
         dgel = edgeR::estimateDisp(dgel, design, robust=TRUE)
-        fit <- edgeR::glmQLFit(dgel, design, robust=TRUE)
-        res <- edgeR::glmQLFTest(fit, contrast=contrasts)
+        fit = edgeR::glmQLFit(dgel, design, robust=TRUE)
+        res = edgeR::glmQLFTest(fit, contrast=contrasts)
     } else if (method == "LRT") {
         dgel = edgeR::estimateGLMCommonDisp(dgel, design)
         dgel = edgeR::estimateGLMTagwiseDisp(dgel, design)
@@ -67,59 +234,32 @@ deg.edger <- function(se, pathology, case, control, covariates=c(),
     }
     tbl = edgeR::topTags(res, n=Inf, sort.by="none")$table
     colnames(tbl) = gsub("^logFC$", "log2FC", colnames(tbl))
-    tbl$gene = rownames(tbl)
-    tbl$method = method
-    tbl$case = case
-    tbl$control = control
-    tbl$logCPM = edgeR::cpm(Matrix::rowSums(X), log=TRUE)[tbl$gene,]
-    return(tbl[order(tbl$FDR),])
+    rd = as.data.frame(SummarizedExperiment::rowData(se))
+    for (suffix in intersect(c("log2FC", "FDR", "F", "LR"), colnames(tbl))) {
+        rd[[paste0(prefix, "_", method, "_", suffix)]] = NA
+        rd[rownames(tbl), paste0(prefix, "_", method, "_", suffix)] = tbl[[suffix]]
+    }
+    SummarizedExperiment::rowData(se) = rd
+    return(se)
 }
 
 #' Add RUVseq columns to SummarizedExperiment
 #' Based on Carles Boix's RUVSeq workflow
 #'
 #' @param sce SummarizedExperiment object
-#' @param sample Sample on which to pseudobulk
+#' @param sample.col Sample on which to pseudobulk
 #' @param pathology Main variable of interest
 #' @param NRUV Number of RUV components to generate. Non-variable RUV components are removed.
-#' @param assay Assay from SummarizedExperiment to use
-#' @param cpm.cutoff Cutoff of CPM to utilize
-#' @param cpm.frac Number of observations passing CPM cutoff for filter
 #' @param norm edgeR norm method for calcNormFactors
 #' @export
-deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=3, assay=NULL, cpm.cutoff=10, cpm.frac=0.25, norm="TMM") {
-    require(dplyr)
-    pb = se_make_pseudobulk(sce, sample)
-    if (is.null(assay)) {
-        X = SummarizedExperiment::assays(pb)$counts
-    } else {
-        X = SummarizedExperiment::assays(pb)[[assay]]
-    }
-        if ("matrix" %in% class(X)) {
-        round_diff = all(0 == zapsmall(abs(round(X) - X)))
-    } else {
-        round_diff = all(0 == zapsmall(abs(round(X@x) - X@x)))
-    }
-    if (!round_diff) {
-        warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
-    }
+deg.ruvseq <- function(sce, sample.col, pathology, covariates=NULL, NRUV=3, norm="TMM") {
+    pb = se_make_pseudobulk(sce, sample.col)
     cd = SummarizedExperiment::colData(pb)
-    if (!is.character(cd[[pathology]]) | !is.factor(cd[[pathology]])) {
-        warning(paste0("Converting ", pathology, " to factor"))
-    }
-    cd = as.data.frame(as.data.frame(cd) %>% mutate(across(where(is.factor), as.character)))
-    bad.cols = sapply(intersect(covariates, colnames(cd)), function(cn) {
-        print(paste0("Bad covariate:", cn, ' ', length(unique(cd[[cn]]))))
-        ifelse(is.character(cd[[cn]]) & (length(unique(cd[[cn]])) == 1),
-               cn, NA)
-    })
-    cd = cd[setdiff(colnames(cd), bad.cols)]
-    cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
+    X = SummarizedExperiment::assays(pb)$counts
     dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
-    to_keep = Matrix::rowMeans(edgeR::cpm(dgel) > cpm.cutoff) >= cpm.frac
-    dgel = dgel[to_keep,,keep.lib.sizes=FALSE]
-    covariates = covariates[covariates %in% colnames(cd)]
+    covariates = covariates[covariates %in% names(SummarizedExperiment::colData(pb))]
     design = model.matrix(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), data=cd)
+    design = deg.filter.design(design)
 ### Use LRT workflow
     dgel = edgeR::calcNormFactors(dgel, method=norm)
     dgel = edgeR::estimateGLMCommonDisp(dgel, design)
@@ -132,9 +272,9 @@ deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=3, assay=NU
                        residuals=res1)
     ruvw = ruv$W
     ruvw = ruvw[,apply(ruvw, 2, sd) > 0]
-    colnames(ruvw) = paste0("RUV", colnames(ruvw))
+    colnames(ruvw) = paste0("RUV", gsub("^W", "", colnames(ruvw)))
     rownames(ruvw) = colnames(ruv$normalizedCounts)
-    S = as.character(SummarizedExperiment::colData(sce)[[sample]])
+    S = as.character(SummarizedExperiment::colData(sce)[[sample.col]])
     for (cn in colnames(ruvw)) {
         SummarizedExperiment::colData(sce)[[cn]] = ruvw[S, cn]
     }
@@ -157,64 +297,28 @@ deg.ruvseq <- function(sce, sample, pathology, covariates=NULL, NRUV=3, assay=NU
 #' @param cpm.cutoff Cutoff of CPM to utilize for RUV
 #' @param cpm.count Number of observations passing CPM cutoff for filter for RUV
 #' @export
-deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
-                       offset="total_counts", assay=NULL, model="NBGMM",
-                       filter_only_case_control=FALSE, factorize_pathology=TRUE,
-                       ruv.remove.subjectlevel=FALSE,
-                       cpc=0.01, NRUV=10, reml=1) {
-    if (filter_only_case_control) {
-        sce = sce[,SummarizedExperiment::colData(sce)[[pathology]] %in% c(case, control)]
-    }
-    if (NRUV > 0) {
-        sce = deg.ruvseq(sce,
-                         sample=sample,
-                         pathology=pathology,
-                         NRUV=NRUV,
-                         covariates=covariates,
-                         assay=assay)
-        cd = SummarizedExperiment::colData(sce)
-        cd.pb = SummarizedExperiment::colData(se_make_pseudobulk(sce, sample))
-        if (ruv.remove.subjectlevel) {
-            covariates = setdiff(covariates, colnames(cd.pb))
-        }
-        covariates = c(covariates, colnames(cd)[grep("^RUV", colnames(cd))])
-    }
-    sce[[sample]] = as.factor(as.character(sce[[sample]]))
-    sce = sce[,order(sce[[sample]])]
+deg.nebula <- function(sce, pathology, case, control, sample.col, covariates=NULL,
+                       offset="total_counts", model="NBGMM",
+                       ncore=getOption("mc.cores", 2),
+                       cpc=0, reml=1,
+                       prefix="nebula") {
     cd = SummarizedExperiment::colData(sce)
-    if (is.null(assay)) {
-        X = SummarizedExperiment::assays(sce)$counts
-    } else {
-        X = SummarizedExperiment::assays(sce)[[assay]]
-    }
-    if ("matrix" %in% class(X)) {
-        round_diff = all(0 == zapsmall(abs(round(X) - X)))
-    } else {
-        round_diff = all(0 == zapsmall(abs(round(X@x) - X@x)))
-    }
-    if (!round_diff) {
-        warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
-    }
-    if (factorize_pathology) {
-        cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
-    }
-    design = model.matrix(as.formula(paste0("~",
-                                            paste0(c(pathology, covariates), collapse="+"))),
-                          data=cd)
-    A = apply(design, 2, sd)
-    design = design[,names(A)[(A>0) | (names(A) == '(Intercept)')]]
-    if (is.null(offset) | !(offset %in% colnames(cd))) {
-        warning("Offset not present. Using number of counts")
-        offset = Matrix::colSums(X)
-    } else {
-        print(paste0("Using offset ", offset))
+    if (!is.null(offset)) {
+        stopifnot(offset %in% colnames(cd))
         offset = cd[[offset]]
     }
+    X = SummarizedExperiment::assays(sce)$counts
+    cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
+    cd[[pathology]] = relevel(cd[[pathology]], control)
+    design = model.matrix(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), data=cd)
+    design = deg.filter.design(design)
     neb = nebula::nebula(X,
-                         cd[[sample]],
+                         cd[[sample.col]],
                          design,
                          offset=offset,
-                         model=model, reml=reml, cpc=cpc)
+                         cpc=cpc,
+                         model=model, reml=ifelse(model=="NBLMM", reml, 0),
+                         ncore=ncore)
     ### Now to parse output
     name.case = paste0(pathology, case)
     name.control = paste0(pathology, control)
@@ -228,13 +332,18 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
     neb_df = neb$summary
     ovr = neb$overdispersion
     colnames(ovr) = paste0("overdispersion_", colnames(ovr))
+    print(str(ovr))
     neb_df = cbind(neb_df, ovr)
     neb_df$convergence = neb$convergence
     neb_df$algorithm = neb$algorithm
-    neb_df$case = case
-    neb_df$control = control
-    neb_df$logCPM = edgeR::cpm(Matrix::rowSums(X), log=TRUE)[neb_df$gene,]
-    return(neb_df[order(neb_df$FDR),])
+    rownames(neb_df) = neb_df$gene
+    rd = as.data.frame(SummarizedExperiment::rowData(sce))
+    for (suffix in intersect(c("log2FC", "FDR", "convergence", "algorithm", colnames(ovr)), colnames(neb_df))) {
+        rd[[paste0(prefix, "_", suffix)]] = NA
+        rd[rownames(neb_df), paste0(prefix, "_", suffix)] = neb_df[[suffix]]
+    }
+    SummarizedExperiment::rowData(sce) = rd
+    return(sce)
 }
 
 #' Run DESeq2 on pseudobulked data
@@ -243,52 +352,40 @@ deg.nebula <- function(sce, sample, pathology, case, control, covariates=c(),
 #' @param pathology Column in colData(se) from which to study differential changes
 #' @param case Case value within pathology column
 #' @param control Control value within pathology column
+#' @param sample.col Sample column to pseudobulk on
 #' @param covariates Covariates to pass to DESeq2
-#' @param assay Assay to perform differential changes upon. Default is "counts"
-#' @param filter_only_case_control logical telling whether to filter sce to only case and control values within pathology
+#' @param prefix Prefix to add in rowData(se) where edgeR info is added
 #' @export
 deg.deseq2 <- function(se,
                        pathology,
                        case,
                        control,
-                       covariates=c(),
-                       assay=NULL,
-                       filter_only_case_control=FALSE) {
-    if (filter_only_case_control) {
-        se = se[,SummarizedExperiment::colData(se)[[pathology]] %in% c(case, control)]
-    }
-    if (is.null(assay)) {
-        X = SummarizedExperiment::assays(se)$counts
-    } else {
-        X = SummarizedExperiment::assays(se)[[assay]]
-    }
-    if ("matrix" %in% class(X)) {
-        round_diff = all(0 == zapsmall(abs(round(X) - X)))
-    } else {
-        round_diff = all(0 == zapsmall(abs(round(X@x) - X@x)))
-    }
-    if (!round_diff) {
-        warning(paste0("Counts may not be integer: The difference between assay and rounded assay is ", round_diff))
-    }
-    if (S4Vectors::ncol(X) > 1000) {
-        warning("More than 1000 samples are being called to a function under the assumption data passed in is pseudobulk")
-    }
-    formula = paste0("~", c(pathology, covariates), collapse=" + ")
+                       sample.col,
+                       covariates=NULL,
+                       prefix="DESeq2") {
+    pb = se_make_pseudobulk(se, sample.col)
+    X = SummarizedExperiment::assays(pb)$counts
+    cd = as.data.frame(SummarizedExperiment::colData(pb))
+    cd[[pathology]] = relevel(as.factor(cd[[pathology]]), ref=control)
+    covariates = covariates[covariates %in% colnames(cd)]
+    design = model.matrix(as.formula(paste0("~", c(pathology, covariates), collapse=" + ")),
+                          data=cd)
+    design = deg.filter.design(design)
     dds = DESeq2::DESeqDataSetFromMatrix(
                       X,
-                      colData=SummarizedExperiment::colData(se),
-                      design=as.formula(formula))
+                      colData=cd,
+                      design=design)
     out = DESeq2::DESeq(dds)
-    df = DESeq2::results(out, contrast=c(pathology, case, control))
-    df = df[!is.na(df$padj),]
-    df = df[order(df$padj),]
-    df$gene = rownames(df)
-    colnames(df) = msub(c("^log2FoldChange$", "^padj$"),
-                        c("log2FC", "FDR"), colnames(df))
-    df$case = case
-    df$control = control
-    df$logCPM = edgeR::cpm(Matrix::rowSums(X), log=TRUE)[df$gene,]
-    return(as.data.frame(df[order(df$FDR),]))
+    df = DESeq2::results(out, list(make.names(paste0(pathology, case))))
+    rd = as.data.frame(SummarizedExperiment::rowData(se))
+    rd[[paste0(prefix, "_log2FC")]] = NA
+    rd[rownames(df), paste0(prefix, "_log2FC")] = df$log2FoldChange
+    rd[[paste0(prefix, "_FDR")]] = NA
+    rd[rownames(df), paste0(prefix, "_FDR")] = df$padj
+    rd[[paste0(prefix, "_stat")]] = NA
+    rd[rownames(df), paste0(prefix, "_stat")] = df$stat
+    SummarizedExperiment::rowData(se) = rd
+    return(se)
 }
 
 #' Run MAST on a SingleCellExperiment object
@@ -299,62 +396,30 @@ deg.deseq2 <- function(se,
 #' @param case Case to look at within pathology column
 #' @param control Control value to look at within pathology column
 #' @param covariates Vector of covariate columns within colData(sce)
-#' @param offset Offset from which to weight cells in model
-#' @param assay Assay within sce. Default is "counts"
-#' @param model Model to pass to nebula::nebula
-#' @param filter_only_case_control logical telling whether to filter sce to only case and control values within pathology
-#' @param NRUV Number of RUVSeq::RUVr components. 0 means no RUVr components
-#' @param cpm.cutoff Cutoff of CPM to utilize for RUV
-#' @param cpm.count Number of observations passing CPM cutoff for filter for RUV
 #' @export
-deg.mast <- function(sce, sample, pathology, case, control, covariates=c(),
-                     assay=NULL,
-                     filter_only_case_control=FALSE, factorize_pathology=TRUE,
-                     ruv.remove.subjectlevel=FALSE,
-                     NRUV=2) {
+deg.mast <- function(sce, sample.col, pathology, case, control, covariates=NULL,
+                     method, prefix="MAST") {
     require(MAST)
-    if (filter_only_case_control) {
-        sce = sce[,SummarizedExperiment::colData(sce)[[pathology]] %in% c(case, control)]
-    }
-    if (NRUV > 0) {
-        sce = deg.ruvseq(sce,
-                         sample=sample,
-                         pathology=pathology,
-                         NRUV=NRUV,
-                         covariates=covariates,
-                         assay=assay)
-        cd = SummarizedExperiment::colData(sce)
-        cd.pb = SummarizedExperiment::colData(se_make_pseudobulk(sce, sample))
-        if (ruv.remove.subjectlevel) {
-            covariates = setdiff(covariates, colnames(cd.pb))
-        }
-        covariates = c(covariates, colnames(cd)[grep("^RUV", colnames(cd))])
-    }
-    if (is.null(assay)) {
-        M = SingleCellExperiment::counts(sce)
-        logCPM = edgeR::cpm(Matrix::rowSums(M), log=TRUE)
-        M = log1p(M / Matrix::colSums(M) * 1e4) / log(2)
-
-    } else {
-        M = SingleCellExperiment::assays(sce)[[assay]]
-        logCPM = edgeR::cpm(Matrix::rowSums(M), log=TRUE)
-    }
-    logCPM = setNames(logCPM, rownames(M))
-    sce[[sample]] = as.factor(as.character(sce[[sample]]))
-
-    sce = sce[,order(sce[[sample]])]
+    M = SummarizedExperiment::assays(sce)$counts
+    M = log1p(M / Matrix::colSums(M) * 1e4) / log(2)
     cd = as.data.frame(SummarizedExperiment::colData(sce))
     cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
     cd[[pathology]] = relevel(cd[[pathology]], control)
     sca = MAST::FromMatrix(as.matrix(M), cd, SummarizedExperiment::rowData(sce))
     remove("M")
-    covariates = covariates[which(sapply(covariates, function(cv) {
-        if (length(unique(cd[[cv]]))==1) { return(FALSE) }
-        design = model.matrix(as.formula(paste0("~0+", cv)), data=cd)
-        A = apply(design, 2, sd)
-        sum(A) > 0
-    }))]
-    zlmCond = MAST::zlm(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), sca)
+
+    ### Use design to find what WOULD have been filtered if ZLM allowed a design matrix
+    design = model.matrix(as.formula(paste0(c("~0", pathology, covariates), collapse="+")), data=cd)
+    design = deg.filter.design(design, rename=FALSE)
+    covariates = deg.extract.covariates.from.design(design, covariates)
+    if (method=="RE") {
+        cat("Running MAST+Random Effect\n")
+        re.cov = paste0("(1|", sample.col, ")")
+        zlmCond = MAST::zlm(as.formula(paste0("~", paste0(c(pathology, covariates, re.cov), collapse="+"))), sca, method="glmer", ebayes=FALSE, strictConvergence=FALSE)
+    } else {
+        cat("Running MAST Hurdle model\n")
+        zlmCond = MAST::zlm(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), sca)
+    }
     ## saveRDS(zlmCond, "zlmCond.rds")
     summaryCond = MAST::summary(zlmCond, doLRT=paste0(pathology, case))
     ## saveRDS(summaryCond, "summaryCond.rds")
@@ -362,11 +427,14 @@ deg.mast <- function(sce, sample, pathology, case, control, covariates=c(),
     fcHurdle = merge(summaryDt[summaryDt$contrast==paste0(pathology, case) & summaryDt$component=='H',c("primerid", "Pr(>Chisq)")], #hurdle P values
                      summaryDt[summaryDt$contrast==paste0(pathology, case) & summaryDt$component=='logFC', c("primerid", "coef", "ci.hi", "ci.lo")], by='primerid') #logFC coefficients
     fcHurdle$FDR = p.adjust(fcHurdle$`Pr(>Chisq)`, "fdr")
-    fcHurdle$case = case
-    fcHurdle$control = control
-    fcHurdle$algorithm = "MAST"
     colnames(fcHurdle) = gsub("^coef$", "log2FC", colnames(fcHurdle))
     colnames(fcHurdle) = gsub("^primerid$", "gene", colnames(fcHurdle))
-    fcHurdle$logCPM = logCPM[fcHurdle$gene]
-    return(as.data.frame(fcHurdle[order(fcHurdle$FDR),]))
+    rownames(fcHurdle) = fcHurdle$gene
+    rd = as.data.frame(SummarizedExperiment::rowData(sce))
+    for (suffix in intersect(c("log2FC", "FDR"), colnames(fcHurdle))) {
+        rd[[paste0(prefix, "_", method, "_", suffix)]] = NA
+        rd[rownames(fcHurdle), paste0(prefix, "_", method, "_", suffix)] = fcHurdle[[suffix]]
+    }
+    SummarizedExperiment::rowData(sce) = rd
+    return(sce)
 }

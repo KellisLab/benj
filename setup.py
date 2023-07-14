@@ -3,7 +3,7 @@
 import setuptools
 from glob import glob
 setuptools.setup(name="benj",
-                 version="0.0.5",
+                 version="0.0.6",
                  author="Benjamin James",
                  author_email="benjames@mit.edu",
                  url="https://github.com/KellisLab/benj",

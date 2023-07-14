@@ -16,6 +16,16 @@ tss="${refdata}/regions/tss.bed"
 gene_info="${refdata}/star/geneInfo.tab"
 gtf="${refdata}/genes/genes.gtf.gz"
 
+if [[ -z "${REFDATA}" ]]; then
+    refdata=$(awk -F'= ' '/reference_path/{gsub(/[" ,]/, "", $2); print $2}' "${outdir}/_invocation")
+else
+    refdata="${REFDATA}"
+fi
+if [[ ! -d "${refdata}" ]]; then
+    echo "Refdata ${refdata} is not a directory!"
+    exit 1
+fi
+
 if [[ -f "${outdir}/outs/filtered_feature_bc_matrix.h5" ]]; then
     mkdir -p H5AD/filtered
     h5ad_from_cellranger_rna.py --h5 "${outdir}"/outs/filtered_feature_bc_matrix.h5 --sample "${sample}" --output H5AD/filtered/"${sample}.h5ad" --tss "${tss}" --gene-info "${gene_info}" --gtf "${gtf}" --min-n-genes=3 $@

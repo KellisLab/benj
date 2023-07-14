@@ -161,7 +161,7 @@ dependencies:
   - conda-forge::r-ggrastr
   - conda-forge::r-ggrepel
   - bioconda::bioconductor-ggbio
-  - bioconda::r-extrafont
+  # - bioconda::r-extrafont
   - conda-forge::r-uwot
   - conda-forge::r-rtsne
   - conda-forge::r-igraph

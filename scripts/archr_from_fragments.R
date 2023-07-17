@@ -21,7 +21,7 @@ run <- function(aggr, tss, output, gene_annotation=NA, help=FALSE, threads=as.in
     } else {
         gene_annotation = readRDS(gene_annotation)
     }
-    ArrowFiles = createArrowFiles(setNames(df$atac_fragments, df$library_id), minTSS=tss, geneAnnotation=gene_annotation, force=TRUE)
+    ArrowFiles = createArrowFiles(setNames(df$atac_fragments, df[[1]]), minTSS=tss, geneAnnotation=gene_annotation, force=TRUE)
     proj = ArchRProject(ArrowFiles, "ArchR", copyArrows=FALSE, geneAnnotation=gene_annotation)
     data.table::fwrite(as.data.frame(getCellColData(proj)), output, row.names=TRUE, sep="\t")
     unlink("ArchR", recursive=TRUE)

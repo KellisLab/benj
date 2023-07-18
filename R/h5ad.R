@@ -47,9 +47,22 @@
 #' @return A properly formatted dataframe
 #' @export
 read_h5ad_obs <- function(h5ad, base="/") {
-    df = rhdf5::h5read(h5ad, paste0(base, "/obs"))
-    return(.parse_h5ad_dataframe(df))
+    if (length(h5ad) == 1) {
+        df = rhdf5::h5read(h5ad, paste0(base, "/obs"))
+        return(.parse_h5ad_dataframe(df))
+    } else {
+        df.list = parallel::mclapply(h5ad, function(h5) {
+            .parse_h5ad_dataframe(rhdf5::h5read(h5, paste0(base, "/obs")))
+        })
+### Now to combine obs
+        df = do.call(rbind, lapply(df.list, function(dfl) {
+            dfl$df
+        }))
+        stopifnot(all(do.call(c, lapply(df.list, rownames)) %in% rownames(df)))
+        return(df)
+    }
 }
+
 #' Read H5AD var
 #'
 #' This function takes an H5 filename and reads the .var dataframe
@@ -83,6 +96,10 @@ read_h5ad_var <- function(h5ad, base="/") {
         if (is.data.frame(obs)) {
             obs_index = match(rownames(obs), rownames(obs_df))
             obs_df = obs_df[rownames(obs),]
+            for (cn in colnames(obs)) {
+                ### Add new columns as well
+                obs_df[[cn]] = obs[[cn]]
+            }
         } else {
             obs_index = match(obs, rownames(obs_df))
             obs_df = obs_df[obs,]

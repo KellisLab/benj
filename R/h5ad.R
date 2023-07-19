@@ -309,10 +309,10 @@ read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE
 #' Read a list of H5AD files in parallel, then concatenate. Useful for when using subset= and obs= parameters
 #'
 #' @export
-read_h5ad_parallel <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE, obsp=TRUE, varp=TRUE, base="/", subset=list(), refactor=TRUE) {
+read_h5ad_parallel <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE, obsp=TRUE, varp=TRUE, base="/", subset=list(), refactor=TRUE, ncores=getOption("mc.cores", 2L)) {
     se_concat(parallel::mclapply(h5ad, function(h5) {
         read_h5ad(h5, obs=obs, var=var, layer=layer,
                         raw=raw, obsm=obsm, obsp=obsp,
                         varp=varp, base=base, subset=subset, refactor=refactor)
-    }))
+    }), mc.cores=ncores)
 }

@@ -90,11 +90,11 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     ### Then extract across number of samples
         cpm.flag = rownames(cpm.flag)[Matrix::rowSums(cpm.flag) >= cpm.n]
     }
-    se = se[cpm.flag, SummarizedExperiment::colData(se)[[sample.col]] %in% colnames(pb)]
-
+    pb = pb[cpm.flag, ]
+    se = se[rownames(pb), SummarizedExperiment::colData(se)[[sample.col]] %in% colnames(pb)]
 
 ### Get logCPM info
-    logCPM = edgeR::cpmByGroup(se, SummarizedExperiment::colData(se)[[pathology]], log=TRUE)
+    logCPM = edgeR::cpmByGroup(pb, SummarizedExperiment::colData(pb)[[pathology]], log=TRUE)
     colnames(logCPM) = paste0("logCPM_", colnames(logCPM))
     SummarizedExperiment::rowData(se) = cbind(SummarizedExperiment::rowData(se), as.data.frame(logCPM))
 ### Check matrix
@@ -187,7 +187,6 @@ deg <- function(se, pathology, case, control, covariates,
                             covariates=covariates,
                             offset="total_counts", model="NBGMM")
         } else if (grepl("^mast", meth)) {
-            stop("Not implemented")
             se = deg.mast(se, pathology=pathology,
                           case=case, control=control,
                           sample.col=sample.col,

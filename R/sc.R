@@ -206,3 +206,27 @@ se_unnormalize <- function(se, assay=NULL, unnormalized="raw", eps=0.01, total_c
     }
     return(se)
 }
+
+#' Concatenate SummarizedExperiment objects, throwing out non-matching rowData columns
+#'
+#' @param se.list List of SummarizedExperiment objects
+#' @export
+se_concat <- function(se.list) {
+    rowDatas = lapply(se.list, SummarizedExperiment::rowData)
+    stopifnot(do.call(all.equal, lapply(rowDatas, rownames)))
+    metaDatas = lapply(se.list, S4Vectors::metadata)
+    good.cols = sapply(setNames(colnames(rowDatas[[1]]), colnames(rowDatas[[1]])), function(cn) {
+        all(sapply(rowDatas, function(rd) {
+            identical(rd[[cn]], rowDatas[[1]][[cn]])
+        }))
+    })
+    se = do.call(SummarizedExperiment::cbind, lapply(se.list, function(se) {
+        rd = SummarizedExperiment::rowData(se)
+        SummarizedExperiment::rowData(se) = rd[names(which(good.cols))]
+        return(se)
+    }))
+    S4Vectors::metadata(se)$h5ad = sapply(metaDatas, function(md) {
+        md$h5ad
+    })
+    return(se)
+}

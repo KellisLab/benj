@@ -94,6 +94,7 @@ read_h5ad_var <- function(h5ad, base="/") {
     obs_index = 1:nrow(obs_df)
     if (!is.null(obs)) {
         if (is.data.frame(obs)) {
+            obs = obs[rownames(obs) %in% rownames(obs_df),]
             obs_index = match(rownames(obs), rownames(obs_df))
             obs_df = obs_df[rownames(obs),]
             for (cn in colnames(obs)) {
@@ -101,6 +102,7 @@ read_h5ad_var <- function(h5ad, base="/") {
                 obs_df[[cn]] = obs[[cn]]
             }
         } else {
+            obs = intersect(obs, rownames(obs_df))
             obs_index = match(obs, rownames(obs_df))
             obs_df = obs_df[obs,]
         }
@@ -117,7 +119,7 @@ read_h5ad_var <- function(h5ad, base="/") {
                     warning(paste0("No object(s) ", subset[[i]], " in column ", cn))
                 }
             } else {
-                warning(paste0("Column ", cn, " is not in .obs"))
+                warning(paste0("Column ", names(subset)[i], " is not in .obs"))
             }
         }
     }
@@ -302,4 +304,15 @@ read_h5ad <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE
     S4Vectors::metadata(sce)$h5ad = h5ad
     S4Vectors::metadata(sce)$layer = layer
     return(sce)
+}
+
+#' Read a list of H5AD files in parallel, then concatenate. Useful for when using subset= and obs= parameters
+#'
+#' @export
+read_h5ad_parallel <- function(h5ad, obs=NULL, var=NULL, layer=NULL, raw=FALSE, obsm=TRUE, obsp=TRUE, varp=TRUE, base="/", subset=list(), refactor=TRUE) {
+    se_concat(parallel::mclapply(h5ad, function(h5) {
+        read_h5ad(h5, obs=obs, var=var, layer=layer,
+                        raw=raw, obsm=obsm, obsp=obsp,
+                        varp=varp, base=base, subset=subset, refactor=refactor)
+    }))
 }

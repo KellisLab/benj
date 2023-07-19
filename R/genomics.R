@@ -159,7 +159,8 @@ run.great <- function(gr, spt=NULL, bg=TRUE, species="hg38") {
             if (nrow(tbl) > 0) {
                 ### Add cols
                 for (col in spt) {
-                    tbl[[col]] = rep(unique(S4Vectors::mcols(lr)[col]), nrow(tbl))
+                    stopifnot(length(unique(S4Vectors::mcols(lr)[[col]]))==1)
+                    tbl[[col]] = rep(unique(S4Vectors::mcols(lr)[[col]]), nrow(tbl))
                 }
             }
             return(tbl)

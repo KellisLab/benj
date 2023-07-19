@@ -2,9 +2,10 @@
 
 batchdir=""
 RMSK="/net/bmc-lab5/data/kellis/group/Benjamin/ref/RepeatMasker_GRCh38.gtf"
+ZGTF=""
 
-OPTIONS=b:r:
-LONGOPTS=batch:,repeatmasker:
+OPTIONS=b:r:g:
+LONGOPTS=batch:,repeatmasker:,gtf:
 
 # Use getopt and store the output into $PARSED
 ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
@@ -24,6 +25,10 @@ while true; do
             ;;
 	-r|--repeatmasker)
 	    RMSK="`readlink -f $2`"
+	    shift 2
+	    ;;
+	-g|--gtf)
+	    ZGTF="`readlink -f $2`"
 	    shift 2
 	    ;;
         --)
@@ -82,12 +87,17 @@ echo "SAMPLEDIR=\$(< aggr.csv awk -F, -v TASK=\$((SLURM_ARRAY_TASK_ID + 1)) 'NR 
 echo "OUTDIR=\"\$SAMPLEDIR/outs/\""
 echo "echo Sampledir: \"\${SAMPLEDIR}\""
 echo "echo Outdir: \"\${OUTDIR}\""
-echo "REFDATA=\$(awk -F'= ' '/reference_path/{gsub(/[\" ,]/, \"\", \$2); print \$2}' \"\${SAMPLEDIR}/_invocation\")"
 echo "GTF=\$(mktemp --suffix .gtf)"
-echo "zcat \"\${REFDATA}/genes/genes.gtf.gz\" > \"\$GTF\""
-
-echo "if [[ -f \"\${OUTDIR}/gex_possorted_bam.bam\" ]]; then"
+if [[ -f "$ZGTF" ]]; then
+    echo "zcat \"$ZGTF\" > \"\$GTF\""
+else
+    echo "REFDATA=\$(awk -F'= ' '/reference_path/{gsub(/[\" ,]/, \"\", \$2); print \$2}' \"\${SAMPLEDIR}/_invocation\")"
+    echo "zcat \"\${REFDATA}/genes/genes.gtf.gz\" > \"\$GTF\""
+fi
+echo "if [[ -f \"\${OUTDIR}/gex_possorted_bam.bam\" || -L \"\${OUTDIR}/gex_possorted_bam.bam\" ]]; then"
 echo "  \`type -P time\` velocyto run -m \"${RMSK}\" \"\${OUTDIR}/gex_possorted_bam.bam\" \"\${GTF}\" -o \"\${OUTDIR}/velocyto\""
+echo "elif [[ -f  \"\${OUTDIR}/gex_possorted.bam\" || -L  \"\${OUTDIR}/gex_possorted.bam\" ]]; then"
+echo "  \`type -P time\` velocyto run -m \"${RMSK}\" \"\${OUTDIR}/gex_possorted.bam\" \"\${GTF}\" -o \"\${OUTDIR}/velocyto\""
 echo "else"
 echo "  \`type -P time\` velocyto run -m \"${RMSK}\" \"\${OUTDIR}/possorted_genome_bam.bam\" \"\${GTF}\" -o \"\${OUTDIR}/velocyto\""
 echo "fi"

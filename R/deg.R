@@ -13,8 +13,10 @@ deg.filter.design <- function(design, rename=TRUE) {
     if (!is.null(linear_combos$remove)) {
         design = design[,-linear_combos$remove]
     }
-    if (rename && ncol(design) > 1) {
-        colnames(design) = make.names(colnames(design)) ### need spaces to be removed
+    if (rename & is.matrix(design)) {
+        if (ncol(design) > 1) {
+            colnames(design) = make.names(colnames(design)) ### need spaces to be removed
+        }
     }
     return(design)
 }
@@ -63,7 +65,8 @@ deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes"
 #' @export
 deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_case_control=TRUE,
                         cpm.cutoff=10, min.total.counts.per.sample=100, IQR.factor=1.5,
-                        outlier.covariates=c("log1p_total_counts", "n_genes_by_counts")) {
+                        outlier.covariates=c("log1p_total_counts", "n_genes_by_counts"),
+                        ensure.integer.counts=TRUE) {
     if (filter_only_case_control) {
         se = se[,SummarizedExperiment::colData(se)[[pathology]] %in% c(case, control)]
     }
@@ -78,14 +81,17 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     }
     ### Outlier detection
     pb = deg.filter.outliers(pb, covariates=outlier.covariates, IQR.factor=IQR.factor)
-
-    ### Get minimum samples for CPM threshold to pass
-    cpm.n = min(table(SummarizedExperiment::colData(pb)[[pathology]]))
+    cpm.flag = rownames(se)
+    if (!is.na(cpm.cutoff) & !is.null(cpm.cutoff)) {
+### Get minimum samples for CPM threshold to pass
+        cpm.n = min(table(SummarizedExperiment::colData(pb)[[pathology]]))
     ### Filter genes above a cpm cutoff
-    cpm.flag = edgeR::cpm(SummarizedExperiment::assays(pb)$counts) > cpm.cutoff
+        cpm.flag = edgeR::cpm(SummarizedExperiment::assays(pb)$counts) > cpm.cutoff
     ### Then extract across number of samples
-    cpm.flag = rownames(cpm.flag)[Matrix::rowSums(cpm.flag) >= cpm.n]
+        cpm.flag = rownames(cpm.flag)[Matrix::rowSums(cpm.flag) >= cpm.n]
+    }
     se = se[cpm.flag, SummarizedExperiment::colData(se)[[sample.col]] %in% colnames(pb)]
+
 
 ### Get logCPM info
     logCPM = edgeR::cpmByGroup(se, SummarizedExperiment::colData(se)[[pathology]], log=TRUE)
@@ -98,7 +104,9 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     } else {
         is_integer_matrix = all(apply(X, c(1, 2), function(x) { round(x) == x }))
     }
-    stopifnot(is_integer_matrix)
+    if (ensure.integer.counts) {
+        stopifnot(is_integer_matrix)
+    }
     S4Vectors::metadata(se)$deg = list(pathology=pathology,
                                        case=case,
                                        control=control,
@@ -140,15 +148,17 @@ deg <- function(se, pathology, case, control, covariates,
                 sample.col="Sample", cpm.cutoff=10,
                 filter_only_case_control=TRUE, NRUV=0,
                 min.total.counts.per.sample=100, IQR.factor=1.5,
-                outlier.covariates=c("log1p_total_counts", "n_genes_by_counts")) {
+                outlier.covariates=c("log1p_total_counts", "n_genes_by_counts"),
+                ensure.integer.counts=TRUE) {
     method = match.arg(gsub(" ", "-", tolower(method)),
-                       c("deseq2", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re"), several.ok=TRUE)
+                       c("deseq2", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer"), several.ok=TRUE)
     se = deg.prepare(se, pathology=pathology,
                      case=case, control=control,
                      sample.col=sample.col,
                      filter_only_case_control=filter_only_case_control,
                      min.total.counts.per.sample=min.total.counts.per.sample,
-                     cpm.cutoff=cpm.cutoff)
+                     cpm.cutoff=cpm.cutoff, outlier.covariates=outlier.covariates,
+                     ensure.integer.counts=ensure.integer.counts)
     ### RUVSeq
     covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
     if (NRUV > 0) {
@@ -183,6 +193,11 @@ deg <- function(se, pathology, case, control, covariates,
                           sample.col=sample.col,
                           covariates=covariates,
                           method=ifelse(grepl("re$", meth), "RE", "Hurdle"))
+        } else if (meth == "lmer") {
+            se = deg.lmer(se, pathology=pathology,
+                          case=case, control=control,
+                          sample.col=sample.col,
+                          covariates=covariates)
         } else {
             stop(paste0("Invalid method ", meth))
         }
@@ -386,6 +401,42 @@ deg.deseq2 <- function(se,
     rd[rownames(df), paste0(prefix, "_stat")] = df$stat
     SummarizedExperiment::rowData(se) = rd
     return(se)
+}
+
+deg.lmer <- function(se, sample.col, pathology, case, control, covariates=NULL,
+                     weights="log1p_total_counts", mc.cores=2,
+                     prefix="lmer") {
+    stop("not implemented yet")
+    M = SummarizedExperiment::assays(se)$counts
+    cd = as.data.frame(SummarizedExperiment::colData(se))
+    cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
+    cd[[pathology]] = relevel(cd[[pathology]], control)
+
+    design = model.matrix(as.formula(paste0(c("~0", pathology, covariates), collapse="+")), data=cd)
+    design = deg.filter.design(design, rename=FALSE)
+    covariates = deg.extract.covariates.from.design(design, covariates)
+    if (is.null(cd[[weights]])) {
+        weights = rep(1, nrow(cd))
+    } else {
+        weights = cd[[weights]]
+    }
+    result = lapply(rownames(se), function(gene) {
+        cat(gene,"\n")
+        print(table(se@colData$Pathology))
+        lme4::glmer(as.formula(paste0(pathology, "~ gene + (1|", sample.col, ") + ",
+                                              paste0(covariates, collapse="+"))),
+                   data=cbind(cd, data.frame(gene=M[gene,])),
+                   weights=weights,
+                   family=stats::binomial(link="logit"))
+
+    })
+    coefs = t(sapply(setNames(result, rownames(se)), function(model) {
+        coef(summary(model))["gene",]
+    }))
+    return(data.frame(coef=coefs[,"Estimate"],
+                      pvalue=coefs[,"Pr(>|z|)"],
+                      row.names=rownames(coefs)))
+
 }
 
 #' Run MAST on a SingleCellExperiment object

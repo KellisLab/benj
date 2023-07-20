@@ -55,7 +55,10 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
         sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=[])
     if "gene_ids" in adata.var.columns:
         with sw("Finding HVGs"):
-            sc.pp.highly_variable_genes(adata, batch_key="Sample", flavor="seurat_v3", n_top_genes=adata.shape[1])
+            try:
+                sc.pp.highly_variable_genes(adata, batch_key="Sample", flavor="seurat_v3", n_top_genes=adata.shape[1])
+            except ValueError:
+                pass
     if use_scrublet and "scrublet" not in adata.uns.keys():
         with sw("Scrublet"):
             sc.external.pp.scrublet(adata, batch_key="Sample")

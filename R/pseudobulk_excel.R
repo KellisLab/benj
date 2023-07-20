@@ -11,7 +11,10 @@ dump.excel <- function(se, output) {
         A$subset = as.data.frame(md$subset)
     }
     if ("h5ad" %in% names(md)) {
-        A$files = data.frame(h5ad=normalizePath(md$h5ad), annotation=normalizePath(md$annotation))
+        A$files = data.frame(h5ad=normalizePath(md$h5ad))
+        if (!is.null(md$annotation)) {
+            A$files$annotation = normalizePath(md$annotation)
+        }
     }
     writexl::write_xlsx(A, output)
 }

@@ -8,13 +8,10 @@ dump.excel <- function(se, output) {
              sample_metadata=cbind(data.frame(name=colnames(se)), cd),
              deg_metadata=as.data.frame(md$deg))
     if ("subset" %in% names(md)) {
-        sf = as.data.frame(md$subset)
-        if (nrow(sf) == 0) {
-            sf = data.frame(h5ad=md$h5ad)
-        } else {
-            sf$h5ad = md$h5ad
-        }
-        A$subset = sf
+        A$subset = as.data.frame(md$subset)
+    }
+    if ("h5ad" %in% names(md)) {
+        A$files = data.frame(h5ad=normalizePath(md$h5ad), annotation=normalizePath(md$annotation))
     }
     writexl::write_xlsx(A, output)
 }

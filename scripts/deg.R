@@ -27,9 +27,34 @@ get_args <- function(args) {
     params$min.total.counts.per.sample = 100
     params$ncores = as.integer(Sys.getenv("OMP_NUM_THREADS", getOption("mc.cores", 2)))
     i = 1
+    help = function() {
+        cat("deg.R [options]
+options:
+  -h, --help Show this message and exit.
+  -i, --h5ad List of H5AD object(s) to read in.
+  -a, --annotation Annotation if necessary, to add to colData to subset
+  -s, --subset Subset the H5AD objects with key=value assignments. Multiple values could be comma separated, like key1=valueA,valueB,valueC key2=valueX
+  -o, --output XLSX output file
+  -j, --ncores Number of cores to use. By default, use OMP_NUM_THREADS
+  --pathology Column in colData/.obs that separates pathology/diagnosis.
+  --case  Value within --pathology column that specifices cells that are cases.
+  --control Value within --pathology column that specifies cells that are controls.
+  --method Method(s) (whitespace separated) to be used for DEG analysis. Supported are DESeq2, edgeR-lrt, edgeR-QL, nebula, mast, mast-re.
+  --covariates Covariates (in colData/.obs) to be used as covariates for DEG calling. If pseudobulk, may be removed if not a subject-level variable
+  --sample-col Column corresponding to sample for pseudobulk
+  --ruv Number of subject-level RUV terms to include
+  --cpm-cutoff Counts per million cutoff for filtering genes.
+  --min-total-counts Number of total counts required per cell
+  --iqr-factor Number of IQR above 75% away from outlier covariates to be a bad sample.
+  --outlier-covariates Covariates (in colData/.obs) to be used as covariates for pseudobulk outlier detection. If not present, or not calculated by benj::calculate_qc_metrics, will be thrown out.
+")
+        stop("Help")
+    }
     while (i <= length(args)) {
         arg = args[[i]]
-        if (arg %in% c("-i", "--h5ad")) {
+        if (arg %in% c("-h", "--help")) {
+            help()
+        } else if (arg %in% c("-i", "--h5ad")) {
             i = i + 1
             while(i <= length(args) && !startsWith(args[[i]], "-")) {
                 params$h5ad = c(params$h5ad, args[[i]])
@@ -59,7 +84,7 @@ get_args <- function(args) {
             i = i + 1
             params$ncores = as.integer(args[[i]])
             i = i + 1
-        } else if (arg %in% c("-p", "--pathology")) {
+        } else if (arg %in% c("--path", "--pathology")) {
             i = i + 1
             params$pathology = args[[i]]
             i = i + 1
@@ -111,7 +136,6 @@ get_args <- function(args) {
                 i = i + 1
             }
         } else {
-            print(i)
             stop(paste0("Unknown option ", args[[i]]))
         }
     }

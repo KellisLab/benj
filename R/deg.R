@@ -68,7 +68,11 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
                         outlier.covariates=c("log1p_total_counts", "n_genes_by_counts"),
                         ensure.integer.counts=TRUE) {
     if (filter_only_case_control) {
-        se = se[,SummarizedExperiment::colData(se)[[pathology]] %in% c(case, control)]
+        if (pathology %in% colnames(SummarizedExperiment::colData(se))) {
+            se = se[,SummarizedExperiment::colData(se)[[pathology]] %in% c(case, control)]
+        } else {
+            stop(paste0("Pathology not present in colData"))
+        }
     }
     stopifnot("counts" %in% names(SummarizedExperiment::assays(se)))
     pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts")

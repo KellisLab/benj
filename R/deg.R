@@ -155,7 +155,7 @@ deg <- function(se, pathology, case, control, covariates,
                 outlier.covariates=c("log1p_total_counts", "n_genes_by_counts"),
                 ensure.integer.counts=TRUE) {
     method = match.arg(gsub(" ", "-", tolower(method)),
-                       c("deseq2", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer"), several.ok=TRUE)
+                       c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer"), several.ok=TRUE)
     se = deg.prepare(se, pathology=pathology,
                      case=case, control=control,
                      sample.col=sample.col,

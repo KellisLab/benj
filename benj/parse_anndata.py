@@ -35,7 +35,8 @@ def parse_anndata(parse_anndata_prefix="", **args):
     import os
     import logging
     import numpy as np
-    parse_anndata_prefix = parse_anndata_prefix.replace("-", "_") + "_"
+    if parse_anndata_prefix:
+        parse_anndata_prefix = parse_anndata_prefix.replace("-", "_") + "_"
     h5ad = args.get(parse_anndata_prefix + "h5ad",
                     args.get(parse_anndata_prefix + "input", ""))
     if os.path.exists(h5ad):

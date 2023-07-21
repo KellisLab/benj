@@ -214,16 +214,20 @@ se_unnormalize <- function(se, assay=NULL, unnormalized="raw", eps=0.01, total_c
 se_concat <- function(se.list) {
     se.list = Filter(function(x) { S4Vectors::ncol(x) > 0 }, se.list)
     rowDatas = lapply(se.list, SummarizedExperiment::rowData)
+    colDatas = lapply(se.list, SummarizedExperiment::colData)
     stopifnot(do.call(all.equal, lapply(rowDatas, rownames)))
     metaDatas = lapply(se.list, S4Vectors::metadata)
-    good.cols = sapply(setNames(colnames(rowDatas[[1]]), colnames(rowDatas[[1]])), function(cn) {
+    good.row.cols = sapply(setNames(colnames(rowDatas[[1]]), colnames(rowDatas[[1]])), function(cn) {
         all(sapply(rowDatas, function(rd) {
             identical(rd[[cn]], rowDatas[[1]][[cn]])
         }))
     })
+    good.col.cols = Reduce(intersect, lapply(colDatas, colnames))
     se = do.call(SummarizedExperiment::cbind, lapply(se.list, function(se) {
         rd = as.data.frame(SummarizedExperiment::rowData(se))
-        SummarizedExperiment::rowData(se) = rd[names(which(good.cols))]
+        SummarizedExperiment::rowData(se) = rd[,names(which(good.row.cols)),drop=FALSE]
+        cd = as.data.frame(SummarizedExperiment::colData(se))
+        SummarizedExperiment::colData(se) = cd[,names(which(good.col.cols)),drop=FALSE]
         return(se)
     }))
     S4Vectors::metadata(se)$h5ad = sapply(metaDatas, function(md) {

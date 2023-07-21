@@ -13,6 +13,7 @@ if __name__ == "__main__":
     ap.add_argument("-l", "--leiden", default="overall_clust")
     ap.add_argument("--prefix", default="C")
     ap.add_argument("--genome", required=True)
+    ap.add_argument("-c", "--min-cells-per-peak", type=int, default=10, dest="min_n_cells_by_counts")
     ap.add_argument("-j", "--jaspar", default="JASPAR2022")
     ap.add_argument("-s", "--species", type=int, required=True)
     ap.add_argument("--cor-cutoff", type=float, default=0.8)

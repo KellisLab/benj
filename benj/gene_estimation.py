@@ -32,8 +32,8 @@ def estimate_genes_archr(adata, gtf:str,
         gf["gene_length"] = gf["End"] - gf["Start"]
         ### scale by inverse gene length
         gs = 1/gf["gene_length"].values
-        ### min max scale
-        gs = (gs - np.min(gs)) / (np.max(gs) - np.min(gs))
+        ### min max scale, plus epsilon to avoid divide by 0
+        gs = (gs - np.min(gs)) / (np.max(gs) - np.min(gs)) + 1e-300
         ### expand to 1 to GSF range. But take log, so log1p((gs-1)*s) = log(1 + (gs - 1) * s)
         gf["log_gene_scale"] = np.log1p((gene_scale_factor - 1) * gs)
         gf.index = gf["gene_id"].values
@@ -90,6 +90,7 @@ def estimate_genes_archr(adata, gtf:str,
     if target_sum is not None and target_sum > 0:
         sc.pp.normalize_total(gdata, target_sum=target_sum)
     else:
+        print("Using median normalization")
         sc.pp.normalize_total(gdata)
     return gdata
 

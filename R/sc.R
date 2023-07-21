@@ -227,7 +227,7 @@ se_concat <- function(se.list) {
         rd = as.data.frame(SummarizedExperiment::rowData(se))
         SummarizedExperiment::rowData(se) = rd[,names(which(good.row.cols)),drop=FALSE]
         cd = as.data.frame(SummarizedExperiment::colData(se))
-        SummarizedExperiment::colData(se) = cd[,names(which(good.col.cols)),drop=FALSE]
+        SummarizedExperiment::colData(se) = cd[,good.col.cols,drop=FALSE]
         return(se)
     }))
     S4Vectors::metadata(se)$h5ad = sapply(metaDatas, function(md) {

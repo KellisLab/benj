@@ -94,9 +94,9 @@ read_h5ad_var <- function(h5ad, base="/") {
     obs_index = 1:nrow(obs_df)
     if (!is.null(obs)) {
         if (is.data.frame(obs)) {
-            obs = obs[rownames(obs) %in% rownames(obs_df),]
+            obs = obs[rownames(obs) %in% rownames(obs_df),,drop=FALSE]
             obs_index = match(rownames(obs), rownames(obs_df))
-            obs_df = obs_df[rownames(obs),]
+            obs_df = obs_df[rownames(obs),,drop=FALSE]
             for (cn in colnames(obs)) {
                 ### Add new columns as well
                 obs_df[[cn]] = obs[[cn]]
@@ -104,7 +104,7 @@ read_h5ad_var <- function(h5ad, base="/") {
         } else {
             obs = intersect(obs, rownames(obs_df))
             obs_index = match(obs, rownames(obs_df))
-            obs_df = obs_df[obs,]
+            obs_df = obs_df[obs,,drop=FALSE]
         }
     }
     if (length(subset) > 0) {
@@ -113,7 +113,7 @@ read_h5ad_var <- function(h5ad, base="/") {
                 cn = names(subset)[i]
                 if (any(subset[[i]] %in% obs_df[[cn]])) {
                     flag = obs_df[[cn]] %in% subset[[i]]
-                    obs_df = obs_df[flag, ]
+                    obs_df = obs_df[flag,,drop=FALSE]
                     obs_index = obs_index[flag]
                 } else {
                     warning(paste0("No object(s) ", subset[[i]], " in column ", cn))

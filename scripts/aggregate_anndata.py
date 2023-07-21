@@ -25,7 +25,10 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
                 if os.path.isfile(fname):
                     adata = sc.read(fname)
                     if "scrublet" in adata.uns:
-                        scrub_table[sample] = adata.uns["scrublet"]
+                        if "batches" in adata.uns["scrublet"]:
+                            scrub_table |= adata.uns["scrublet"]["batches"]
+                        else:
+                            scrub_table[sample] = adata.uns["scrublet"]
                     for cn in md.columns:
                         adata.obs[cn] = md.loc[sample, cn]
                     if "n_genes_by_counts" in adata.obs.columns and min_n_genes > 0:

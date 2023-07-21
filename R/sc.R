@@ -222,7 +222,7 @@ se_concat <- function(se.list) {
         }))
     })
     se = do.call(SummarizedExperiment::cbind, lapply(se.list, function(se) {
-        rd = SummarizedExperiment::rowData(se)
+        rd = as.data.frame(SummarizedExperiment::rowData(se))
         SummarizedExperiment::rowData(se) = rd[names(which(good.cols))]
         return(se)
     }))

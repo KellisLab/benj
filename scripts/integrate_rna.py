@@ -24,7 +24,7 @@ if __name__ == "__main__":
     ap.add_argument("--dotplot", nargs="+")
     ap.add_argument("--target-sum", type=int, default=0)
     ap.add_argument("--celltypist")
-    ap.add_argument("--compression", type=int, default=9)
+    ap.add_argument("--compression", type=int, default=6)
     ap.add_argument("--min-dist", type=float, default=0.3)
     ap.add_argument("--no-rank-genes", dest="use_rgg", action="store_false")
     ap.add_argument("--rank-genes", dest="use_rgg", action="store_true")

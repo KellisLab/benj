@@ -1,7 +1,7 @@
 
 def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_bbknn:bool=True,
                    leiden="overall_clust", resolution:float=1., prefix="C",
-                   tsv=None, min_dist:float=0.3, compression:int=9,
+                   tsv=None, min_dist:float=0.3, compression:int=6,
                    min_n_cells_by_counts:int=2, cor_cutoff:float=0.8,
                    max_iter_harmony:int=50,
                    genome:str=None, release:str="JASPAR2022", species:int=-1,
@@ -126,7 +126,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
                   leiden:str="overall_clust", resolution:float=1., min_dist:float=0.3,
                   dotplot=None, celltypist=None, tsv=None,
                   rgg_ng:int=5, max_iter_harmony:int=50, prefix:str="C",
-                  sw=None, use_rgg:bool=True, target_sum:int=None, compression:int=9, **kwargs):
+                  sw=None, use_rgg:bool=True, target_sum:int=None, compression:int=6, **kwargs):
     import scanpy as sc
     import anndata
     import pandas as pd
@@ -147,10 +147,10 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     if "raw" in adata.layers:
         with sw("Copying .layers[\"raw\"] to .X"):
             adata.X = adata.layers["raw"].copy()
-    elif np.issubtype(adata.X.dtype, np.integer):
+    elif np.issubdtype(adata.X.dtype, np.integer):
         with sw("Copying .X to .layers[\"raw\"]"):
             adata.layers["raw"] = adata.X.copy()
-    if np.issubtype(adata.X.dtype, np.integer):
+    if np.issubdtype(adata.X.dtype, np.integer):
         with sw("Normalizing data"):
             if target_sum is not None and target_sum > 0:
                 sc.pp.normalize_total(adata, target_sum=target_sum)

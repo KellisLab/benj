@@ -230,6 +230,7 @@ deg.edger <- function(se, pathology, case, control,
     X = SummarizedExperiment::assays(pb)$counts
     cd = as.data.frame(SummarizedExperiment::colData(pb))
     cd[[pathology]] = relevel(as.factor(cd[[pathology]]), ref=control)
+    covariates = covariates[covariates %in% colnames(cd)]
     dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
     dgel = edgeR::calcNormFactors(dgel, method="TMM")
     design = model.matrix(as.formula(paste0(c("~0", pathology, covariates), collapse=" + ")),

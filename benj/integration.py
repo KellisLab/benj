@@ -34,7 +34,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
     with sw("Re-calculating qc metrics"):
         sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True, layer="raw")
     if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
-        with sw("Filtering cells by counts >= %d" % min_n_cells_by_counts):
+        with sw("Filtering peaks with cells by counts >= %d" % min_n_cells_by_counts):
             mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
     with sw("Running TF-IDF"):
         adata.X = adata.layers["raw"].copy()
@@ -147,20 +147,23 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     if "raw" in adata.layers:
         with sw("Copying .layers[\"raw\"] to .X"):
             adata.X = adata.layers["raw"].copy()
-    else:
+    elif np.issubtype(adata.X.dtype, np.integer):
         with sw("Copying .X to .layers[\"raw\"]"):
             adata.layers["raw"] = adata.X.copy()
-    with sw("Normalizing data"):
-        if target_sum is not None and target_sum > 0:
-            sc.pp.normalize_total(adata, target_sum=target_sum)
-        else:
-            print("Using median normalization")
-            sc.pp.normalize_total(adata)
-        sc.pp.log1p(adata)
-        adata.raw = adata
+    if np.issubtype(adata.X.dtype, np.integer):
+        with sw("Normalizing data"):
+            if target_sum is not None and target_sum > 0:
+                sc.pp.normalize_total(adata, target_sum=target_sum)
+            else:
+                print("Using median normalization")
+                sc.pp.normalize_total(adata)
+            sc.pp.log1p(adata)
+    else:
+        print("Data looks normalized already")
     if hvg > 0:
         with sw("Calculating %d HVG" % hvg):
             sc.pp.highly_variable_genes(adata, n_top_genes=hvg, batch_key=batch, subset=True)
+    adata.raw = adata
     if batch is not None and use_combat:
         with sw("Running ComBat"):
             sc.pp.combat(adata, batch)

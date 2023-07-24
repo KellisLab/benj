@@ -67,7 +67,7 @@ def parse_anndata(parse_anndata_prefix="", **args):
                 sval = S[1].split(args[parse_anndata_prefix + "split"])
                 try:
                     sval = [literal_eval(x) for x in sval]
-                except ValueError:
+                except:
                     pass
                 dt = obs[S[0]].dtype
                 if dt.name == "category":

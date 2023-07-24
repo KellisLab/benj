@@ -23,9 +23,11 @@ dump.excel <- function(se, output) {
 #' @export
 load.persample.excel <- function(xlsx) {
     sheets = readxl::excel_sheets(xlsx)
-    obs = readxl::read_xlsx(xlsx, "sample_metadata")
-    if ("genes" %in% sheets) {
-        var = readxl::read_xlsx(xlsx, "gene_info")
+    obs = as.data.frame(readxl::read_xlsx(xlsx, "sample_metadata"))
+    rownames(obs) = obs[[1]]
+    if ("gene_info" %in% sheets) {
+        var = as.data.frame(readxl::read_xlsx(xlsx, "gene_info"))
+        rownames(var) = var[[1]]
     } else {
         var = NULL
     }

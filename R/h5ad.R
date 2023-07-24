@@ -111,20 +111,19 @@ read_h5ad_var <- function(h5ad, base="/") {
         for (i in seq_along(subset)) {
             if (names(subset)[i] %in% colnames(obs_df)) {
                 cn = names(subset)[i]
-                if (any(subset[[i]] %in% obs_df[[cn]])) {
-                    flag = obs_df[[cn]] %in% subset[[i]]
-                    obs_df = obs_df[flag,,drop=FALSE]
-                    obs_index = obs_index[flag]
-                } else {
+                if (!(subset[[i]] %in% obs_df[[cn]])) {
                     warning(paste0("No object(s) ", subset[[i]], " in column ", cn))
                 }
+                flag = obs_df[[cn]] %in% subset[[i]]
+                obs_df = obs_df[flag,,drop=FALSE]
+                obs_index = obs_index[flag]
             } else {
                 warning(paste0("Column ", names(subset)[i], " is not in .obs"))
             }
         }
     }
     for (cn in colnames(obs_df)) {
-        if (refactor & is.factor(obs_df[[cn]]) & (min(table(obs_df[[cn]]))==0)) {
+        if ((nrow(obs_df) > 0) & refactor & is.factor(obs_df[[cn]]) & (min(table(obs_df[[cn]]))==0)) {
             obs_df[[cn]] = as.factor(as.character(obs_df[[cn]]))
         }
     }

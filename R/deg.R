@@ -456,7 +456,8 @@ deg.mast <- function(sce, sample.col, pathology, case, control, covariates=NULL,
                      method, prefix="MAST") {
     require(MAST)
     M = SummarizedExperiment::assays(sce)$counts
-    M = log1p(M / Matrix::colSums(M) * 1e4) / log(2)
+    M = M %*% Matrix::Diagonal(x=1e4 / Matrix::colSums(M))
+    M = log1p(M) / log(2)
     cd = as.data.frame(SummarizedExperiment::colData(sce))
     cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
     cd[[pathology]] = relevel(cd[[pathology]], control)

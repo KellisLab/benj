@@ -1,5 +1,5 @@
 #' @export
-dump.excel <- function(se, output) {
+dump.excel <- function(se, output, use.openxlsx=TRUE) {
     stopifnot(dir.exists(dirname(output)))
     md = S4Vectors::metadata(se)
     cd = SummarizedExperiment::colData(se)
@@ -16,7 +16,36 @@ dump.excel <- function(se, output) {
             A$files$annotation = normalizePath(md$annotation)
         }
     }
-    writexl::write_xlsx(A, output)
+    gic = colnames(A$gene_info)
+    if (use.openxlsx) {
+        wb = openxlsx::createWorkbook()
+        # Loop over the list and add each dataframe as a new sheet
+        for (sheet_name in names(A)) {
+            openxlsx::addWorksheet(wb, sheet_name)
+            openxlsx::writeData(wb, sheet_name, A[[sheet_name]])
+        }
+
+        openxlsx::conditionalFormatting(wb=wb, sheet="gene_info",
+                                        type="colourScale",
+                                        style=c("#FF0000", "#FFFFFF", "#0000FF"),
+                                        rows=1:nrow(rd), cols=grep("^logCPM", gic))
+        for (col in grep("log2FC$", gic)) {
+            openxlsx::conditionalFormatting(wb=wb, sheet="gene_info",
+                                            type="colourScale",
+                                            style=c("#FF0000", "#FFFF00", "#00FF00"),
+                                            rows=1:nrow(rd), cols=col)
+        }
+        for (col in grep("FDR$", gic)) {
+            openxlsx::conditionalFormatting(wb=wb, sheet="gene_info",
+                                            type="colourScale",
+                                            style=c("#FFFFFF", "#AAAAFF", "#4444FF"),
+                                            rows=1:nrow(rd), cols=col)
+        }
+        openxlsx::freezePane(wb, sheet="gene_info", firstRow=TRUE, firstCol=TRUE)
+        openxlsx::saveWorkbook(wb, output, overwrite=TRUE)
+    } else {
+        writexl::write_xlsx(A, output)
+    }
 }
 
 

@@ -167,7 +167,7 @@ deg <- function(se, pathology, case, control, covariates,
     covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
     if (NRUV > 0) {
         se = deg.ruvseq(se, pathology=pathology, covariates=covariates, sample.col=sample.col, NRUV=NRUV)
-        covariates = c(covariates, paste0("RUV", NRUV))
+        covariates = c(covariates, paste0("RUV_", NRUV))
         covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
     }
     S4Vectors::metadata(se)$deg$covariates = paste0(covariates, collapse=" + ")
@@ -461,7 +461,7 @@ deg.mast <- function(sce, sample.col, pathology, case, control, covariates=NULL,
     cd = as.data.frame(SummarizedExperiment::colData(sce))
     cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
     cd[[pathology]] = relevel(cd[[pathology]], control)
-    sca = MAST::FromMatrix(as.matrix(M), cd, SummarizedExperiment::rowData(sce))
+    sca = MAST::FromMatrix(as.matrix(M), cd, SummarizedExperiment::rowData(sce), check_sanity=TRUE)
     remove("M")
 
     ### Use design to find what WOULD have been filtered if ZLM allowed a design matrix

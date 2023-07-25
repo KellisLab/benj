@@ -38,7 +38,7 @@ dump.excel <- function(se, output, use.openxlsx=TRUE) {
         for (col in grep("FDR$", gic)) {
             openxlsx::conditionalFormatting(wb=wb, sheet="gene_info",
                                             type="colourScale",
-                                            style=c("#FFFFFF", "#AAAAFF", "#4444FF"),
+                                            style=c("#FEFEFF", "#AAAAFF", "#4444FF"),
                                             rows=1:nrow(rd), cols=col)
         }
         openxlsx::freezePane(wb, sheet="gene_info", firstRow=TRUE, firstCol=TRUE)

@@ -167,7 +167,7 @@ deg <- function(se, pathology, case, control, covariates,
     covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
     if (NRUV > 0) {
         se = deg.ruvseq(se, pathology=pathology, covariates=covariates, sample.col=sample.col, NRUV=NRUV)
-        covariates = c(covariates, paste0("RUV_", NRUV))
+        covariates = c(covariates, paste0("RUV_", 1:NRUV))
         covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
     }
     S4Vectors::metadata(se)$deg$covariates = paste0(covariates, collapse=" + ")

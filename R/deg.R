@@ -153,6 +153,7 @@ deg <- function(se, pathology, case, control, covariates,
                 filter_only_case_control=TRUE, NRUV=0,
                 min.total.counts.per.sample=100, IQR.factor=1.5,
                 outlier.covariates=c("log1p_total_counts", "n_genes_by_counts"),
+                verbose=TRUE,
                 ensure.integer.counts=TRUE) {
     method = match.arg(gsub(" ", "-", tolower(method)),
                        c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer"), several.ok=TRUE)
@@ -166,7 +167,7 @@ deg <- function(se, pathology, case, control, covariates,
     ### RUVSeq
     covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
     if (NRUV > 0) {
-        se = deg.ruvseq(se, pathology=pathology, covariates=covariates, sample.col=sample.col, NRUV=NRUV)
+        se = deg.ruvseq(se, pathology=pathology, covariates=covariates, sample.col=sample.col, NRUV=NRUV, verbose=verbose)
         covariates = c(covariates, paste0("RUV_", 1:NRUV))
         covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
     }
@@ -280,6 +281,7 @@ deg.ruvseq <- function(sce, sample.col, pathology, covariates=NULL, NRUV=3, norm
     if (verbose) {
         cat("Design matrix:\n")
         print(tibble::as_tibble(cd[c(pathology, covariates)]), n=nrow(cd))
+        print(str(cd))
     }
     design = model.matrix(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), data=cd)
     design = deg.filter.design(design)

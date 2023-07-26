@@ -36,6 +36,7 @@ get_args <- function(args) {
     params$cpm.cutoff = 10
     params$sample.col = "Sample"
     params$NRUV = 0
+    params$verbose = FALSE
     params$IQR.factor = 1.5
     params$outlier.covariates = c("log1p_total_counts", "n_genes_by_counts")
     params$min.total.counts.per.sample = 100
@@ -149,6 +150,12 @@ options:
                 params$outlier.covariates = c(params$outlier.covariates, args[[i]])
                 i = i + 1
             }
+        } else if (arg %in% c("-v", "--verbose")) {
+            i = i + 1
+            verbose = TRUE
+        } else if (arg %in% c("-q", "--quiet")) {
+            i = i + 1
+            verbose = FALSE
         } else {
             stop(paste0("Unknown option ", args[[i]]))
         }
@@ -197,6 +204,7 @@ adata = benj::deg(adata,
                   sample.col=params$sample.col,
                   cpm.cutoff=params$cpm.cutoff,
                   NRUV=params$NRUV,
+                  verbose=params$verbose,
                   min.total.counts.per.sample=params$min.total.counts.per.sample,
                   IQR.factor=params$IQR.factor,
                   outlier.covariates=params$outlier.covariates)

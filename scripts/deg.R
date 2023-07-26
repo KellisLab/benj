@@ -152,10 +152,10 @@ options:
             }
         } else if (arg %in% c("-v", "--verbose")) {
             i = i + 1
-            verbose = TRUE
+            params$verbose = TRUE
         } else if (arg %in% c("-q", "--quiet")) {
             i = i + 1
-            verbose = FALSE
+            params$verbose = FALSE
         } else {
             stop(paste0("Unknown option ", args[[i]]))
         }

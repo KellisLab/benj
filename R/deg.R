@@ -8,10 +8,10 @@
 #' @export
 deg.filter.design <- function(design, rename=TRUE) {
     nzv = caret::nearZeroVar(design, saveMetrics=TRUE)
-    design = design[,!nzv$nzv | rownames(nzv) == "(Intercept)"]
+    design = design[,!nzv$nzv | rownames(nzv) == "(Intercept)",drop=FALSE]
     linear_combos = caret::findLinearCombos(design)
     if (!is.null(linear_combos$remove)) {
-        design = design[,-linear_combos$remove]
+        design = design[,-linear_combos$remove,drop=FALSE]
     }
     if (rename & is.matrix(design)) {
         if (ncol(design) > 1) {
@@ -40,8 +40,10 @@ deg.extract.covariates.from.design <- function(design, covariates.used) {
 #' @return Updated SummarizedExperiment object with bad samples removed
 #' @export
 deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes"), IQR.factor=1.5) {
+    cd = as.data.frame(SummarizedExperiment::colData(se))
+    covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
     design = model.matrix(as.formula(paste0(c("~0", covariates), collapse="+")),
-                          data=as.data.frame(SummarizedExperiment::colData(se)))
+                          data=cd)
     design = deg.filter.design(design)
     if (ncol(design)==0) {
         ### Remove in case no covariates are passed
@@ -234,6 +236,7 @@ deg.edger <- function(se, pathology, case, control,
     covariates = covariates[covariates %in% colnames(cd)]
     dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
     dgel = edgeR::calcNormFactors(dgel, method="TMM")
+    covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
     design = model.matrix(as.formula(paste0(c("~0", pathology, covariates), collapse=" + ")),
                           data=cd)
     design = deg.filter.design(design)
@@ -283,6 +286,7 @@ deg.ruvseq <- function(sce, sample.col, pathology, covariates=NULL, NRUV=3, norm
         print(tibble::as_tibble(cd[c(pathology, covariates)]), n=nrow(cd))
         print(str(cd))
     }
+    covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
     design = model.matrix(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), data=cd)
     design = deg.filter.design(design)
 ### Use LRT workflow
@@ -335,6 +339,7 @@ deg.nebula <- function(sce, pathology, case, control, sample.col, covariates=NUL
     X = SummarizedExperiment::assays(sce)$counts
     cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
     cd[[pathology]] = relevel(cd[[pathology]], control)
+    covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
     design = model.matrix(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), data=cd)
     design = deg.filter.design(design)
     neb = nebula::nebula(X,
@@ -393,6 +398,7 @@ deg.deseq2 <- function(se,
     cd = as.data.frame(SummarizedExperiment::colData(pb))
     cd[[pathology]] = relevel(as.factor(cd[[pathology]]), ref=control)
     covariates = covariates[covariates %in% colnames(cd)]
+    covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
     design = model.matrix(as.formula(paste0("~", c(pathology, covariates), collapse=" + ")),
                           data=cd)
     design = deg.filter.design(design)
@@ -421,7 +427,7 @@ deg.lmer <- function(se, sample.col, pathology, case, control, covariates=NULL,
     cd = as.data.frame(SummarizedExperiment::colData(se))
     cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
     cd[[pathology]] = relevel(cd[[pathology]], control)
-
+    covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
     design = model.matrix(as.formula(paste0(c("~0", pathology, covariates), collapse="+")), data=cd)
     design = deg.filter.design(design, rename=FALSE)
     covariates = deg.extract.covariates.from.design(design, covariates)
@@ -469,7 +475,7 @@ deg.mast <- function(sce, sample.col, pathology, case, control, covariates=NULL,
     cd[[pathology]] = relevel(cd[[pathology]], control)
     sca = MAST::FromMatrix(as.matrix(M), cd, SummarizedExperiment::rowData(sce), check_sanity=TRUE)
     remove("M")
-
+    covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
     ### Use design to find what WOULD have been filtered if ZLM allowed a design matrix
     design = model.matrix(as.formula(paste0(c("~0", pathology, covariates), collapse="+")), data=cd)
     design = deg.filter.design(design, rename=FALSE)

@@ -111,8 +111,8 @@ read_h5ad_var <- function(h5ad, base="/") {
         for (i in seq_along(subset)) {
             if (names(subset)[i] %in% colnames(obs_df)) {
                 cn = names(subset)[i]
-                if (!(subset[[i]] %in% obs_df[[cn]])) {
-                    warning(paste0("No object(s) ", subset[[i]], " in column ", cn))
+                if (!(any(subset[[i]] %in% obs_df[[cn]]))) {
+                    warning(paste0("No object(s) ", subset[[i]], " in column ", cn, collapse=","))
                 }
                 flag = obs_df[[cn]] %in% subset[[i]]
                 obs_df = obs_df[flag,,drop=FALSE]

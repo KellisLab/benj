@@ -9,10 +9,15 @@
 deg.filter.design <- function(design, rename=TRUE) {
     nzv = caret::nearZeroVar(design, saveMetrics=TRUE)
     design = design[,!nzv$nzv | rownames(nzv) == "(Intercept)",drop=FALSE]
-    linear_combos = caret::findLinearCombos(design)
-    if (!is.null(linear_combos$remove)) {
-        design = design[,-linear_combos$remove,drop=FALSE]
-    }
+    tryCatch({
+        linear_combos = caret::findLinearCombos(design)
+        if (!is.null(linear_combos$remove)) {
+            design = design[,-linear_combos$remove,drop=FALSE]
+        }
+    }, error=function(e) {
+        message("Disregarded error: ", e)
+        print(str(design))
+    })
     if (rename & is.matrix(design)) {
         if (ncol(design) > 1) {
             colnames(design) = make.names(colnames(design)) ### need spaces to be removed
@@ -273,7 +278,7 @@ deg.edger <- function(se, pathology, case, control,
 #' @param sample.col Sample on which to pseudobulk
 #' @param pathology Main variable of interest
 #' @param NRUV Number of RUV components to generate. Non-variable RUV components are removed.
-#' @param norm edgeR norm method for calcNormFactors
+#' @param norm edgeR norm method for cal`<cNormFactors
 #' @export
 deg.ruvseq <- function(sce, sample.col, pathology, covariates=NULL, NRUV=3, norm="TMM", verbose=TRUE) {
     pb = se_make_pseudobulk(sce, sample.col)

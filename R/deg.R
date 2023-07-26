@@ -271,12 +271,16 @@ deg.edger <- function(se, pathology, case, control,
 #' @param NRUV Number of RUV components to generate. Non-variable RUV components are removed.
 #' @param norm edgeR norm method for calcNormFactors
 #' @export
-deg.ruvseq <- function(sce, sample.col, pathology, covariates=NULL, NRUV=3, norm="TMM") {
+deg.ruvseq <- function(sce, sample.col, pathology, covariates=NULL, NRUV=3, norm="TMM", verbose=TRUE) {
     pb = se_make_pseudobulk(sce, sample.col)
     cd = SummarizedExperiment::colData(pb)
     X = SummarizedExperiment::assays(pb)$counts
     dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
     covariates = covariates[covariates %in% names(SummarizedExperiment::colData(pb))]
+    if (verbose) {
+        cat("Design matrix:\n")
+        print(tibble::as_tibble(cd[c(pathology, covariates)]), n=nrow(cd))
+    }
     design = model.matrix(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), data=cd)
     design = deg.filter.design(design)
 ### Use LRT workflow

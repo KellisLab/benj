@@ -234,9 +234,10 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
         sc.pl.rank_genes_groups_matrixplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
         sc.pl.rank_genes_groups_heatmap(adata, save="_rgg_%s.png" % leiden, n_genes=rgg_ng)
     if output is not None:
-        with sw("Re-setting counts") as _:
-            adata.X = adata.layers["raw"].copy()
-            del adata.layers["raw"]
+        if "raw" in adata.layers.keys():
+            with sw("Re-setting counts") as _:
+                adata.X = adata.layers["raw"].copy()
+                del adata.layers["raw"]
         with sw("Writing to H5AD"):
             adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata

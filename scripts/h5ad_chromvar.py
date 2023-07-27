@@ -22,7 +22,11 @@ def run(adata, output:str, genome:str, release:str="JASPAR2022", chunk_size:int=
         with sw("Matching motifs"):
             pc.match_motif(adata, motifs=motifs)
     with sw("Computing deviations"):
-        dev = pc.compute_deviations(adata, chunk_size=chunk_size)
+        try:
+            dev = pc.compute_deviations(adata, chunk_size=chunk_size)
+        except:
+            dev = pc.compute_deviations(adata)
+            pass
     with sw("Copying information"):
         tbl = {"%s.%s" % (m.matrix_id, m.name): m for m in motifs}
         dev.obsm = adata.obsm

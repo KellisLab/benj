@@ -2,21 +2,25 @@
 
 def run(adata, output:str, genome:str, release:str="JASPAR2022", chunk_size:int=10000, compression:int=9, **kwargs):
     import pychromvar as pc
-    with sw("Adding peak sequence"):
-        pc.add_peak_seq(adata, genome_file=genome, delimiter=":|-")
-    with sw("Adding GC bias"):
-        pc.add_gc_bias(adata)
-    with sw("Add background peaks"):
-        pc.get_bg_peaks(adata)
-    with sw("Fetching motifs"):
-        from pyjaspar import jaspardb
-        jargs = {"collection": "CORE", "tax_group": ["vertebrates"]}
-        if "species" in kwargs:
-            jargs["species"] = kwargs["species"]
-        jdb_obj = jaspardb(release=release)
-        motifs = jdb_obj.fetch_motifs(**jargs)
-    with sw("Matching motifs"):
-        pc.match_motif(adata, motifs=motifs)
+    if "peak_seq" not in adata.uns:
+        with sw("Adding peak sequence"):
+            pc.add_peak_seq(adata, genome_file=genome, delimiter=":|-")
+    if "gc_bias" not in adata.var.columns:
+        with sw("Adding GC bias"):
+            pc.add_gc_bias(adata)
+    if "bg_peaks" not in adata.varm:
+        with sw("Add background peaks"):
+            pc.get_bg_peaks(adata)
+    if "motif_match" not in adata.varm:
+        with sw("Fetching motifs"):
+            from pyjaspar import jaspardb
+            jargs = {"collection": "CORE", "tax_group": ["vertebrates"]}
+            if "species" in kwargs:
+                jargs["species"] = kwargs["species"]
+            jdb_obj = jaspardb(release=release)
+            motifs = jdb_obj.fetch_motifs(**jargs)
+        with sw("Matching motifs"):
+            pc.match_motif(adata, motifs=motifs)
     with sw("Computing deviations"):
         dev = pc.compute_deviations(adata, chunk_size=chunk_size)
     with sw("Copying information"):

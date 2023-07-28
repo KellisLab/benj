@@ -25,8 +25,10 @@ def run(adata, output:str, genome:str, release:str="JASPAR2022", chunk_size:int=
         try:
             dev = pc.compute_deviations(adata, chunk_size=chunk_size)
         except:
+            import numpy as np
             if adata.isbacked:
                 adata = adata.to_memory()
+            adata.X = adata.X.astype(np.float32)
             dev = pc.compute_deviations(adata)
             pass
     with sw("Copying information"):

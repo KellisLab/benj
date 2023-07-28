@@ -95,7 +95,7 @@ def parse_anndata(parse_anndata_prefix="", **args):
         flag = np.ravel(np.where(flag))
         flag = np.random.choice(flag, len(flag)//args[parse_anndata_prefix + "subsample"], replace=False)
     adata = adata[obs.index.values[flag], :]
-    if args.get(parse_anndata_prefix + "backed") is None:
+    if args.get(parse_anndata_prefix + "backed") is None or not args.get(parse_anndata_prefix + "backed"):
         adata = adata.to_memory()
     for cn in np.setdiff1d(obs.columns, adata.obs.columns):
         adata.obs[cn] = obs[cn]

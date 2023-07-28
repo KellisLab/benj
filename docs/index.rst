@@ -10,7 +10,7 @@ Welcome to benj's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
+   deg
 
 Indices and tables
 ==================

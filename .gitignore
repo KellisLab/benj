@@ -72,6 +72,10 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/_static/
+docs/_templates/
+docs/.doctrees/
+docs/.buildinfo
 
 # PyBuilder
 target/
@@ -171,8 +175,16 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-# pkgdown site
-docs/
+# pkgdown sit
+docs/reference/
+docs/articles/
+docs/news/
+docs/CNAME
+docs/docs.rds
+docs/pkgdown.yml
+docs/README.html
+docs/sitemap.xml
+docs/404.html
 
 # manuals
 man/

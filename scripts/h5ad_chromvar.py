@@ -11,16 +11,15 @@ def run(adata, output:str, genome:str, release:str="JASPAR2022", chunk_size:int=
     if "bg_peaks" not in adata.varm:
         with sw("Add background peaks"):
             pc.get_bg_peaks(adata)
-    if "motif_match" not in adata.varm:
-        with sw("Fetching motifs"):
-            from pyjaspar import jaspardb
-            jargs = {"collection": "CORE", "tax_group": ["vertebrates"]}
-            if "species" in kwargs:
-                jargs["species"] = kwargs["species"]
-            jdb_obj = jaspardb(release=release)
-            motifs = jdb_obj.fetch_motifs(**jargs)
-        with sw("Matching motifs"):
-            pc.match_motif(adata, motifs=motifs)
+    with sw("Fetching motifs"):
+        from pyjaspar import jaspardb
+        jargs = {"collection": "CORE", "tax_group": ["vertebrates"]}
+        if "species" in kwargs:
+            jargs["species"] = kwargs["species"]
+        jdb_obj = jaspardb(release=release)
+        motifs = jdb_obj.fetch_motifs(**jargs)
+    with sw("Matching motifs"):
+        pc.match_motif(adata, motifs=motifs)
     with sw("Computing deviations"):
         try:
             dev = pc.compute_deviations(adata, chunk_size=chunk_size)

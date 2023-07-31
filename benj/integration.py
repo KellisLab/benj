@@ -160,10 +160,10 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
             sc.pp.log1p(adata)
     else:
         print("Data looks normalized already")
+    adata.raw = adata
     if hvg > 0:
         with sw("Calculating %d HVG" % hvg):
             sc.pp.highly_variable_genes(adata, n_top_genes=hvg, batch_key=batch, subset=True)
-    adata.raw = adata
     if batch is not None and use_combat:
         with sw("Running ComBat"):
             sc.pp.combat(adata, batch)

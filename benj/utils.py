@@ -1,4 +1,19 @@
 
+from typing import Union, List, Dict
+def pg(adata, color_map="Reds"):
+    import scanpy as sc
+    return lambda x, **kwargs: sc.pl.umap(adata, color=x, color_map=color_map, save="_%s.png" % x, **kwargs)
+
+
+def read_elems(path: str, elems: Union[str, List[str]]) -> Union[Dict[str, any], any]:
+    import h5py
+    import anndata.experimental
+    with h5py.File(path, "r") as F:
+        if isinstance(elems, str):
+            return anndata.experimental.read_elem(F[elems])
+        else:
+            return {elem: anndata.experimental.read_elem(F[elem]) for elem in elems}
+
 def convert_X(X, dtype_tbl=None):
     import numpy as np
     import scipy.sparse

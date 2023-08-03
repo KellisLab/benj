@@ -66,8 +66,13 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
         with sw("Scrublet"):
             sc.external.pp.scrublet(adata, batch_key="Sample")
     with sw("Writing H5AD"):
-        adata.write_h5ad(output, compression="gzip", compression_opts=compression)
-
+        try:
+            adata.write_h5ad(output, compression="gzip", compression_opts=compression)
+        except TypeError:
+            print(adata.obs.loc["predicted_doublet"])
+            adata.obs["predicted_doublet"] = adata.obs["predicted_doublet"].astype(str)
+            adata.write_h5ad(output, compression="gzip", compression_opts=compression)
+            pass
 
 
 def read_backed_noX(fname, min_n_genes:int=0, **kwargs):

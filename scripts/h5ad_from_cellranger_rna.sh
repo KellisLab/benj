@@ -11,7 +11,14 @@ else
 fi
 MIN_N_GENES=${MIN_N_GENES:-3}
 ### find refdata from the MRO file
-refdata=$(awk -F'= ' '/reference_path/{gsub(/[" ,]/, "", $2); print $2}' "${outdir}/_invocation")
+if [[ -z "${REFDATA}" ]]; then
+    refdata=$(awk -F'= ' '/reference_path/{gsub(/[" ,]/, "", $2); print $2}' "${outdir}/_invocation")
+elif [[ -d "${REFDATA}" ]]; then
+    refdata="${REFDATA}"
+else
+    echo "refdata directory must be set, by either having a 10x style _invocation file, or providing the REFDATA env variable."
+    exit 1
+fi
 tss="${refdata}/regions/tss.bed"
 gene_info="${refdata}/star/geneInfo.tab"
 gtf="${refdata}/genes/genes.gtf.gz"

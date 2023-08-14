@@ -120,9 +120,10 @@ fi
 
 for sample in $(cut -d , -f 1 < "${batchdir}/aggr.csv" | tail -n+2); do
     if [[ "$rna" == "true" ]]; then
-	check_h5 "${batchdir}/H5AD/raw/${sample}.h5ad"
+	splice="false" check_h5 "${batchdir}/H5AD/raw/${sample}.h5ad"
 	check_h5 "${batchdir}/H5AD/filtered/${sample}.h5ad"
 	check_h5 "${batchdir}/H5AD/cellbender/${sample}.h5ad"
+	check_h5 "${batchdir}/H5AD/cb_raw/${sample}.h5ad"
     fi
     if [[ "$atac" == "true" ]]; then
 	test -f "${batchdir}/ArrowFiles/${sample}.arrow" || die "Arrow file ${batchdir}/ArrowFiles/${sample}.arrow does not exist"

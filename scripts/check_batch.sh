@@ -116,6 +116,7 @@ if [[ "$rna" == "true" ]]; then
     test -d "${batchdir}/H5AD/raw" || die "H5AD raw dir does not exist"
     test -d "${batchdir}/H5AD/filtered" || die "H5AD filtered dir does not exist"
     test -d "${batchdir}/H5AD/cellbender" || die "H5AD cellbender dir does not exist"
+    test -d "${batchdir}/H5AD/cb_raw" || die "H5AD cellbender raw dir does not exist"
 fi
 
 for sample in $(cut -d , -f 1 < "${batchdir}/aggr.csv" | tail -n+2); do

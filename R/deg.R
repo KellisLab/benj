@@ -44,7 +44,7 @@ deg.extract.covariates.from.design <- function(design, covariates.used) {
 #' @param IQR.factor Number of IQR above 75%ile to use for exclusion of samples. Set to Inf for no exclusion
 #' @return Updated SummarizedExperiment object with bad samples removed
 #' @export
-deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes"), IQR.factor=1.5) {
+deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"), IQR.factor=1.5) {
     cd = as.data.frame(SummarizedExperiment::colData(se))
     covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
     design = model.matrix(as.formula(paste0(c("~0", covariates), collapse="+")),
@@ -72,7 +72,7 @@ deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes"
 #' @export
 deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_case_control=TRUE,
                         cpm.cutoff=10, min.total.counts.per.sample=100, IQR.factor=1.5,
-                        outlier.covariates=c("log1p_total_counts", "n_genes_by_counts"),
+                        outlier.covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"),
                         ensure.integer.counts=TRUE) {
     if (filter_only_case_control) {
         if (pathology %in% colnames(SummarizedExperiment::colData(se))) {
@@ -82,7 +82,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
         }
     }
     stopifnot("counts" %in% names(SummarizedExperiment::assays(se)))
-    pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts")
+    pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc"))
     stopifnot(S4Vectors::ncol(pb) <= 1000) ### we can't have uber-large sample numbers
     if (any(SummarizedExperiment::colData(pb)$total_counts < min.total.counts.per.sample)) {
         cd = SummarizedExperiment::colData(pb)
@@ -412,7 +412,7 @@ deg.deseq2 <- function(se,
                       colData=cd,
                       design=design)
     out = DESeq2::DESeq(dds)
-    df = DESeq2::results(out, list(make.names(paste0(pathology, case))))
+    df = DESeq2::results(out, list(make.names(paste0(pathology, case))), independentFiltering=FALSE)
     rd = as.data.frame(SummarizedExperiment::rowData(se))
     rd[[paste0(prefix, "_log2FC")]] = NA
     rd[rownames(df), paste0(prefix, "_log2FC")] = df$log2FoldChange

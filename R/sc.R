@@ -76,7 +76,7 @@ se_prcomp <- function(se, n=3, assay="TMM", retx=TRUE, center=TRUE, scale.=FALSE
 #' @param assay Assay to calculate upon
 #' @param log1p logical whether to use log statistics as well
 #' @export
-calculate_qc_metrics <- function(se, assay=NULL, log1p=TRUE) {
+calculate_qc_metrics <- function(se, assay=NULL, log1p=TRUE, qc_vars=c()) {
     if (is.null(assay)) {
         X = SummarizedExperiment::assays(se)[[1]]
     } else {
@@ -94,6 +94,19 @@ calculate_qc_metrics <- function(se, assay=NULL, log1p=TRUE) {
         SummarizedExperiment::rowData(se)$log1p_total_counts = base::log1p(rs)
         SummarizedExperiment::colData(se)$log1p_total_counts = base::log1p(cs)
         SummarizedExperiment::colData(se)$log1p_n_genes_by_counts = base::log1p(csz)
+    }
+    for (qcv in intersect(qc_vars, colnames(SummarizedExperiment::rowData(se)))) {
+### pct_counts_${qcv}
+### check if logical
+        vals = SummarizedExperiment::rowData(se)[[qcv]]
+        if (is.logical(vals)) {
+            tc_qc = Matrix::colSums(X[vals,])
+            SummarizedExperiment::colData(se)[[paste0("total_counts_", qcv)]] = tc_qc
+            SummarizedExperiment::colData(se)[[paste0("pct_counts_", qcv)]] = 100 * tc_qc / cs
+            if (log1p) {
+                SummarizedExperiment::colData(se)[[paste0("log1p_total_counts_", qcv)]] = log1p(tc_qc)
+            }
+        }
     }
     return(se)
 }

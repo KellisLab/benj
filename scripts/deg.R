@@ -38,7 +38,7 @@ get_args <- function(args) {
     params$NRUV = 0
     params$verbose = FALSE
     params$IQR.factor = 1.5
-    params$outlier.covariates = c("log1p_total_counts", "n_genes_by_counts")
+    params$outlier.covariates = c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo")
     params$min.total.counts.per.sample = 100
     params$ncores = as.integer(Sys.getenv("OMP_NUM_THREADS", getOption("mc.cores", 2)))
     i = 1

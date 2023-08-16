@@ -171,10 +171,11 @@ ht_asterisks <- function(p.matrix, gp, ...) {
 volcano <- function(df, label="gene", title="Volcano plot of",
                     threshold.FDR=0.99999, threshold.log2FC=0.5,
                     force=1, max.overlaps = getOption("ggrepel.max.overlaps", default = 10),
+                    prefix="",
                     quantile.log2FC=1) {
     require(ggplot2)
-    df$log2FC = qclip(df$log2FC, quantile.log2FC)
-    df$FDR = vclip(df$FDR, min=1e-300)
+    df$log2FC = qclip(df[[paste0(prefix, "log2FC")]], quantile.log2FC)
+    df$FDR = vclip(df[[paste0(prefix, "FDR")]], min=1e-300)
     df$score = -log10(df$FDR) * abs(df$log2FC)
     if (all(label %in% colnames(df))) {
         df$label = apply(df[label], 1, function(x) { paste0(x, collapse=" ") })

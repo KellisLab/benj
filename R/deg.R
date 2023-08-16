@@ -214,7 +214,7 @@ deg <- function(se, pathology, case, control, covariates,
             stop(paste0("Invalid method ", meth))
         }
         if (!is.null(output)) {
-            dump.excel(se_make_pseudobulk(se, sample.col), output)
+            dump.excel(calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY")), output)
         }
     }
     return(se)

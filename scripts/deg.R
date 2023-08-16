@@ -47,6 +47,8 @@ get_args <- function(args) {
 options:
   -h, --help Show this message and exit.
   -i, --h5ad List of H5AD object(s) to read in.
+  -v, --verbose Be more verbose to debug.
+  -q, --quiet Don't print debug messages.
   -a, --annotation Annotation if necessary, to add to colData to subset
   -s, --subset Subset the H5AD objects with key=value assignments. Multiple values could be comma separated, like key1=valueA,valueB,valueC key2=valueX
   -o, --output XLSX output file

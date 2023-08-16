@@ -46,6 +46,7 @@ deg.extract.covariates.from.design <- function(design, covariates.used) {
 #' @export
 deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"), IQR.factor=1.5) {
     cd = as.data.frame(SummarizedExperiment::colData(se))
+    covariates = covariates[covariates %in% names(cd)]
     covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
     design = model.matrix(as.formula(paste0(c("~0", covariates), collapse="+")),
                           data=cd)
@@ -82,13 +83,13 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
         }
     }
     stopifnot("counts" %in% names(SummarizedExperiment::assays(se)))
-    pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc"))
+    pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     stopifnot(S4Vectors::ncol(pb) <= 1000) ### we can't have uber-large sample numbers
     if (any(SummarizedExperiment::colData(pb)$total_counts < min.total.counts.per.sample)) {
         cd = SummarizedExperiment::colData(pb)
         cat("Bad samples:", rownames(cd)[cd$total_counts < min.total.counts.per.sample], "\n")
         se = se[, SummarizedExperiment::colData(se)[[sample.col]] %in% rownames(cd)[cd$total_counts >= min.total.counts.per.sample]]
-        pb = se_make_pseudobulk(se, sample.col)
+        pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     }
     ### Outlier detection
     pb = deg.filter.outliers(pb, covariates=outlier.covariates, IQR.factor=IQR.factor)
@@ -234,7 +235,7 @@ deg.edger <- function(se, pathology, case, control,
                       sample.col, covariates=NULL,
                       method=c("LRT", "QL"), prefix="edgeR") {
     method = match.arg(gsub("^EDGER[^A-Z]*","", toupper(method)), c("LRT", "QL"))
-    pb = se_make_pseudobulk(se, sample.col)
+    pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     X = SummarizedExperiment::assays(pb)$counts
     cd = as.data.frame(SummarizedExperiment::colData(pb))
     cd[[pathology]] = relevel(as.factor(cd[[pathology]]), ref=control)
@@ -281,7 +282,7 @@ deg.edger <- function(se, pathology, case, control,
 #' @param norm edgeR norm method for cal`<cNormFactors
 #' @export
 deg.ruvseq <- function(sce, sample.col, pathology, covariates=NULL, NRUV=3, norm="TMM", verbose=TRUE) {
-    pb = se_make_pseudobulk(sce, sample.col)
+    pb = calculate_qc_metrics(se_make_pseudobulk(sce, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     cd = SummarizedExperiment::colData(pb)
     X = SummarizedExperiment::assays(pb)$counts
     dgel = edgeR::DGEList(X, group=cd[[pathology]], remove.zeros=TRUE)
@@ -398,7 +399,7 @@ deg.deseq2 <- function(se,
                        sample.col,
                        covariates=NULL,
                        prefix="DESeq2") {
-    pb = se_make_pseudobulk(se, sample.col)
+    pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     X = SummarizedExperiment::assays(pb)$counts
     cd = as.data.frame(SummarizedExperiment::colData(pb))
     cd[[pathology]] = relevel(as.factor(cd[[pathology]]), ref=control)

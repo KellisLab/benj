@@ -52,6 +52,7 @@ dump.excel <- function(se, output, use.openxlsx=TRUE) {
 #' @export
 load.persample.excel <- function(xlsx) {
     sheets = readxl::excel_sheets(xlsx)
+    md = list()
     obs = as.data.frame(readxl::read_xlsx(xlsx, "sample_metadata"))
     rownames(obs) = obs[[1]]
     if ("gene_info" %in% sheets) {
@@ -60,13 +61,19 @@ load.persample.excel <- function(xlsx) {
     } else {
         var = NULL
     }
+    if ("deg_metadata" %in% sheets) {
+        md$deg = as.list(readxl::read_xlsx(xlsx, "deg_metadata"))
+    }
+    if ("subset" %in% sheets) {
+        md$subset = as.list(readxl::read_xlsx(xlsx, "subset"))
+    }
     qs = c("counts", sheets[grep("^Quantile ", sheets)])
     qs = qs[qs %in% sheets]
     return(SummarizedExperiment::SummarizedExperiment(lapply(setNames(qs, qs), function(qsheet) {
         df = as.data.frame(readxl::read_xlsx(xlsx, qsheet))
         rownames(df) = df[[1]]
         return(as.matrix(df[,-1]))
-    }), colData=obs, rowData=var))
+    }), colData=obs, rowData=var, metadata=md))
 }
 
 

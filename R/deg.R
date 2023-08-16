@@ -159,7 +159,7 @@ deg <- function(se, pathology, case, control, covariates,
                 sample.col="Sample", cpm.cutoff=10,
                 filter_only_case_control=TRUE, NRUV=0,
                 min.total.counts.per.sample=100, IQR.factor=1.5,
-                outlier.covariates=c("log1p_total_counts", "n_genes_by_counts"),
+                outlier.covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"),
                 verbose=TRUE,
                 ensure.integer.counts=TRUE) {
     method = match.arg(gsub(" ", "-", tolower(method)),

@@ -26,7 +26,9 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
             pk = pd.read_csv(peaks, sep="\t")
         if pk.shape[1] == 6 and "peak_type" in pk.columns:
             ### cellranger peak_annotation.tsv format
-            pk.columns = ["seqnames", "start", "end", "gene", "distance", "peakType"]
+            pk.columns = ["seqnames", "start", "end", "nearestGene", "distToGeneStart", "peakType"]
+        if "distToTSS" in pk.columns and "distToGeneStart" not in pk.columns:
+            pk = pk.rename({"distToTSS": "distToGeneStart"}, axis=1)
         pk.index = ["%s:%d-%d" % (chrom, begin, end) for chrom, begin, end in zip(pk["seqnames"], pk["start"], pk["end"])]
         pk["interval"] = pk.index.values.astype(str)
         if "peakType" in pk.columns:

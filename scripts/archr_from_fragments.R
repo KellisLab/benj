@@ -8,12 +8,14 @@ get_args <- function() {
         optparse::make_option(c("--tss"), action="store", default=4, type="numeric", help="TSS enrichment cutoff"),
         optparse::make_option(c("-o", "--output"), action="store", default="archr_metadata.tsv.gz", type="character", help="output file for metadata"),
         optparse::make_option(c("--genome"), action="store", default="hg38", type="character", help="Genome identifier passed to ArchR::addArchRGenome()"),
+        optparse::make_option(c("-f", "--force"), dest="force", action="store_true", default=TRUE, help="Overwrite arrow files if already created."),
+        optparse::make_option(c("-n", "--no-force"), dest="force", action="store_false", help="Don't overwrite arrow files if already created."),
         optparse::make_option(c("-g", "--gene-annotation"), action="store", default=NA, type="character", dest="gene_annotation", help="archr gene annotation (RDS)"),
         optparse::make_option(c("-r", "--refdata"), action="store", default=NA, type="character", help="Path to 10X style refdata for generating tile matrix"))
     return(optparse::parse_args(optparse::OptionParser(option_list=option_list)))
 }
 
-run <- function(aggr, tss, output, refdata=NA, gene_annotation=NA, help=FALSE, genome="hg38", threads=as.integer(Sys.getenv("OMP_NUM_THREADS", "16"))) {
+run <- function(aggr, tss, output, refdata=NA, gene_annotation=NA, help=FALSE, force=TRUE, genome="hg38", threads=as.integer(Sys.getenv("OMP_NUM_THREADS", "16"))) {
     require(ArchR)
     addArchRGenome(genome)
     addArchRThreads(threads)
@@ -23,7 +25,7 @@ run <- function(aggr, tss, output, refdata=NA, gene_annotation=NA, help=FALSE, g
     } else {
         gene_annotation = readRDS(gene_annotation)
     }
-    ArrowFiles = createArrowFiles(setNames(df$atac_fragments, df[[1]]), minTSS=tss, geneAnnotation=gene_annotation, force=TRUE)
+    ArrowFiles = createArrowFiles(setNames(df$atac_fragments, df[[1]]), minTSS=tss, geneAnnotation=gene_annotation, force=force)
     proj = ArchRProject(ArrowFiles, "ArchR", copyArrows=FALSE, geneAnnotation=gene_annotation)
     data.table::fwrite(as.data.frame(getCellColData(proj)), output, row.names=TRUE, sep="\t")
     genome = ArchR::getArchRGenome(genomeAnnotation=TRUE)

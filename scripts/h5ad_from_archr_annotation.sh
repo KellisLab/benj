@@ -52,7 +52,7 @@ for tilebed in "${atac_dir}/"tile_*.tsv.gz; do
 done
 
 ## now get the largest tile matrix (for gene score, more accurate)
-gs_in=$(ls -1S "${atac_dir}/tile_*.tsv.gz" | head -n1)
+gs_in=$(ls -1S "${atac_dir}/"tile_*.tsv.gz | head -n1)
 gs_in=$(basename "${gs_in}" | sed 's/^tile_/TileMatrix/g;s/.tsv.gz$//g')
 
 Tile4GeneH5AD="H5AD/${gs_in}/${sample}.h5ad"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# usage: export PEAKS=/path/to/peaks; export BLACKLIST=/path/to/blacklist; < sample_list.txt xargs -P8 -I{} sh -c 'h5ad_from_archr_annotation.sh -a ArrowFiles/archr_metadata.tsv.gz
+# usage: export PEAKS=/path/to/peaks; export BLACKLIST=/path/to/blacklist; < sample_list.txt xargs -P8 -I{} bash -c 'h5ad_from_archr_annotation.sh {}'
 
 outdir="$1"
 shift;
@@ -38,9 +38,6 @@ elif [[ ! -f "${PEAKS}" ]]; then
 fi
 
 extraopts=""
-if [[ -f "${BLACKLIST}" ]]; then
-    extraopts="${extraopts} -b ${BLACKLIST}"
-fi
 if [[ -f "${outdir}/outs/atac_fragments.tsv.gz" ]]; then
     ## multi-ome
     fragments="${outdir}/outs/atac_fragments.tsv.gz"
@@ -54,5 +51,8 @@ fi
 
 mkdir -p "H5AD/ATAC"
 output="H5AD/ATAC/${sample}.h5ad"
-
-h5ad_from_archr_annotation.py -f "${fragments}" -s "${sample}" --cell-metadata "${md}" --peaks "${PEAKS}" "${extraopts}" -o "${output}"
+if [[ -f "${BLACKLIST}" ]]; then
+    h5ad_from_archr_annotation.py -f "${fragments}" -s "${sample}" --cell-metadata "${md}" --peaks "${PEAKS}" -o "${output}" -b "${BLACKLIST}"
+else
+    h5ad_from_archr_annotation.py -f "${fragments}" -s "${sample}" --cell-metadata "${md}" --peaks "${PEAKS}" -o "${output}"
+fi

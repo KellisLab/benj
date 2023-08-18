@@ -29,16 +29,6 @@ if [[ ! -f "${md}" ]]; then
     exit 1
 fi
 
-mytempbed=$(mktemp)
-bed5k=$(mktemp)
-bed500=$(mktemp)
-bedtools makewindows -b <(awk '{ print $1"\t0\t"$2 }' < "${refdata}/star/chrNameLength.txt") -w 5000 > "${mytempbed}"
-Rscript -e "benj::bed.dump(benj::peak_annotation(benj::bed.slurp(\"${mytempbed}\"), \"${refdata}/genes/genes.gtf.gz\"), \"${bed5k}\")"
-bedtools makewindows -b <(awk '{ print $1"\t0\t"$2 }' < "${refdata}/star/chrNameLength.txt") -w 500 > "${mytempbed}"
-Rscript -e "benj::bed.dump(benj::peak_annotation(benj::bed.slurp(\"${mytempbed}\"), \"${refdata}/genes/genes.gtf.gz\"), \"${bed500}\")"
-rm "${mytempbed}"
-
-extraopts=""
 if [[ -f "${outdir}/outs/atac_fragments.tsv.gz" ]]; then
     ## multi-ome
     fragments="${outdir}/outs/atac_fragments.tsv.gz"
@@ -49,6 +39,16 @@ else
     echo "Fragments not found at ${outdir}/outs/*fragments.tsv.gz"
     exit 1
 fi
+
+mytempbed=$(mktemp)
+bed5k=$(mktemp)
+bed500=$(mktemp)
+bedtools makewindows -b <(awk '{ print $1"\t0\t"$2 }' < "${refdata}/star/chrNameLength.txt") -w 5000 | grep -Fw -f <(tabix -l "${fragments}") > "${mytempbed}"
+Rscript -e "benj::bed.dump(benj::peak_annotation(benj::bed.slurp(\"${mytempbed}\"), \"${refdata}/genes/genes.gtf.gz\"), \"${bed5k}\")"
+bedtools makewindows -b <(awk '{ print $1"\t0\t"$2 }' < "${refdata}/star/chrNameLength.txt") -w 500 | grep -Fw -f <(tabix -l "${fragments}") > "${mytempbed}"
+Rscript -e "benj::bed.dump(benj::peak_annotation(benj::bed.slurp(\"${mytempbed}\"), \"${refdata}/genes/genes.gtf.gz\"), \"${bed500}\")"
+rm "${mytempbed}"
+
 
 mkdir -p "H5AD/TileMatrix5k"
 

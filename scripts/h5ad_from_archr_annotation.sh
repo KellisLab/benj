@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# usage: export BLACKLIST=/path/to/blacklist; < sample_list.txt xargs -P8 -I{} bash -c 'h5ad_from_archr_annotation.sh {}'
+# usage: < sample_list.txt xargs -P8 -I{} bash -c 'h5ad_from_archr_annotation.sh {}'
 
 outdir="$1"
 shift;
@@ -23,7 +23,9 @@ fi
 gtf="${refdata}/genes/genes.gtf.gz"
 tss="${refdata}/regions/tss.bed"
 md=$(dirname "${outdir}")
-md="${md}/ArrowFiles/archr_metadata.tsv.gz"
+atac_dir="${md}/ArrowFiles/"
+md="${atac_dir}/archr_metadata.tsv.gz"
+
 if [[ ! -f "${md}" ]]; then
     echo "ArchR metadata at ${md} does not exist!"
     exit 1
@@ -40,43 +42,21 @@ else
     exit 1
 fi
 
-mytempbed=$(mktemp)
-bed5k=$(mktemp)
-bed500=$(mktemp)
-bedtools makewindows -b <(awk '{ print $1"\t0\t"$2 }' < "${refdata}/star/chrNameLength.txt") -w 5000 | grep -Fw -f <(tabix -l "${fragments}") > "${mytempbed}"
-Rscript -e "benj::bed.dump(benj::peak_annotation(benj::bed.slurp(\"${mytempbed}\"), \"${refdata}/genes/genes.gtf.gz\"), \"${bed5k}\")"
-bedtools makewindows -b <(awk '{ print $1"\t0\t"$2 }' < "${refdata}/star/chrNameLength.txt") -w 500 | grep -Fw -f <(tabix -l "${fragments}") > "${mytempbed}"
-Rscript -e "benj::bed.dump(benj::peak_annotation(benj::bed.slurp(\"${mytempbed}\"), \"${refdata}/genes/genes.gtf.gz\"), \"${bed500}\")"
-rm "${mytempbed}"
 
-
-mkdir -p "H5AD/TileMatrix5k"
-
-if [[ -f "${bed5k}" ]]; then
-    hdir="H5AD/TileMatrix5k/"
+for tilebed in "${atac_dir}/tile_*.tsv.gz"; do
+    # TODO; suffix
+    suffix=$(basename "${tilebed}" | sed 's/^tile_//g;s/.tsv.gz$//g')
+    hdir="H5AD/TileMatrix${suffix}"
     mkdir -p "${hdir}"
-    peaks="${bed5k}"
-    if [[ -f "${BLACKLIST}" ]]; then
-	h5ad_from_archr_annotation.py -f "${fragments}" -s "${sample}" --cell-metadata "${md}" --peaks "${peaks}" -o "${hdir}/${sample}.h5ad" -b "${BLACKLIST}"
-    else
-	h5ad_from_archr_annotation.py -f "${fragments}" -s "${sample}" --cell-metadata "${md}" --peaks "${peaks}" -o "${hdir}/${sample}.h5ad"
-    fi
-    gs_in="${hdir}/${sample}.h5ad"
-    rm "${bed5k}"
-fi
+    h5ad_from_archr_annotation.py -f "${fragments}" -s "${sample}" --cell-metadata "${md}" --peaks "${tilebed}" -o "${hdir}/${sample}.h5ad"
+done
 
-if [[ -f "${bed500}" ]]; then
-    hdir="H5AD/TileMatrix500/"
-    peaks="${bed500}"
-    mkdir -p "${hdir}"
-    if [[ -f "${BLACKLIST}" ]]; then
-	h5ad_from_archr_annotation.py -f "${fragments}" -s "${sample}" --cell-metadata "${md}" --peaks "${peaks}" -o "${hdir}/${sample}.h5ad" -b "${BLACKLIST}"
-    else
-	h5ad_from_archr_annotation.py -f "${fragments}" -s "${sample}" --cell-metadata "${md}" --peaks "${peaks}" -o "${hdir}/${sample}.h5ad"
-    fi
-    gs_in="${hdir}/${sample}.h5ad"
-    rm "${bed500}"
-fi
+## now get the largest tile matrix (for gene score, more accurate)
+gs_in=$(ls -1S "${atac_dir}/tile_*.tsv.gz" | head -n1)
+gs_in=$(basename "${gs_in}" | sed 's/^tile_/TileMatrix/g;s/.tsv.gz$//g')
 
-mkdir -p "H5AD/GeneScoreMatrix"
-estimate_gene_accessibility -i "${gs_in}" -o "H5AD/GeneScoreMatrix/${sample}.h5ad" --gtf "${gtf}" --tss "${tss}"
+Tile4GeneH5AD="H5AD/${gs_in}/${sample}.h5ad"
+if [[ -f "${Tile4GeneH5AD}" ]]; then
+    mkdir -p "H5AD/GeneScoreMatrix"
+    estimate_gene_accessibility.py -i "${Tile4GeneH5AD}" -o "H5AD/GeneScoreMatrix/${sample}.h5ad" --gtf "${gtf}" --tss "${tss}"
+fi

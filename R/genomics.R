@@ -127,6 +127,22 @@ peak_annotation <- function(gr, gff, upstream=2000, downstream=200) {
     return(gr)
 }
 
+#' Make windows similar to bedtools makewindows
+#'
+#' @param gr GenomicRanges object
+#' @export
+make_tiles <- function(gr, window_size) {
+    return(unlist(GenomicRanges::GRangesList(lapply(GenomeInfoDb::seqlevels(gr), function(seqname) {
+        sr = gr[GenomeInfoDb::seqnames(gr) == seqname]
+        min_start = min(GenomicRanges::start(sr))
+        max_end = max(GenomicRanges::end(sr))
+        num_windows = max(ceiling((max_end - min_start + 1) / window_size))
+        starts = min_start + (0:(num_windows-1)) * window_size
+        ends = pmin(min_start + (1:num_windows) * window_size - 1, max_end)
+        GenomicRanges::GRanges(seqnames=seqname, ranges=IRanges::IRanges(start=starts, end=ends))
+    }))))
+}
+
 #' Run GREAT via rGREAT
 #'
 #' @param gr Ranges to send

@@ -43,7 +43,7 @@ else
 fi
 
 
-for tilebed in "${atac_dir}/tile_*.tsv.gz"; do
+for tilebed in "${atac_dir}/"tile_*.tsv.gz; do
     # TODO; suffix
     suffix=$(basename "${tilebed}" | sed 's/^tile_//g;s/.tsv.gz$//g')
     hdir="H5AD/TileMatrix${suffix}"

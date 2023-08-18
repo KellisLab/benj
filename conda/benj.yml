@@ -92,6 +92,8 @@ dependencies:
   - bioconda::pysam
   - bioconda::pyjaspar
   - bioconda::pybiomart
+  - bioconda::alevin-fry
+  - bioconda::regtools
   ### bioconductor
   - bioconda::bioconductor-motifmatchr
   - bioconda::bioconductor-tfbstools

@@ -70,7 +70,7 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
             adata.write_h5ad(output, compression="gzip", compression_opts=compression)
         except TypeError:
             print(adata.obs.loc["predicted_doublet"])
-            adata.obs["predicted_doublet"] = adata.obs["predicted_doublet"].astype(str)
+            adata.obs["predicted_doublet"] = adata.obs["predicted_doublet"].values.astype(str)
             adata.write_h5ad(output, compression="gzip", compression_opts=compression)
             pass
 
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     ap.add_argument("--compression", type=int, default=9)
     ap.add_argument("--backed", dest="backed", action="store_true", help="Use AnnCollection experimental API to load backed anndata objects")
     ap.add_argument("--no-backed", dest="backed", action="store_false")
-    ap.set_defaults(scrublet=True, backed=False)
+    ap.set_defaults(use_scrublet=False, backed=False)
     args = vars(ap.parse_args())
     if args["backed"]:
         run_backed(**args)

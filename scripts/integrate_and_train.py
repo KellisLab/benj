@@ -23,9 +23,8 @@ if __name__ == "__main__":
         adata = benj.integrate_rna(adata,
                                    batch=args["batch"], hvg=args["hvg"], use_scaling=True, use_harmony=True, use_bbknn=False, use_rgg=False, plot=args["labels"], target_sum=1e4,
                                    output=args["output"], compression=args["compression"])
-        for label in args["labels"]:
+        with sw("Training celltypist for " + ",".join(label)):
                 import celltypist
                 import scanpy as sc
-                with sw(f"Training celltypist for {label}"):
-                        ct = celltypist.train(adata.raw.to_adata(), labels=adata.obs[label], genes=adata.var_names, n_jobs=-1, with_mean=args["with_mean"])
-                        ct.write(os.path.join(sc.settings.figdir, f"celltypist_{label}.pkl"))
+                ct = celltypist.train(adata.raw.to_adata(), labels=adata.obs.loc[:, labels], genes=adata.var_names, n_jobs=-1, with_mean=args["with_mean"])
+                ct.write(os.path.join(sc.settings.figdir, f"celltypist_{label}.pkl"))

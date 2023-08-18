@@ -109,8 +109,12 @@ peak_annotation <- function(gr, gff, upstream=2000, downstream=200) {
                                         strand=strand,
                                         gene_name=var_names_make_unique(gene_name)))
     prom = GenomicRanges::promoters(genes, 0, 0)
-    gr$nearestGene = genes[GenomicRanges::nearest(gr, prom)]$gene_name
-    gr$distToTSS = S4Vectors::mcols(GenomicRanges::distanceToNearest(gr, prom))$distance
+    d2n = as.data.frame(GenomicRanges::distanceToNearest(gr, prom, ignore.strand=TRUE))
+    d2n = d2n[!is.na(d2n$distance),]
+    gr$nearestGene = NA
+    gr$nearestGene[d2n$queryHits] = prom[d2n$subjectHits]$gene_name
+    gr$distToTSS = NA
+    gr$distToTSS[d2n$queryHits] = d2n$distance
     prom = GenomicRanges::promoters(genes, upstream=upstream, downstream=downstream)
     op = S4Vectors::from(GenomicRanges::findOverlaps(gr, prom))
     og = S4Vectors::from(GenomicRanges::findOverlaps(gr, genes))

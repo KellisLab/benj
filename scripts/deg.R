@@ -41,6 +41,7 @@ get_args <- function(args) {
     params$outlier.covariates = c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo")
     params$min.total.counts.per.sample = 100
     params$ncores = as.integer(Sys.getenv("OMP_NUM_THREADS", getOption("mc.cores", 2)))
+    params$genes = NULL
     i = 1
     help = function() {
         cat("deg.R [options]
@@ -60,6 +61,7 @@ options:
   --covariates Covariates (in colData/.obs) to be used as covariates for DEG calling. If pseudobulk, may be removed if not a subject-level variable
   --sample-col Column corresponding to sample for pseudobulk
   --ruv Number of subject-level RUV terms to include
+  -g, --genes File containing genes to use, one per line
   --cpm-cutoff Counts per million cutoff for filtering genes.
   --min-total-counts Number of total counts required per cell
   --iqr-factor Number of IQR above 75% away from outlier covariates to be a bad sample.
@@ -100,6 +102,10 @@ options:
         } else if (arg %in% c("-j", "--cores")) {
             i = i + 1
             params$ncores = as.integer(args[[i]])
+            i = i + 1
+        } else if (arg %in% c("-g", "--genes")) {
+            i = i + 1
+            params$genes = readLines(args[[i]])
             i = i + 1
         } else if (arg %in% c("--path", "--pathology")) {
             i = i + 1
@@ -183,9 +189,9 @@ load.anndata <- function(params) {
     }
 
     if (length(params$h5ad) > 1) {
-        adata = benj::read_h5ad_parallel(h5ad=params$h5ad, obs=obs, subset=params$subset, ncores=params$ncores)
+        adata = benj::read_h5ad_parallel(h5ad=params$h5ad, obs=obs, var=params$genes, subset=params$subset, ncores=params$ncores)
     } else {
-        adata = benj::read_h5ad(h5ad=params$h5ad, obs=obs, subset=params$subset)
+        adata = benj::read_h5ad(h5ad=params$h5ad, obs=obs, var=params$genes, subset=params$subset)
     }
     if (!is.null(params$annotation)) {
         S4Vectors::metadata(adata)$annotation = params$annotation

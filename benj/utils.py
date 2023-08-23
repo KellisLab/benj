@@ -30,7 +30,10 @@ def convert_X(X, dtype_tbl=None):
     else:
         D = X
     if isinstance(X.dtype, (int, np.integer)):
-        data_max = np.abs(D).max()
+        if len(D) == 0:
+            data_max = 0
+        else:
+            data_max = np.abs(D).max()
         for dtype_max in sorted(dtype_tbl.keys()):
             if data_max < dtype_max:
                 return X.astype(dtype_tbl[dtype_max])

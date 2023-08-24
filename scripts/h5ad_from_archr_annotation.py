@@ -33,6 +33,14 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
         pk["interval"] = pk.index.values.astype(str)
         if "peakType" in pk.columns:
             pk = pd.concat([pk, pd.get_dummies(pk["peakType"]) > 0], axis=1)
+    ### TODO filter out bad
+    with sw("Filtering contigs"):
+        import pysam
+        contigs = pysam.TabixFile(fragments, parser=pysam.asBed()).contigs
+        unused = np.setdiff1d(pk["seqnames"], contigs)
+        if len(unused) > 0:
+            print("Warning: Unused contigs ", ",".join(unused))
+        pk = pk.loc[pk["seqnames"].isin(contigs), :]
     if blacklist is not None and os.path.exists(blacklist):
         with sw("Reading blacklist"):
             bl = pd.read_csv(blacklist, sep="\t", header=None).iloc[:, [0,1,2]]

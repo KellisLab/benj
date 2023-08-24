@@ -3,7 +3,7 @@
 def add_cell_cycle_info(adata, cell_cycle):
     return 0
 
-def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gtf=None, min_cells_per_sample:int=30, compression:int=9, min_n_genes:int=0, min_total_counts:int=0, use_scrublet:bool=True, qc_vars=[], backed:bool=False, min_tss:float=1., **kwargs):
+def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gtf=None, min_cells_per_sample:int=30, compression:int=9, min_n_genes:int=0, min_cells_per_feature:int=0, min_total_counts:int=0, use_scrublet:bool=True, qc_vars=[], backed:bool=False, min_tss:float=1., **kwargs):
     import os
     from tqdm.auto import tqdm
     import pandas as pd
@@ -41,6 +41,8 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
                         adata = adata[adata.obs["total_counts"] >= min_total_counts, :].copy()
                     if "TSSEnrichment" in adata.obs.columns and min_tss > 0:
                         adata = adata[adata.obs["TSSEnrichment"] >= min_tss, :].copy()
+                    if "n_cells_by_counts" in adata.var.columns and min_cells_per_feature > 0:
+                        adata = adata[:, adata.var["n_cells_by_counts"] >= min_cells_per_feature].copy()
                     if adata.shape[0] >= min_cells_per_sample:
                         tbl[sample] = adata
                         file_tbl[sample] = fname
@@ -95,11 +97,12 @@ if __name__ == "__main__":
     ap.add_argument("-o", "--output", required=True)
     ap.add_argument("--qc-vars", nargs="+")
     ap.add_argument("--min-cells-per-sample", type=int, default=30, help="Minimum number of cells per sample in order to include")
+    ap.add_argument("--min-cells-per-feature", type=int, default=0, help="Minimum number of cells per feature in order to include")
     ap.add_argument("--use-scrublet", dest="use_scrublet", action="store_true")
     ap.add_argument("--no-use-scrublet", dest="use_scrublet", action="store_false")
     ap.add_argument("--min-n-genes", type=int, default=0)
     ap.add_argument("--min-total-counts", type=int, default=0)
-    ap.add_argument("--compression", type=int, default=9)
+    ap.add_argument("--compression", type=int, default=6)
     ap.add_argument("--min-tss", type=float, default=1., help="TSS enrichment (if TSSEnrichment column exists) minimum")
     ap.add_argument("--backed", dest="backed", action="store_true", help="Use AnnCollection experimental API to load backed anndata objects")
     ap.add_argument("--no-backed", dest="backed", action="store_false")

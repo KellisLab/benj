@@ -79,7 +79,7 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:
             adata = adata[adata.obs["total_counts"] >= min_total_counts, :].copy()
     if use_scrublet and adata.shape[0] > min_cells_per_sample:
         with sw("Running Scrublet"):
-            sc.external.pp.scrublet(adata, n_prin_comps=min(adata.shape.min(), 30))
+            sc.external.pp.scrublet(adata, n_prin_comps=min(min(adata.shape[0], adata.shape[1]), 30))
     with sw("Writing H5AD"):
         adata.uns = benj.convert_dict(adata.uns)
         adata.write_h5ad(output, compression="gzip", compression_opts=compression)

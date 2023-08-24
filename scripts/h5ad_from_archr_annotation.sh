@@ -48,7 +48,9 @@ for tilebed in "${atac_dir}/"tile_*.tsv.gz; do
     suffix=$(basename "${tilebed}" | sed 's/^tile_//g;s/.tsv.gz$//g')
     hdir="H5AD/TileMatrix${suffix}"
     mkdir -p "${hdir}"
-    h5ad_from_archr_annotation.py -f "${fragments}" -s "${sample}" --cell-metadata "${md}" --peaks "${tilebed}" -o "${hdir}/${sample}.h5ad"
+    if [[ ! -f "${hdir}/${sample}.h5ad" ]]; then
+	h5ad_from_archr_annotation.py -f "${fragments}" -s "${sample}" --cell-metadata "${md}" --peaks "${tilebed}" -o "${hdir}/${sample}.h5ad"
+    fi
 done
 
 ## now get the largest tile matrix (for gene score, more accurate)

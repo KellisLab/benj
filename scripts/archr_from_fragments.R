@@ -49,7 +49,7 @@ run <- function(aggr, tss, output, refdata=NA, gene_annotation=NA, help=FALSE, f
         gff$gene_name = gff$symbol
     }
     unlink("ArchR", recursive=TRUE)
-    tile.list = lapply(list("tile_500.tsv.gz"=500, "tile_5k.tsv.gz"=5000), function(tile_width) {
+    tile.list = lapply(list("tile_500.tsv.gz"=500, "tile_5k.tsv.gz"=5000, "tile_50k.tsv.gz"=50000), function(tile_width) {
         tgr = benj::make_tiles(cs, tile_width)
         tgr = unlist(GenomicRanges::subtract(tgr, genome$blacklist, ignore.strand=TRUE))
         GenomicRanges::start(tgr) = GenomicRanges::start(tgr) - 1

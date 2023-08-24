@@ -3,7 +3,7 @@
 def add_cell_cycle_info(adata, cell_cycle):
     return 0
 
-def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gtf=None, min_cells_per_sample:int=30, compression:int=9, min_n_genes:int=0, min_total_counts:int=0, use_scrublet:bool=True, qc_vars=[], backed:bool=False, **kwargs):
+def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gtf=None, min_cells_per_sample:int=30, compression:int=9, min_n_genes:int=0, min_total_counts:int=0, use_scrublet:bool=True, qc_vars=[], backed:bool=False, min_tss:float=1., **kwargs):
     import os
     from tqdm.auto import tqdm
     import pandas as pd
@@ -39,6 +39,8 @@ def run(metadata, output, directory=[], sample_key="Sample", cell_cycle=None, gt
                         adata = adata[adata.obs["n_genes_by_counts"] >= min_n_genes, :].copy()
                     if "total_counts" in adata.obs.columns and min_total_counts > 0:
                         adata = adata[adata.obs["total_counts"] >= min_total_counts, :].copy()
+                    if "TSSEnrichment" in adata.obs.columns and min_tss > 0:
+                        adata = adata[adata.obs["TSSEnrichment"] >= min_tss, :].copy()
                     if adata.shape[0] >= min_cells_per_sample:
                         tbl[sample] = adata
                         file_tbl[sample] = fname
@@ -98,6 +100,7 @@ if __name__ == "__main__":
     ap.add_argument("--min-n-genes", type=int, default=0)
     ap.add_argument("--min-total-counts", type=int, default=0)
     ap.add_argument("--compression", type=int, default=9)
+    ap.add_argument("--min-tss", type=float, default=1., help="TSS enrichment (if TSSEnrichment column exists) minimum")
     ap.add_argument("--backed", dest="backed", action="store_true", help="Use AnnCollection experimental API to load backed anndata objects")
     ap.add_argument("--no-backed", dest="backed", action="store_false")
     ap.set_defaults(use_scrublet=False, backed=False)

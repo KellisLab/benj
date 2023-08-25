@@ -28,7 +28,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
             batch = None
         else:
             adata.obs[batch] = adata.obs[batch].values.astype(str)
-    if "raw" not in adata.layers:
+    if "raw" not in adata.layers and output is not None:
         with sw("Copying .X to .layers[\"raw\"]"):
             adata.layers["raw"] = adata.X.copy()
     with sw("Re-calculating qc metrics"):
@@ -37,12 +37,15 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
         with sw("Filtering peaks with cells by counts >= %d" % min_n_cells_by_counts):
             mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
     with sw("Running TF-IDF"):
-        adata.X = adata.layers["raw"].copy()
+        if output is not None:
+            del adata.X
+            adata.X = adata.layers["raw"].copy()
         ac.pp.tfidf(adata)
     with sw("Running LSI"):
         ac.tl.lsi(adata)
-        adata.X = adata.layers["raw"].copy()
-        del adata.layers["raw"]
+        if output is not None:
+            adata.X = adata.layers["raw"]
+            del adata.layers["raw"]
     for col in qc_cols:
         with sw("Correlating column \"%s\" with LSI" % col):
             from scipy.stats import pearsonr
@@ -114,11 +117,12 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
         with sw("Matching motifs"):
             import pychromvar as pc
             pc.match_motif(adata, motifs=motifs)
-    with sw("Writing to H5AD"):
-        for col in adata.obs.columns:
-            if np.all(adata.obs[col].isna()):
-                del adata.obs[col] ### will fail
-        adata.write_h5ad(output, compression="gzip", compression_opts=compression)
+    if output is not None:
+        with sw("Writing to H5AD"):
+            for col in adata.obs.columns:
+                if np.all(adata.obs[col].isna()):
+                    del adata.obs[col] ### will fail
+            adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata
 
 

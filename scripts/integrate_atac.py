@@ -5,7 +5,7 @@ if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--input", dest="h5ad", required=True)
-    ap.add_argument("-o", "--output", required=True)
+    ap.add_argument("-o", "--output", type=str, default=None)
     ap.add_argument("-t", "--tsv")
     ap.add_argument("-b", "--batch", type=str, default=None)
     ap.add_argument("-p", "--plot", nargs="+")

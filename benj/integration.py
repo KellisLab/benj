@@ -28,24 +28,16 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
             batch = None
         else:
             adata.obs[batch] = adata.obs[batch].values.astype(str)
-    if "raw" not in adata.layers and output is not None:
-        with sw("Copying .X to .layers[\"raw\"]"):
-            adata.layers["raw"] = adata.X.copy()
     with sw("Re-calculating qc metrics"):
-        sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True, layer="raw")
+        sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True)
     if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
         with sw("Filtering peaks with cells by counts >= %d" % min_n_cells_by_counts):
             mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
     with sw("Running TF-IDF"):
-        if output is not None:
-            del adata.X
-            adata.X = adata.layers["raw"].copy()
         ac.pp.tfidf(adata)
     with sw("Running LSI"):
         ac.tl.lsi(adata)
-        if output is not None:
-            adata.X = adata.layers["raw"]
-            del adata.layers["raw"]
+        del adata.X
     for col in qc_cols:
         with sw("Correlating column \"%s\" with LSI" % col):
             from scipy.stats import pearsonr
@@ -94,8 +86,12 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
         adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
     if tsv is not None:
         with sw("Writing TSV"):
-            cols = np.intersect1d([leiden, "majority_voting", "predicted_labels"], adata.obs.columns)
-            adata.obs.loc[:, cols].to_csv(tsv, sep="\t")
+            obs = adata.obs
+            obs["U0"] = adata.obsm["X_umap"][:, 0]
+            obs["U1"] = adata.obsm["X_umap"][:, 1]
+            cols = np.intersect1d([leiden, "majority_voting", "predicted_labels", "U0", "U1"], obs.columns)
+            obs.loc[:, cols].to_csv(tsv, sep="\t")
+            del obs
     with sw("Plotting %s" % leiden):
         sc.pl.umap(adata, color=leiden, save="_%s_beside.png" % leiden)
         sc.pl.umap(adata, color=leiden, save="_%s_ondata.png" % leiden, legend_loc="on data", legend_fontsize=4)

@@ -1,13 +1,10 @@
 
 from typing import Union
-class IncrementalLSI:
+class IncrementalTFIDF:
         def __init__(self, var_means,
-                     n_comps:int=50,
                      log_tf:bool=True, log_idf:bool=True, log_tfidf:bool=False,
-                     scale_factor:Union[int, float]=1e4,
-                     ):
+                     scale_factor:Union[int, float]=1e4):
                 import numpy as np
-                from .incrementalsvd import IncrementalSVD
                 if log_tfidf and (log_tf or log_idf):
                         raise AttributeError(
                                 "When returning log(TF*IDF), \
@@ -21,13 +18,7 @@ class IncrementalLSI:
                 if log_idf:
                         self.idf = np.log1p(self.idf)
                 self.log_tfidf = log_tfidf
-                self.svd = IncrementalSVD(n_comps)
-        def partial_fit(self, X):
-                self.svd.partial_fit(self._tfidf(X))
-                return self
         def transform(self, X):
-                return self.svd.transform(self._tfidf(X))
-        def _tfidf(self, X):
                 import numpy as np
                 from scipy.sparse import issparse, dia_matrix, csr_matrix
                 ### First get X sums per row
@@ -53,3 +44,21 @@ class IncrementalLSI:
                 if self.log_tfidf:
                         tf_idf = np.log1p(tf_idf)
                 return np.nan_to_num(tf_idf, 0)
+
+class IncrementalLSI:
+        def __init__(self, var_means,
+                     n_comps:int=50,
+                     log_tf:bool=True, log_idf:bool=True, log_tfidf:bool=False,
+                     scale_factor:Union[int, float]=1e4,
+                     ):
+                from .incrementalsvd import IncrementalSVD
+                self.tfidf = IncrementalTFIDF(var_means=var_means,
+                                              log_tf=log_tf, log_idf=log_idf,
+                                              log_tfidf=log_tfidf,
+                                              scale_factor=scale_factor)
+                self.svd = IncrementalSVD(n_comps)
+        def partial_fit(self, X):
+                self.svd.partial_fit(self.tfidf.transform(X))
+                return self
+        def transform(self, X):
+                return self.svd.transform(self.tfidf.transform(X))

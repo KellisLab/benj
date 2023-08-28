@@ -11,13 +11,14 @@ class IncrementalSVD:
                 self.n_components = n_components
                 self.s = None
                 self.V = None
-        def partial_fit(self, X):
+        def partial_fit(self, X, method_qr:bool=False):
                 import numpy as np
+                import scipy.sparse
                 from scipy.sparse.linalg import svds
                 if self.s is None and self.V is None:
                         U, s, VT = svds(X, k=self.n_components)
                         _, self.s, self.V = U[:, ::-1], s[::-1], VT[::-1, :].T
-                else:
+                elif method_qr:
                         residuals = X - np.dot(np.dot(X, self.V), self.V.T)
                         Q, R = np.linalg.qr(residuals)
                         del residuals
@@ -27,6 +28,12 @@ class IncrementalSVD:
                         augmented = np.vstack((aug_upper, aug_lower))
                         del aug_upper, aug_lower
                         Uz, sz, VzT = svds(augmented, k=self.n_components)
+                        self.s = sz[::-1]
+                        self.V = VzT[::-1, :].T
+                else:
+                        X = scipy.sparse.vstack((np.diag(self.s).dot(self.V.T),
+                                                 X))
+                        Uz, sz, VzT = svds(X, k=self.n_components)
                         self.s = sz[::-1]
                         self.V = VzT[::-1, :].T
         def transform(self, X):

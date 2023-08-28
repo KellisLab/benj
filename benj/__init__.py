@@ -3,6 +3,8 @@ from .spectral import spectral, n_spectral, find_features, iterativeSpectral
 from .arg_parse import parse_args
 from .parse_anndata import parse_anndata
 from .annotate import *
+from .aggregate import *
+from .incrementallsi import *
 from .timer import template as stopwatch
 from .rgg import *
 from .mu import *

@@ -33,7 +33,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
                      h5ad:Union[_PathLike, List[_PathLike]]=None,
                      sample_key="Sample",
                      min_cells_per_sample:int=30, qc_vars:List[str]=[],
-                     sep="\t",
+                     sep="\t", verbose:bool=True,
                      **kwargs):
     """Metadata+directory, or h5ad with or without metadata"""
     import os
@@ -60,7 +60,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
         raise ValueError("Metadata does not exist!")
     if directory is None and len(h5ad) == 0:
         raise ValueError("Must provide either directory or h5ad")
-    if isinstance(metadata, pd.DataFrame):
+    if verbose and isinstance(metadata, pd.DataFrame):
         print("Metadata:")
         print(metadata)
     adata_tbl = {}
@@ -73,6 +73,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
             adata, fname = find_sample(directory=directory, h5ad=h5ad.get(sample),
                                        sample=sample, metadata=metadata,
                                        min_cells_per_sample=min_cells_per_sample,
+                                       verbose=verbose,
                                        **kwargs)
             if adata is None:
                 bad.append(sample)

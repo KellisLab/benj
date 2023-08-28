@@ -1,7 +1,7 @@
 
 from typing import Union
 class IncrementalLSI:
-        def __init__(self, var_sums,
+        def __init__(self, var_means,
                      n_comps:int=50,
                      log_tf:bool=True, log_idf:bool=True, log_tfidf:bool=False,
                      scale_factor:Union[int, float]=1e4,
@@ -13,11 +13,13 @@ class IncrementalLSI:
                                 "When returning log(TF*IDF), \
                                 applying neither log(TF) nor log(IDF) is possible."
                         )
-                var_sums = np.ravel(var_sums)
-                self.tf = np.zeros(len(var_sums), dtype="f8")
-                self.tf = np.divide(scale_factor, var_sums, where=var_sums > 0, out=self.tf)
+                var_means = np.ravel(var_means)
+                self.idf = np.zeros(len(var_means), dtype="f8")
+                self.idf = np.divide(1, var_means, where=var_means > 0, out=self.idf)
+                self.scale_factor = self.scale_factor
                 self.log_tf = log_tf
-                self.log_idf = log_idf
+                if log_idf:
+                        self.idf = np.log1p(self.idf)
                 self.log_tfidf = log_tfidf
                 self.svd = IncrementalSVD(n_comps)
         def partial_fit(self, X):
@@ -28,23 +30,27 @@ class IncrementalLSI:
         def _tfidf(self, X):
                 import numpy as np
                 from scipy.sparse import issparse, dia_matrix, csr_matrix
-                idf = np.ravel(X.shape[0] / X.sum(0))
-                if self.log_idf:
-                        idf = np.log1p(idf)
+                ### First get X sums per row
+                xs1 = np.ravel(X.sum(1))
+                tf = np.zeros(len(xs1))
+                tf = np.divide(self.scale_factor, xs1, where=xs1>0, out=tf)
+                del xs1
+                del xs
                 if issparse(X):
-                        tf = np.dot(dia_matrix((self.tf, 0),
-                                               shape=(self.tf.shape[0],
-                                                      self.tf.shape[0])),
+                        tf = np.dot(dia_matrix((tf, 0),
+                                               shape=(tf.shape[0],
+                                                      tf.shape[0])),
                                     X)
                 else:
-                        tf = X / self.tf
+                        tf = np.reshape(tf, (-1, 1))
+                        tf = X * tf
                 if self.log_tf:
                         tf = np.log1p(tf)
                 if issparse(tf):
-                        idf = dia_matrix((idf, 0), shape=(idf.size, idf.size))
+                        idf = dia_matrix((self.idf, 0), shape=(self.idf.size, self.idf.size))
                         tf_idf = np.dot(tf, idf)
                 else:
-                        tf_idf = np.dot(csr_matrix(tf), csr_matrix(np.diag(idf)))
+                        tf_idf = np.dot(csr_matrix(tf), csr_matrix(np.diag(self.idf)))
                 if self.log_tfidf:
                         tf_idf = np.log1p(tf_idf)
                 return np.nan_to_num(tf_idf, 0)

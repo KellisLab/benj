@@ -3,23 +3,30 @@ from typing import Union, List
 from pathlib import Path
 _PathLike=Union[str, Path]
 
+def aggregate_collection(adata):
+    from tqdm.auto import tqdm
+    import scanpy as sc
+    from anndata.experimental.multi_files import AnnCollection
+    tbl = {}
+    for k, v in tqdm(adata.uns["H5AD"]["files"].items()):
+        tbl[k] = sc.read(v, backed="r")
+    return AnnCollection(tbl, join_vars="inner")[adata.obs_names, adata.var_names]
+
+
 def aggregate_load(adata, which:Union[str, List[str]]="X"):
     from anndata.experimental.multi_files import AnnCollection
     import scanpy as sc
     from .timer import template as stopwatch
     sw = stopwatch()
     if isinstance(which, str):
-            which = [which]
+        which = [which]
+    ac = aggregate_collection(adata)
     if "X" in which or "all" in which:
-            with sw("Loading X (%d, %d)" % adata.shape):
-                    ac = AnnCollection({k: sc.read(v, backed="r") for k, v in adata.uns["H5AD"]["files"].items()},
-                                       join_vars="inner")
-                    adata.X = ac[adata.obs_names, adata.var_names].X
+        with sw("Loading X (%d, %d)" % adata.shape):
+            adata.X = ac.X
     if "layers" in which or "all" in which:
-            with sw("Loading layers (%d, %d)" % adata.shape):
-                    ac = AnnCollection({k: sc.read(v, backed="r") for k, v in adata.uns["H5AD"]["files"].items()},
-                                       join_vars="inner")
-                    adata.layers = ac[adata.obs_names, adata.var_names].layers
+        with sw("Loading layers (%d, %d)" % adata.shape):
+            adata.layers = ac.layers
     return adata
 
 def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=None,

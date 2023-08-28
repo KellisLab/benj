@@ -31,7 +31,53 @@ def setup_args_anndata(ap, parse_anndata_prefix=""):
         ap.add_argument("--split", default=",")
     return ap
 
+def parse_anndata_options(parse_anndata_prefix="", **args):
+    """ Use argparse derived args and split into arguments to aggregate_concat"""
+    if parse_anndata_prefix:
+        parse_anndata_prefix = parse_anndata_prefix.replace("-", "_") + "_"
+    h5ad = args.get(parse_anndata_prefix + "h5ad",
+                    args.get(parse_anndata_prefix + "input", ""))
+    ### h5ad can be either str or list[str]
+    out = {"h5ad": h5ad}
+    if args.get(parse_anndata_prefix + "subset") and isinstance(args[parse_anndata_prefix + "subset"], list):
+        subset = {}
+        for ss in args[parse_anndata_prefix + "subset"]:
+            S = [s.strip() for s in ss.split("=")]
+            if len(S) == 2:
+                from ast import literal_eval
+                sval = S[1].split(args.get(parse_anndata_prefix + "split", ","))
+                try:
+                    sval = [literal_eval(x) for x in sval]
+                except:
+                    pass
+                subset[S[0]] = sval
+        out["subset"] = subset
+    if args.get(parse_anndata_prefix + "min") and isinstance(args[parse_anndata_prefix + "min"], list):
+        obs_min = {}
+        for kv in args[parse_anndata_prefix + "min"]:
+            S = [s.strip() for s in kv.split("=")]
+            if len(S) == 2:
+                obs_min[S[0]] = float(S[1])
+        out["obs_min"] = obs_min
+    if args.get(parse_anndata_prefix + "max") and isinstance(args[parse_anndata_prefix + "max"], list):
+        obs_max = {}
+        for kv in args[parse_anndata_prefix + "max"]:
+            S = [s.strip() for s in kv.split("=")]
+            if len(S) == 2:
+                obs_max[S[0]] = float(S[1])
+        out["obs_max"] = obs_max
+    if args.get(parse_anndata_prefix + "annotation"):
+        out["obs_annotation"] = args["annotation"]
+    return out
+
 def parse_anndata(parse_anndata_prefix="", **args):
+    """Legacy option, uses aggregate_concat and aggregate_load"""
+    from .aggregate import aggregate_concat, aggregate_load
+    opt = parse_anndata_options(parse_anndata_prefix=parse_anndata_prefix, **args)
+    adata = aggregate_concat(**opt)
+    return aggregate_load(adata, which="all")
+
+def _old_parse_anndata(parse_anndata_prefix="", **args):
     import os
     import logging
     import numpy as np

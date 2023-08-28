@@ -16,7 +16,7 @@ class IncrementalLSI:
                 var_means = np.ravel(var_means)
                 self.idf = np.zeros(len(var_means), dtype="f8")
                 self.idf = np.divide(1, var_means, where=var_means > 0, out=self.idf)
-                self.scale_factor = self.scale_factor
+                self.scale_factor = scale_factor
                 self.log_tf = log_tf
                 if log_idf:
                         self.idf = np.log1p(self.idf)

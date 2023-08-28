@@ -35,7 +35,6 @@ class IncrementalLSI:
                 tf = np.zeros(len(xs1))
                 tf = np.divide(self.scale_factor, xs1, where=xs1>0, out=tf)
                 del xs1
-                del xs
                 if issparse(X):
                         tf = np.dot(dia_matrix((tf, 0),
                                                shape=(tf.shape[0],

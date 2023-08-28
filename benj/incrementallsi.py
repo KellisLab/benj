@@ -32,7 +32,7 @@ class IncrementalLSI:
                 from scipy.sparse import issparse, dia_matrix, csr_matrix
                 ### First get X sums per row
                 xs1 = np.ravel(X.sum(1))
-                tf = np.zeros(len(xs1))
+                tf = np.zeros(len(xs1), dtype="f8")
                 tf = np.divide(self.scale_factor, xs1, where=xs1>0, out=tf)
                 del xs1
                 if issparse(X):

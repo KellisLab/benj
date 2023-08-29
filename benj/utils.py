@@ -14,6 +14,25 @@ def read_elems(path: str, elems: Union[str, List[str]]) -> Union[Dict[str, any],
         else:
             return {elem: anndata.experimental.read_elem(F[elem]) for elem in elems}
 
+def filter_LSI(adata, qc_cols, cor_cutoff:float=0.8, sw=None):
+    import numpy as np
+    if sw is None:
+        from .template import stopwatch
+        sw = stopwatch()
+    for col in qc_cols:
+        with sw("Correlating column \"%s\" with LSI" % col):
+            from scipy.stats import pearsonr
+            cor = np.zeros(len(adata.uns["lsi"]["stdev"]))
+            for i in range(len(cor)):
+                cor[i], _ = pearsonr(adata.obsm["X_lsi"][:, i], adata.obs[col])
+            cor_flag = np.abs(cor) < cor_cutoff
+            if np.sum(cor_flag) > 0:
+                print("Removing components:", np.ravel(np.where(~cor_flag)))
+                print("  with correlations", cor[~cor_flag])
+            adata.obsm["X_lsi"] = adata.obsm["X_lsi"][:, cor_flag].astype(np.float32)
+            adata.varm["LSI"] = adata.varm["LSI"][:, cor_flag].astype(np.float32)
+            adata.uns["lsi"]["stdev"] = adata.uns["lsi"]["stdev"][cor_flag]
+
 def convert_X(X, dtype_tbl=None):
     import numpy as np
     import scipy.sparse

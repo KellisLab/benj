@@ -13,6 +13,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
     import scanpy as sc
     import muon as mu
     from muon import atac as ac
+    from .utils import filter_LSI
     if sw is None:
         from .timer import template as stopwatch
         sw = stopwatch()
@@ -38,19 +39,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
     with sw("Running LSI"):
         ac.tl.lsi(adata)
         del adata.X
-    for col in qc_cols:
-        with sw("Correlating column \"%s\" with LSI" % col):
-            from scipy.stats import pearsonr
-            cor = np.zeros(len(adata.uns["lsi"]["stdev"]))
-            for i in range(len(cor)):
-                cor[i], _ = pearsonr(adata.obsm["X_lsi"][:, i], adata.obs[col])
-            cor_flag = np.abs(cor) < cor_cutoff
-            if np.sum(cor_flag) > 0:
-                print("Removing components:", np.ravel(np.where(~cor_flag)))
-                print("  with correlations", cor[~cor_flag])
-            adata.obsm["X_lsi"] = adata.obsm["X_lsi"][:, cor_flag].astype(np.float32)
-            adata.varm["LSI"] = adata.varm["LSI"][:, cor_flag].astype(np.float32)
-            adata.uns["lsi"]["stdev"] = adata.uns["lsi"]["stdev"][cor_flag]
+    filter_LSI(adata, qc_cols=qc_cols, cor_cutoff=cor_cutoff, sw=sw)
     use_rep="X_lsi"
     n_pcs=len(adata.uns["lsi"]["stdev"])
     if batch is not None and use_harmony:

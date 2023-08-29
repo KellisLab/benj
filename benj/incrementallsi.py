@@ -27,10 +27,9 @@ class IncrementalTFIDF:
                 tf = np.divide(self.scale_factor, xs1, where=xs1>0, out=tf)
                 del xs1
                 if issparse(X):
-                        tf = np.dot(dia_matrix((tf, 0),
-                                               shape=(tf.shape[0],
-                                                      tf.shape[0])),
-                                    X)
+                        tf = dia_matrix((tf, 0),
+                                        shape=(tf.shape[0],
+                                               tf.shape[0])).dot(X)
                 else:
                         tf = np.reshape(tf, (-1, 1))
                         tf = X * tf
@@ -38,11 +37,11 @@ class IncrementalTFIDF:
                         if self.log_tf:
                                 tf.data = np.log1p(tf.data)
                         idf = dia_matrix((self.idf, 0), shape=(self.idf.size, self.idf.size))
-                        tf_idf = np.dot(tf, idf)
+                        tf_idf = tf.dot(idf)
                 else:
                         if self.log_tf:
                                 tf = np.log1p(tf)
-                        tf_idf = np.dot(csr_matrix(tf), csr_matrix(np.diag(self.idf)))
+                        tf_idf = csr_matrix(tf).dot(csr_matrix(np.diag(self.idf)))
                 if issparse(tf_idf):
                         if self.log_tfidf:
                                 tf_idf.data = np.log1p(tf_idf.data)

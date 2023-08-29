@@ -42,5 +42,4 @@ class IncrementalSVD:
                         self.s = sz[::-1]
                         self.V = VzT[::-1, :].T
         def transform(self, X):
-                import numpy as np
-                return np.dot(X, self.V)
+                return self.X.dot(self.V)

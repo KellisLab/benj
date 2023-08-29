@@ -35,7 +35,7 @@ def convert_X(X, dtype_tbl=None):
         else:
             data_max = np.abs(D).max()
         for dtype_max in sorted(dtype_tbl.keys()):
-            if data_max < dtype_max:
+            if data_max < dtype_max and np.allclose(D.astype(dtype_max), D):
                 return X.astype(dtype_tbl[dtype_max])
     elif np.allclose(D, np.round(D)):
         if len(D) == 0:
@@ -43,7 +43,7 @@ def convert_X(X, dtype_tbl=None):
         else:
             data_max = np.abs(D).max()
         for dtype_max in sorted(dtype_tbl.keys()):
-            if data_max < dtype_max:
+            if data_max < dtype_max and np.allclose(D.astype(dtype_max), D):
                 return X.astype(dtype_tbl[dtype_max])
     return X
 
@@ -56,6 +56,13 @@ def is_norm_log(adata, target_sum=10000):
     lse = logsumexp(X, axis=0)
     total = np.exp(lse) - X.shape[1]
     return np.allclose(total, target_sum)
+
+def anndata_batched_generator(adata, batch_size:int=10000):
+    from anndata import AnnData
+    from anndata.experimental import AnnCollection, AnnCollectionView
+    if isinstance(adata, AnnData):
+        adata = AnnCollection({"data": adata}, join_vars="inner")
+    return adata.iterate_axis(batch_size)
 
 def index_of(values, idx):
     import numpy as np

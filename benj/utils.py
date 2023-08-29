@@ -43,7 +43,7 @@ def convert_X(X, dtype_tbl=None):
         else:
             data_max = np.abs(D).max()
         for dtype_max in sorted(dtype_tbl.keys()):
-            if data_max < dtype_max and np.allclose(D.astype(dtype_max), D):
+            if data_max < dtype_max and np.allclose(D.astype(dtype_tbl[dtype_max]), D):
                 return X.astype(dtype_tbl[dtype_max])
     return X
 

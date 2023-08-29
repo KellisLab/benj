@@ -17,6 +17,7 @@ def read_elems(path: str, elems: Union[str, List[str]]) -> Union[Dict[str, any],
 def convert_X(X, dtype_tbl=None):
     import numpy as np
     import scipy.sparse
+    import gc
     if dtype_tbl is None:
         dtype_tbl = {np.iinfo(np.int8).max: np.int8,
                      np.iinfo(np.uint8).max: np.uint8,
@@ -26,6 +27,7 @@ def convert_X(X, dtype_tbl=None):
                      np.iinfo(np.uint32).max: np.uint32,
                      np.iinfo(np.int64).max: np.int64}
     if scipy.sparse.issparse(X):
+        X.sum_duplicates()
         D = X.data
     else:
         D = X
@@ -35,7 +37,7 @@ def convert_X(X, dtype_tbl=None):
         else:
             data_max = np.abs(D).max()
         for dtype_max in sorted(dtype_tbl.keys()):
-            if data_max < dtype_max and np.allclose(D.astype(dtype_max), D):
+            if data_max <= dtype_max:
                 return X.astype(dtype_tbl[dtype_max])
     elif np.allclose(D, np.round(D)):
         if len(D) == 0:
@@ -43,7 +45,7 @@ def convert_X(X, dtype_tbl=None):
         else:
             data_max = np.abs(D).max()
         for dtype_max in sorted(dtype_tbl.keys()):
-            if data_max < dtype_max and np.allclose(D.astype(dtype_tbl[dtype_max]), D):
+            if data_max <= dtype_max:
                 return X.astype(dtype_tbl[dtype_max])
     return X
 

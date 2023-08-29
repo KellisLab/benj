@@ -55,13 +55,14 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
             if len(badnames) > 0: ### Only set if bad peaks exist!
                 pk["blacklist"] = pk.index.isin(badnames)
     adata = anndata.AnnData(obs=cm)
-    ac.tl.locate_fragments(adata, fragments)
+    ac.tl.locate_fragments(adata, os.path.abspath(fragments))
     with sw("Counting peaks"):
         adata = ac.tl.count_fragments_features(adata, pk.rename({"seqnames": "Chromosome", "start": "Start", "end": "End"}, axis=1), extend_upstream=0, extend_downstream=0)
+        adata.X.sum_duplicates()
     if max_value > 0:
         with sw("Clipping peak counts to %d" % max_value):
             adata.X.data = adata.X.data.clip(0, max_value)
-    ac.tl.locate_fragments(adata, fragments)
+    ac.tl.locate_fragments(adata, os.path.abspath(fragments))
     with sw("Converting counts to int"):
         adata.X = benj.convert_X(adata.X)
     adata.obs.index = old_index

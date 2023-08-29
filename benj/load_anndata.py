@@ -81,6 +81,6 @@ def find_sample(sample:str, metadata=None, directory:Union[_PathLike, List[_Path
         for cn in metadata.columns:
             adata.obs[cn] = metadata.loc[sample, cn]
     if adata.shape[0] >= min_cells_per_sample:
-        return adata, fname
+        return adata, os.path.abspath(fname)
     else:
         return None, fname

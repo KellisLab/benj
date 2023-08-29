@@ -3,24 +3,31 @@ from typing import Union, List
 from pathlib import Path
 _PathLike=Union[str, Path]
 
-def aggregate_collection(adata):
+def aggregate_collection(adata, which:Union[str, List[str]]="X"):
     from tqdm.auto import tqdm
     import scanpy as sc
     from anndata.experimental.multi_files import AnnCollection
+    if isinstance(which, str):
+        which = [which]
     tbl = {}
+    good_samples = pd.unique(adata.obs[adata.uns["H5AD"]["sample_key"]])
     for k, v in tqdm(adata.uns["H5AD"]["files"].items()):
+        if k not in good_samples:
+                continue
         tbl[k] = sc.read(v, backed="r")
+        del tbl[k].raw
+        if "layers" not in which and "all" not in which:
+                del tbl[k].layers
     return AnnCollection(tbl, join_vars="inner")[adata.obs_names, adata.var_names]
 
 
 def aggregate_load(adata, which:Union[str, List[str]]="X"):
-    from anndata.experimental.multi_files import AnnCollection
     import scanpy as sc
     from .timer import template as stopwatch
     sw = stopwatch()
     if isinstance(which, str):
         which = [which]
-    ac = aggregate_collection(adata)
+    ac = aggregate_collection(adata, which=which)
     if "X" in which or "all" in which:
         with sw("Loading X (%d, %d)" % adata.shape):
             adata.X = ac.X

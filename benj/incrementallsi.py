@@ -34,16 +34,24 @@ class IncrementalTFIDF:
                 else:
                         tf = np.reshape(tf, (-1, 1))
                         tf = X * tf
-                if self.log_tf:
-                        tf = np.log1p(tf)
                 if issparse(tf):
+                        if self.log_tf:
+                                tf.data = np.log1p(tf.data)
                         idf = dia_matrix((self.idf, 0), shape=(self.idf.size, self.idf.size))
                         tf_idf = np.dot(tf, idf)
                 else:
+                        if self.log_tf:
+                                tf = np.log1p(tf)
                         tf_idf = np.dot(csr_matrix(tf), csr_matrix(np.diag(self.idf)))
-                if self.log_tfidf:
-                        tf_idf = np.log1p(tf_idf)
-                return np.nan_to_num(tf_idf, 0)
+                if issparse(tf_idf):
+                        if self.log_tfidf:
+                                tf_idf.data = np.log1p(tf_idf.data)
+                        tf_idf.data = np.nan_to_num(tf_idf.data, 0)
+                else:
+                        if self.log_tfidf:
+                                tf_idf = np.log1p(tf_idf)
+                        tf_idf = np.nan_to_num(tf_idf, 0)
+                return tf_idf
 
 class IncrementalLSI:
         def __init__(self, var_means,

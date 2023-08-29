@@ -33,7 +33,12 @@ class IncrementalSVD:
                 else:
                         X = scipy.sparse.vstack((np.diag(self.s).dot(self.V.T),
                                                  X))
-                        Uz, sz, VzT = svds(X, k=self.n_components)
+                        ### Use previous SVD to guess
+                        if X.shape[0] < X.shape[1]:
+                                v0 = X.dot(self.V[:, 0] / self.s[0])
+                        else:
+                                v0 = self.V[:, 0]
+                        Uz, sz, VzT = svds(X, k=self.n_components, solver="arpack", v0=v0)
                         self.s = sz[::-1]
                         self.V = VzT[::-1, :].T
         def transform(self, X):

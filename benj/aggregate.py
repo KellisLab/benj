@@ -5,6 +5,8 @@ _PathLike=Union[str, Path]
 
 def aggregate_collection(adata, which:Union[str, List[str]]="X"):
     from tqdm.auto import tqdm
+    import numpy as np
+    import pandas as pd
     import scanpy as sc
     from anndata.experimental.multi_files import AnnCollection
     if isinstance(which, str):

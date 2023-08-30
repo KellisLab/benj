@@ -22,6 +22,25 @@ def aggregate_collection(adata, which:Union[str, List[str]]="X"):
                 del tbl[k].layers
     return AnnCollection(tbl, join_vars="inner")[adata.obs_names, adata.var_names]
 
+def aggregate_var(tbl:dict):
+    import numpy as np
+    import pandas as pd
+    import anndata
+    comm_cols = None
+    var_tbl = {}
+    for k, data in tbl.items():
+        if isinstance(data, anndata.AnnData):
+            var_tbl[k] = data.var.copy()
+        elif isinstance(data, pd.DataFrame):
+            var_tbl[k] = data.copy()
+        else:
+            continue
+        var_tbl[k]["gene"] = var_tbl[k].index.values
+    df = pd.concat(var_tbl, axis=0)
+    var = df.groupby("gene").agg({"total_counts": np.nansum,
+                                  "n_cells_by_counts": np.nansum})
+    var["log1p_total_counts"] = np.log1p(var["total_counts"])
+    return var
 
 def aggregate_load(adata, which:Union[str, List[str]]="X"):
     import scanpy as sc
@@ -40,7 +59,7 @@ def aggregate_load(adata, which:Union[str, List[str]]="X"):
 
 def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=None,
                      h5ad:Union[_PathLike, List[_PathLike]]=None,
-                     sample_key="Sample",
+                     sample_key="Sample", calc_qc:bool=True,
                      min_cells_per_sample:int=30, qc_vars:List[str]=[],
                      sep="\t", verbose:bool=True,
                      **kwargs):
@@ -80,7 +99,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
         for sample in tqdm(metadata.index.values):
             ### find sample checks 1: h5ad 2: directory+metadata, 3: sample.h5ad
             adata, fname = find_sample(directory=directory, h5ad=h5ad.get(sample),
-                                       sample=sample, metadata=metadata,
+                                       sample=sample, metadata=metadata, qc=calc_qc,
                                        min_cells_per_sample=min_cells_per_sample,
                                        verbose=verbose,
                                        **kwargs)
@@ -99,12 +118,17 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
         print("Bad samples: ", ",".join(bad))
     total_cells = np.sum([adata.shape[0] for _, adata in adata_tbl.items()])
     with sw("Concatenating %d cells into one AnnData object" % total_cells):
+        if calc_qc:
+            calc_qc = aggregate_var(adata_tbl)
         adata = anndata.concat(adata_tbl, merge="same", uns_merge="same")
         tk = list(adata_tbl.keys())
         del adata_tbl
         if len(tk) == len(scrub_tbl.keys()):
             adata.uns["scrublet"] = {"batches": scrub_tbl,
                                      "batched_by": sample_key}
+        if calc_qc:
+            for col in calc_qc.columns:
+                adata.var[col] = calc_qc.loc[adata.var_names, col].values
     adata.uns["H5AD"] = {"sample_key": sample_key,
                          "files": fname_tbl}
     return adata

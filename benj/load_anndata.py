@@ -5,7 +5,7 @@ _PathLike=Union[str, Path]
 
 def load_anndata(h5ad:_PathLike,
                  obs_annotation:Union[_PathLike, List[_PathLike]]=None,
-                 subset:dict=None,
+                 subset:dict=None, qc:bool=True,
                  elt:Union[str, List[str]]=None, logger="benj", verbose:bool=True,
                  obs_min:dict=None, obs_max:dict=None, sep:str="\t"):
     import numpy as np
@@ -20,6 +20,9 @@ def load_anndata(h5ad:_PathLike,
         elt = ["obs", "var", "obsm", "varm", "varp", "uns"]
     elif elt == "all":
         elt = ["obs", "var", "obsm", "varm", "varp", "uns", "X", "layers", "raw"]
+    temp_X = qc and "X" not in elt
+    if temp_X:
+        elt.append("X")
     adata = anndata.AnnData(**read_elems(h5ad, elt))
     obs = adata.obs.copy()
     if isinstance(obs_annotation, pd.DataFrame):
@@ -49,6 +52,10 @@ def load_anndata(h5ad:_PathLike,
     adata = adata[obs.index.values, :].copy()
     for cn in set(obs.columns) - set(adata.obs.columns):
         adata.obs[cn] = obs[cn]
+    if qc:
+        sc.pp.calculate_qc_metrics(adata, inplace=True)
+    if temp_X:
+        del adata.X
     if verbose:
         import logging
         logger = logging.getLogger(logger)
@@ -57,7 +64,7 @@ def load_anndata(h5ad:_PathLike,
     return adata
 
 def find_sample(sample:str, metadata=None, directory:Union[_PathLike, List[_PathLike]]=None,
-                h5ad:_PathLike=None,
+                h5ad:_PathLike=None, qc:bool=True,
                 min_cells_per_sample:int=30,
                 **kwargs):
     import os

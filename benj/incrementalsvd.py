@@ -42,4 +42,4 @@ class IncrementalSVD:
                         self.s = sz[::-1]
                         self.V = VzT[::-1, :].T
         def transform(self, X):
-                return self.X.dot(self.V)
+                return X.dot(self.V)

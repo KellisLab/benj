@@ -53,6 +53,7 @@ def load_anndata(h5ad:_PathLike,
     for cn in set(obs.columns) - set(adata.obs.columns):
         adata.obs[cn] = obs[cn]
     if qc:
+        import scanpy as sc
         sc.pp.calculate_qc_metrics(adata, inplace=True)
     if temp_X:
         del adata.X

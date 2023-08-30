@@ -17,7 +17,7 @@ def read_elems(path: str, elems: Union[str, List[str]]) -> Union[Dict[str, any],
 def filter_LSI(adata, qc_cols, cor_cutoff:float=0.8, sw=None):
     import numpy as np
     if sw is None:
-        from .template import stopwatch
+        from .timer import template as stopwatch
         sw = stopwatch()
     for col in qc_cols:
         with sw("Correlating column \"%s\" with LSI" % col):
@@ -164,3 +164,34 @@ def dotplot_summarize(adata, groupby, expression_cutoff:float=0, which="mean"):
     sc.pp.log1p(adata)
     adata.layers["expressed"] = adata.X > expression_cutoff
     return pseudobulk(adata, cols=groupby, which=which)
+
+def ac_var_qc(ac, batch_size:int=10000, meansd:bool=True):
+    import numpy as np
+    import pandas as pd
+    import anndata
+    import scanpy as sc
+    var = pd.DataFrame(index=ac.var_names)
+    total_counts = np.zeros(ac.shape[1], dtype="i8")
+    n_cells = 0
+    mean = np.zeros(ac.shape[1], dtype="f8")
+    var = np.zeros(ac.shape[1], dtype="f8")
+    for batch, _ in tqdm(ac.iterate_axis(10000, shuffle=meansd)):
+        X = batch.X
+        total_counts += np.ravel(X.sum(0))
+        if meansd:
+            batch = anndata.AnnData(X)
+            sc.pp.normalize_total(batch, target_sum=10000)
+            sc.pp.log1p(batch)
+            s1 = np.ravel(batch.X.sum(0))
+            s2 = np.ravel(batch.X.multiply(batch.X).sum(0))
+            mean_new = (n_cells * mean + s1) / (n_cells + X.shape[0])
+            ### Young and Cramer update
+            var_new = (n_cells * (var + mean*mean) + s2) / (n_cells + X.shape[0]) - mean_new*mean_new
+            mean = mean_new
+            var = var_new
+        n_cells += X.shape[0]
+    var["total_counts"] = total_counts
+    if meansd:
+        var["mean"] = mean
+        var["std"] = np.sqrt(var)
+    return var

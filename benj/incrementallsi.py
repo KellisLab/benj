@@ -53,13 +53,14 @@ class IncrementalTFIDF:
                 return tf_idf
 
 class IncrementalLSI:
-        def __init__(self, var_means,
+        def __init__(self, var,
                      n_comps:int=50,
                      log_tf:bool=True, log_idf:bool=True, log_tfidf:bool=False,
                      scale_factor:Union[int, float]=1e4,
                      ):
+                import pandas as pd
                 from .incrementalsvd import IncrementalSVD
-                self.tfidf = IncrementalTFIDF(var_means=var_means,
+                self.tfidf = IncrementalTFIDF(var_means=var["var_means"].values,
                                               log_tf=log_tf, log_idf=log_idf,
                                               log_tfidf=log_tfidf,
                                               scale_factor=scale_factor)

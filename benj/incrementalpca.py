@@ -3,6 +3,8 @@ class _RawNormalizeLogScaler:
                 self.mean = mean
                 self.std = std
                 self.target_sum = target_sum
+                if target_sum is None: ### weird python thing
+                        self.target_sum = None
         def transform(self, data):
                 import numpy as np
                 import pandas as pd
@@ -16,9 +18,9 @@ class _RawNormalizeLogScaler:
                 return np.asarray(X)
 
 class IncrementalPCA:
-        def __init__(self, mean, std, target_sum:int=None, n_components:int=50):
+        def __init__(self, var, target_sum:int=None, n_components:int=50):
                 from .incrementalsvd import IncrementalSVD
-                self.scaler = _RawNormalizeLogScaler(mean=mean, std=std, target_sum=target_sum)
+                self.scaler = _RawNormalizeLogScaler(mean=var["mean"], std=var["std"], target_sum=target_sum)
                 self.svd = IncrementalSVD(n_components=n_components)
         def partial_fit(self, X):
                 self.svd.partial_fit(self.scaler.transform(X))

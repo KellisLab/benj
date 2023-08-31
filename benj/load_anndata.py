@@ -55,6 +55,15 @@ def load_anndata(h5ad:_PathLike,
     if qc:
         import scanpy as sc
         sc.pp.calculate_qc_metrics(adata, inplace=True)
+        if "gene_ids" in adata.var.columns:
+            import anndata
+            bdata = anndata.AnnData(sc.pp.normalize_total(adata, target_sum=10000, inplace=False)["X"],
+                                    obs=adata.obs, var=adata.var)
+            sc.pp.log1p(bdata)
+            sc.pp.highly_variable(bdata)
+            sc.pp.scale(bdata)
+            adata.var = bdata.var
+            del bdata
     if temp_X:
         del adata.X
     if verbose:

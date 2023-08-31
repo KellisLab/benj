@@ -126,7 +126,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
         if len(tk) == len(scrub_tbl.keys()):
             adata.uns["scrublet"] = {"batches": scrub_tbl,
                                      "batched_by": sample_key}
-        if calc_qc:
+        if isinstance(calc_qc, pd.DataFrame):
             for col in calc_qc.columns:
                 adata.var[col] = calc_qc.loc[adata.var_names, col].values
     adata.uns["H5AD"] = {"sample_key": sample_key,

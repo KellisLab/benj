@@ -41,28 +41,43 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
         if len(unused) > 0:
             print("Warning: Unused contigs ", ",".join(unused))
         pk = pk.loc[pk["seqnames"].isin(contigs), :]
+    pkbl = None
     if blacklist is not None and os.path.exists(blacklist):
         with sw("Reading blacklist"):
             bl = pd.read_csv(blacklist, sep="\t", header=None).iloc[:, [0,1,2]]
-            bl = pyranges.from_dict({"Chromosome": bl[0].values,
-                                     "Start": bl[1].values,
-                                     "End": bl[2].values})
+            blgr = pyranges.from_dict({"Chromosome": bl[0].values,
+                                       "Start": bl[1].values,
+                                       "End": bl[2].values})
             pkgr = pyranges.from_dict({"Chromosome": pk["seqnames"].values,
                                        "Start": pk["start"].values,
                                        "End": pk["end"].values,
                                        "name": pk.index.values})
-            badnames = pd.unique(pkgr.join(bl).df["name"])
+            pkbl = pkgr.intersect(blgr).df
+            badnames = pd.unique(pkbl.df["name"])
             if len(badnames) > 0: ### Only set if bad peaks exist!
-                pk["blacklist"] = pk.index.isin(badnames)
+                pk["overlaps_blacklist"] = pk.index.isin(badnames)
     adata = anndata.AnnData(obs=cm)
     ac.tl.locate_fragments(adata, os.path.abspath(fragments))
     with sw("Counting peaks"):
         adata = ac.tl.count_fragments_features(adata, pk.rename({"seqnames": "Chromosome", "start": "Start", "end": "End"}, axis=1), extend_upstream=0, extend_downstream=0)
         adata.X.sum_duplicates()
+    ac.tl.locate_fragments(adata, os.path.abspath(fragments))
+    if pkbl is not None and isinstance(pkbl, pd.DataFrame) and pkbl.shape[0] > 0:
+        with sw("Converting raw counts to int"):
+            adata.X = benj.convert_X(adata.X)
+        with sw("Removing reads in peaks overlapping blacklist"):
+            import scipy.sparse
+            from benj.utils import index_of
+            bdata = ac.tl.count_fragments_features(adata, pkbl, extend_upstream=0, extend_downstream=0)
+            IC = index_of(pkbl["name"], adata.var_names)
+            S = scipy.sparse.csr_matrix((np.ones(len(IC)), (np.arange(len(IC)), IC)),
+                                        dtype=int, shape=(bdata.shape[1], adata.shape[1]))
+            adata.X = adata.X - bdata.X.dot(S)
+            del bdata, S
+            adata.X.sum_duplicates()
     if max_value > 0:
         with sw("Clipping peak counts to %d" % max_value):
             adata.X.data = adata.X.data.clip(0, max_value)
-    ac.tl.locate_fragments(adata, os.path.abspath(fragments))
     with sw("Converting counts to int"):
         adata.X = benj.convert_X(adata.X)
     adata.obs.index = old_index
@@ -79,16 +94,7 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
         qc_vars = []
         if "peakType" in pk.columns:
             qc_vars = list(set(pk.columns) & set(pk["peakType"]))
-        if "blacklist" in pk.columns:
-            qc_vars.append("blacklist")
         sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=None)
-    if "blacklist" in qc_vars:
-        with sw("Zeroing blacklisted peaks and recalculating QC metrics"):
-            qc_vars.remove("blacklist")
-            I = np.ravel(np.where(adata.var["blacklist"].values))
-            adata.X[:, I] = 0
-            adata.X.eliminate_zeros()
-            sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=None)
     with sw("Writing to H5AD"):
         adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return 0

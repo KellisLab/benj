@@ -60,7 +60,7 @@ def aggregate_load(adata, which:Union[str, List[str]]="X"):
 def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=None,
                      h5ad:Union[_PathLike, List[_PathLike]]=None,
                      sample_key="Sample", calc_qc:bool=True,
-                     min_cells_per_sample:int=30, qc_vars:List[str]=[],
+                     min_cells_per_sample:int=30,
                      sep="\t", verbose:bool=True,
                      **kwargs):
     """Metadata+directory, or h5ad with or without metadata"""
@@ -118,7 +118,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
         print("Bad samples: ", ",".join(bad))
     total_cells = np.sum([adata.shape[0] for _, adata in adata_tbl.items()])
     with sw("Concatenating %d cells into one AnnData object" % total_cells):
-        if calc_qc:
+        if isinstance(calc_qc, pd.DataFrame):
             calc_qc = aggregate_var(adata_tbl)
         adata = anndata.concat(adata_tbl, merge="same", uns_merge="same")
         tk = list(adata_tbl.keys())

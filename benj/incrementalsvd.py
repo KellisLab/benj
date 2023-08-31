@@ -31,8 +31,12 @@ class IncrementalSVD:
                         self.s = sz[::-1]
                         self.V = VzT[::-1, :].T
                 else:
-                        X = scipy.sparse.vstack((np.diag(self.s).dot(self.V.T),
-                                                 X))
+                        if scipy.sparse.issparse(X):
+                                X = scipy.sparse.vstack((np.diag(self.s).dot(self.V.T),
+                                                         X))
+                        else:
+                                X = np.vstack((np.diag(self.s).dot(self.V.T),
+                                               X))
                         ### Use previous SVD to guess
                         if X.shape[0] < X.shape[1]:
                                 v0 = X.dot(self.V[:, 0] / self.s[0])

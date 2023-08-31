@@ -100,8 +100,6 @@ def aggregate_load(adata, which:Union[str, List[str]]="X"):
             adata.layers = ac.layers
     return adata
 
-def _aggregate_futures(metadata, directory, h5ad, calc_qc:bool=True, min_cells_per_sample, verbose, **kwargs):
-    ### ProcessPoolExecutor
 def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=None,
                      h5ad:Union[_PathLike, List[_PathLike]]=None,
                      sample_key="Sample", calc_qc:bool=True,

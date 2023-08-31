@@ -170,7 +170,6 @@ def ac_var_qc(ac, batch_size:int=10000, meansd:bool=True):
     import pandas as pd
     import anndata
     import scanpy as sc
-    var = pd.DataFrame(index=ac.var_names)
     total_counts = np.zeros(ac.shape[1], dtype="i8")
     n_cells = 0
     mean = np.zeros(ac.shape[1], dtype="f8")
@@ -190,6 +189,7 @@ def ac_var_qc(ac, batch_size:int=10000, meansd:bool=True):
             mean = mean_new
             var = var_new
         n_cells += X.shape[0]
+    var = pd.DataFrame(index=ac.var_names)
     var["total_counts"] = total_counts
     if meansd:
         var["mean"] = mean

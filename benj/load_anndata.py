@@ -60,7 +60,7 @@ def load_anndata(h5ad:_PathLike,
             bdata = anndata.AnnData(sc.pp.normalize_total(adata, target_sum=10000, inplace=False)["X"],
                                     obs=adata.obs, var=adata.var)
             sc.pp.log1p(bdata)
-            sc.pp.highly_variable(bdata)
+            sc.pp.highly_variable_genes(bdata)
             sc.pp.scale(bdata)
             adata.var = bdata.var
             del bdata

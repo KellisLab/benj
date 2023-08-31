@@ -53,7 +53,7 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
                                        "End": pk["end"].values,
                                        "name": pk.index.values})
             pkbl = pkgr.intersect(blgr).df
-            badnames = pd.unique(pkbl.df["name"])
+            badnames = pd.unique(pkbl["name"])
             if len(badnames) > 0: ### Only set if bad peaks exist!
                 pk["overlaps_blacklist"] = pk.index.isin(badnames)
     adata = anndata.AnnData(obs=cm)

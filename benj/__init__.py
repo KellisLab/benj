@@ -5,6 +5,7 @@ from .parse_anndata import parse_anndata
 from .annotate import *
 from .aggregate import *
 from .incrementallsi import *
+from .incrementalpca import IncrementalPCA
 from .timer import template as stopwatch
 from .rgg import *
 from .mu import *

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blacklist=None, max_value:int=127, **kwargs):
+def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blacklist=None, max_value:int=127, stranded:bool=False, qc=["peakType"], **kwargs):
     import os
     import pandas as pd
     import numpy as np
@@ -31,8 +31,9 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
             pk = pk.rename({"distToTSS": "distToGeneStart"}, axis=1)
         pk.index = ["%s:%d-%d" % (chrom, begin, end) for chrom, begin, end in zip(pk["seqnames"], pk["start"], pk["end"])]
         pk["interval"] = pk.index.values.astype(str)
-        if "peakType" in pk.columns:
-            pk = pd.concat([pk, pd.get_dummies(pk["peakType"]) > 0], axis=1)
+        for col in qc:
+            if col in pk.columns:
+                pk = pd.concat([pk, pd.get_dummies(pk[col]) > 0], axis=1)
     ### TODO filter out bad
     with sw("Filtering contigs"):
         import pysam
@@ -56,10 +57,12 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
             badnames = pd.unique(pkbl["name"])
             if len(badnames) > 0: ### Only set if bad peaks exist!
                 pk["overlaps_blacklist"] = pk.index.isin(badnames)
+            if "strand" in pk.columns:
+                pkbl["strand"] = pk.loc[pkbl["name"].values, "strand"].values
     adata = anndata.AnnData(obs=cm)
     ac.tl.locate_fragments(adata, os.path.abspath(fragments))
     with sw("Counting peaks"):
-        adata = ac.tl.count_fragments_features(adata, pk.rename({"seqnames": "Chromosome", "start": "Start", "end": "End"}, axis=1), extend_upstream=0, extend_downstream=0)
+        adata = ac.tl.count_fragments_features(adata, pk.rename({"seqnames": "Chromosome", "start": "Start", "end": "End", "strand": "Strand"}, axis=1), extend_upstream=0, extend_downstream=0, stranded=stranded)
         adata.X.sum_duplicates()
     ac.tl.locate_fragments(adata, os.path.abspath(fragments))
     if pkbl is not None and isinstance(pkbl, pd.DataFrame) and pkbl.shape[0] > 0:
@@ -68,7 +71,7 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
         with sw("Removing reads in peaks overlapping blacklist"):
             import scipy.sparse
             from benj.utils import index_of
-            bdata = ac.tl.count_fragments_features(adata, pkbl, extend_upstream=0, extend_downstream=0)
+            bdata = ac.tl.count_fragments_features(adata, pkbl, extend_upstream=0, extend_downstream=0, stranded=stranded)
             IC = index_of(pkbl["name"], adata.var_names)
             S = scipy.sparse.csr_matrix((np.ones(len(IC)), (np.arange(len(IC)), IC)),
                                         dtype=int, shape=(bdata.shape[1], adata.shape[1]))
@@ -92,8 +95,10 @@ def run(fragments, sample, cell_metadata, peaks, output, compression:int=9, blac
     adata.uns = benj.convert_dict(adata.uns)
     with sw("Calculating QC metrics"):
         qc_vars = []
-        if "peakType" in pk.columns:
-            qc_vars = list(set(pk.columns) & set(pk["peakType"]))
+        for col in qc:
+            if col in pk.columns:
+                ### Make sure column exists, and each value in column is also a dummy!
+                qc_vars += list(set(pk.columns) & set(pk[col]))
         sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=None)
     with sw("Writing to H5AD"):
         adata.write_h5ad(output, compression="gzip", compression_opts=compression)
@@ -108,10 +113,13 @@ if __name__ == "__main__":
     ap.add_argument("--peaks", required=True)
     ap.add_argument("--peaks-bed", dest="bed", action="store_true")
     ap.add_argument("--peaks-tsv", dest="bed", action="store_false")
-    ap.add_argument("-b", "--blacklist")
+    ap.add_argument("-b", "--blacklist", default=None)
     ap.add_argument("-o", "--output", required=True)
     ap.add_argument("--max-value", type=int, default=127)
+    ap.add_argument("--stranded", dest="stranded", action="store_true")
+    ap.add_argument("--unstranded", dest="stranded", action="store_false")
+    ap.add_argument("--qc", nargs="+", default=["peakType"])
     ap.add_argument("--compression", type=int, default=9)
-    ap.set_defaults(bed=False)
+    ap.set_defaults(bed=False, stranded=False)
     args = vars(ap.parse_args())
     run(**args)

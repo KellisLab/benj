@@ -3,7 +3,7 @@ from typing import Union, List, Optional
 from pathlib import Path
 _PathLike=Union[str, Path]
 
-def aggregate_collection(adata, which:Union[str, List[str]]="X"):
+def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True):
     from tqdm.auto import tqdm
     import numpy as np
     import pandas as pd
@@ -20,7 +20,12 @@ def aggregate_collection(adata, which:Union[str, List[str]]="X"):
         del tbl[k].raw
         if "layers" not in which and "all" not in which:
                 del tbl[k].layers
-    return AnnCollection(tbl, join_vars="inner")[adata.obs_names, adata.var_names]
+    ac = AnnCollection(tbl, join_vars="inner")
+    if view:
+        return ac[adata.obs_names, adata.var_names]
+    else:
+        ac
+        
 
 def aggregate_var(tbl:dict):
     import numpy as np

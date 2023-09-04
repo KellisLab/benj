@@ -16,6 +16,7 @@ def estimate_genes_archr(adata, gtf:str,
                          target_sum:int=None,
                          gene_scale_factor:float=5.,
                          peak_column:str=None, ## If not provided, will use peak index
+                         log1p:bool=False,
                          layer:str=None):
     import numpy as np
     import pandas as pd
@@ -92,6 +93,8 @@ def estimate_genes_archr(adata, gtf:str,
     else:
         print("Using median normalization")
         sc.pp.normalize_total(gdata)
+    if log1p:
+        sc.pp.log1p(gdata)
     return gdata
 
 def get_tss(tss:str):

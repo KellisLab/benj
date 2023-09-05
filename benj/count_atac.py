@@ -80,9 +80,14 @@ def count_atac(fragments:str,
     adata = anndata.AnnData(obs=cm)
     ac.tl.locate_fragments(adata, os.path.abspath(fragments))
     with sw("Counting peaks"):
-        adata = ac.tl.count_fragments_features(adata,
-                                               pk.rename({"seqnames": "Chromosome", "start": "Start", "end": "End", "strand": "Strand"}, axis=1),
-                                               extend_upstream=0, extend_downstream=0, stranded=stranded)
+        if stranded:
+            adata = ac.tl.count_fragments_features(adata,
+                                                   pk.rename({"seqnames": "Chromosome", "start": "Start", "end": "End", "strand": "Strand"}, axis=1),
+                                                   extend_upstream=0, extend_downstream=0, stranded=stranded)
+        else:
+            adata = ac.tl.count_fragments_features(adata,
+                                                   pk.rename({"seqnames": "Chromosome", "start": "Start", "end": "End"}, axis=1),
+                                                   extend_upstream=0, extend_downstream=0, stranded=stranded)
         adata.X.sum_duplicates()
     ac.tl.locate_fragments(adata, os.path.abspath(fragments))
     if pkbl is not None and isinstance(pkbl, pd.DataFrame) and pkbl.shape[0] > 0:
@@ -91,7 +96,12 @@ def count_atac(fragments:str,
         with sw("Removing reads in peaks overlapping blacklist"):
             import scipy.sparse
             from .utils import index_of
-            bdata = ac.tl.count_fragments_features(adata, pkbl, extend_upstream=0, extend_downstream=0, stranded=stranded)
+            if stranded:
+                bdata = ac.tl.count_fragments_features(adata, pkbl.rename({"seqnames": "Chromosome", "start": "Start", "end": "End", "strand": "Strand"}, axis=1),
+                                                       extend_upstream=0, extend_downstream=0, stranded=stranded)
+            else:
+                bdata = ac.tl.count_fragments_features(adata, pkbl.rename({"seqnames": "Chromosome", "start": "Start", "end": "End"}, axis=1),
+                                                       extend_upstream=0, extend_downstream=0, stranded=stranded)
             IC = index_of(pkbl["name"], adata.var_names)
             S = scipy.sparse.csr_matrix((np.ones(len(IC)), (np.arange(len(IC)), IC)),
                                         dtype=int, shape=(bdata.shape[1], adata.shape[1]))

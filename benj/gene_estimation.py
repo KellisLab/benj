@@ -148,8 +148,9 @@ def estimate_genes_archr(adata, gtf:str,
                          target_sum:int=None,
                          gene_scale_factor:float=5.,
                          peak_column:str=None, ## If not provided, will use peak index
-                         feature_column:str=None, ### If not provided, will use feature index
-                         log1p:bool=False,
+                         feature_column:str="gene_id", ### If not provided, will use feature index
+                         log1p:bool=True,
+                         distal:bool=True,
                          layer:str=None):
     import numpy as np
     import pandas as pd

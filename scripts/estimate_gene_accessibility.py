@@ -26,7 +26,7 @@ def estimate_and_rank(adata, gtf:str,
     import pyranges
     from benj.gene_estimation import estimate_genes_archr, add_interval
     if gene:
-        gdata = estimate_genes_archr(adata, gtf=gtf,
+        gdata = estimate_genes_archr(adata, gtf=gtf, feature_column=kwargs.get("feature_column"),
                                      min_upstream=min_upstream, max_upstream=max_upstream,
                                      min_downstream=min_downstream, max_downstream=max_downstream,
                                      gene_upstream=gene_upstream, gene_downstream=gene_downstream,
@@ -35,7 +35,7 @@ def estimate_and_rank(adata, gtf:str,
     else:
         from benj.count_atac import read_peaks
         feature_df = read_peaks(gtf).rename({"seqnames": "Chromosome", "start": "Start", "end": "End"}, axis=1)
-        gdata = estimate_features_archr(adata, feature_df=feature_df,
+        gdata = estimate_features_archr(adata, feature_df=feature_df, feature_column=kwargs.get("feature_column"),
                                         min_upstream=min_upstream, max_upstream=max_upstream,
                                         min_downstream=min_downstream, max_downstream=max_downstream,
                                         gene_upstream=gene_upstream, gene_downstream=gene_downstream,
@@ -89,6 +89,7 @@ if __name__ == "__main__":
     ap.add_argument("--no-distal", dest="distal", action="store_false")
     ap.add_argument("--gene", dest="gene", action="store_true")
     ap.add_argument("--arbitrary-feature", dest="gene", action="store_false")
+    ap.add_argument("--feature-column", default="gene_id")
     ap.set_defaults(distal=True, log1p=True, gene=True)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     sw = benj.stopwatch()

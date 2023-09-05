@@ -1,9 +1,15 @@
 
 def _extend_pre_ranges(df, upstream:int=0, downstream:int=0, start:str="Start", end:str="End", strand:str="Strand"):
+    strand_rm = False
+    if strand not in df.columns:
+        strand_rm = True
+        df[strand] = "+"
     df.loc[df[strand] == "+", start] -= upstream
     df.loc[df[strand] == "-", start] -= downstream
     df.loc[df[strand] == "+", end] += downstream
     df.loc[df[strand] == "-", end] += upstream
+    if strand_rm:
+        del df[strand]
     return df
 
 def _extend_ranges(gf,
@@ -14,7 +20,11 @@ def _extend_ranges(gf,
                    gene_upstream:int=5000,
                    gene_downstream:int=0,
                    gene_scale_factor:float=5.):
+    import numpy as np
     gf["gene_length"] = gf["End"] - gf["Start"]
+    ### In case of duplicated indices, sum lengths across indices
+    gb = gf.groupby(level=0).agg(gene_length=("gene_length", sum))
+    gf["gene_length"] = gb.loc[gf.index.values, "gene_length"].values
     ### scale by inverse gene length
     gs = 1/gf["gene_length"].values
     ### min max scale, plus epsilon to avoid divide by 0
@@ -25,7 +35,10 @@ def _extend_ranges(gf,
     gf = _extend_pre_ranges(gf, upstream=gene_upstream, downstream=gene_downstream)
     gf["MinStart"] = gf["Start"].values
     gf["MinEnd"] = gf["End"].values
-    return _extend_pre_ranges(gf, upstream=min_upstream, downstream=min_downstream, start="MinStart", end="MinEnd")
+    gf = _extend_pre_ranges(gf, upstream=min_upstream, downstream=min_downstream, start="MinStart", end="MinEnd")
+    gf["interval"] = ["%s:%d-%d" % (chrom, start, end) for chrom, start, end in zip(gf["Chromosome"], gf["Start"], gf["End"])]
+    gf["min_interval"] = ["%s:%d-%d" % (chrom, start, end) for chrom, start, end in zip(gf["Chromosome"], gf["MinStart"], gf["MinEnd"])]
+    return gf
 
 def estimate_features_archr(adata, feature_df,
                             min_upstream:int=1000,
@@ -38,6 +51,7 @@ def estimate_features_archr(adata, feature_df,
                             gene_scale_factor:float=5.,
                             peak_column:str=None, ## If not provided, will use peak index
                             feature_column:str=None,
+                            distal:bool=True, ### Use nearest gene to a peak if unassigned
                             log1p:bool=False,
                             layer:str=None):
     import numpy as np
@@ -50,7 +64,7 @@ def estimate_features_archr(adata, feature_df,
     sw = template()
     if not isinstance(feature_df, pd.DataFrame):
         raise ValueError("Feature_df is not a dataframe")
-    if not np.all(np.isin(e["Chromosome", "Start", "End"], feature_df.columns)):
+    if not np.all(np.isin(["Chromosome", "Start", "End"], feature_df.columns)):
         raise ValueError("Feature_df does not have ranges")
     if feature_column is not None:
         feature_df.index = feature_df[feature_column].values
@@ -62,11 +76,13 @@ def estimate_features_archr(adata, feature_df,
         gr = pyranges.from_dict({"Chromosome": gf["Chromosome"],
                                  "Start": gf["Start"],
                                  "End": gf["End"],
-                                 "feature_index": gf.index.values})
+                                 "feature_index": gf.index.values,
+                                 "feature_interval": gf["interval"].values})
         mingr = pyranges.from_dict({"Chromosome": gf["Chromosome"],
                                     "Start": gf["MinStart"],
                                     "End": gf["MinEnd"],
-                                    "feature_index": gf.index.values})
+                                    "feature_index": gf.index.values,
+                                    "feature_interval": gf["interval"].values})
     ##
     ## Now, get peak ranges (pr) from peak frame (pf)
     ##
@@ -78,23 +94,33 @@ def estimate_features_archr(adata, feature_df,
         pf = pd.DataFrame([x.replace(":", "-", 1).split("-") for x in pstr], columns=["Chromosome", "Start", "End"], index=adata.var_names)
         pr = pyranges.from_dict({"Chromosome": pf["Chromosome"], "Start": pf["Start"], "End": pf["End"], "peak_name": pf.index.values})
     with sw("Calculating overlaps"):
+        iif = gf.drop_duplicates("interval")
+        iif.index = iif["interval"]
         ## Once peak ranges are gathered, find intersecting gene bodies:
-        inter_df = pr.join(gr).df.loc[:, ["peak_name", "feature_index"]]
+        inter_df = pr.join(gr).df.loc[:, ["peak_name", "feature_index", "feature_interval"]]
         inter_df["Distance"] = 0
         ## Then, find genes with minimum upstream/downstream distance away
-        min_df = pr.join(mingr).df.loc[:, ["peak_name", "feature_index"]]
+        min_df = pr.join(mingr).df.loc[:, ["peak_name", "feature_index", "feature_interval"]]
         ## diff. is accurate, unless overlapping intervals. Do not need to worry, as duplicates from inter_df will take care
-        diff = pf.loc[min_df["peak_name"].values, ["Start", "Start", "End", "End"]].values.astype(int) - gf.loc[min_df["feature_index"].values, ["Start", "End", "Start", "End"]].values.astype(int)
+        diff = pf.loc[min_df["peak_name"].values, ["Start", "Start", "End", "End"]].values.astype(int) - iif.loc[min_df["feature_interval"].values, ["Start", "End", "Start", "End"]].values.astype(int)
         min_df["Distance"] = np.abs(diff).min(1) + 1
         ## Finally, find distal. Only need nearest gene
-        distance_df = pr.nearest(gr).df.loc[:, ["peak_name", "feature_index", "Distance"]]
-        ## Concat such that 1) prioritized intersections, then 2) minimum distance away, then 3) distal
-        df = pd.concat([inter_df, min_df, distance_df]).drop_duplicates(["peak_name", "feature_index"])
-        df["weight"] = np.exp(-1 - np.abs(df["Distance"]) / 5000. + gf.loc[df["feature_index"].values, "log_gene_scale"].values)
+
+        if distal:
+            distance_df = pr.nearest(gr).df.loc[:, ["peak_name", "feature_index", "feature_interval", "Distance"]]
+            ## Concat such that 1) prioritized intersections, then 2) minimum distance away, then 3) distal
+            df = pd.concat([inter_df, min_df, distance_df]).drop_duplicates(["peak_name", "feature_index"])
+        else:
+            df = pd.concat([inter_df, min_df]).drop_duplicates(["peak_name", "feature_index"])
+        df["weight"] = np.exp(-1 - np.abs(df["Distance"]) / 5000. + iif.loc[df["feature_interval"].values, "log_gene_scale"].values)
     with sw("Calculating accessibility"):
+        if gf.index.duplicated().sum() > 0:
+            ### Get columns that are the same across repeated indices
+            nf = gf.groupby(level=0).nunique()
+            gf = gf.loc[~gf.index.duplicated(keep="first"), nf.columns[(nf==1).all()]]
         S = scipy.sparse.csr_matrix((df["weight"].values,
                                      (pf.index.get_indexer(df["peak_name"].values),
-                                      gf.index.get_indexer(df["feature_id"].values))),
+                                      gf.index.get_indexer(df["feature_index"].values))),
                                     shape=(pf.shape[0], gf.shape[0]))
         if layer is not None and layer in adata.layers:
             X = adata.layers[layer]

@@ -51,6 +51,7 @@ def estimate_features_archr(adata, feature_df,
                             gene_scale_factor:float=5.,
                             peak_column:str=None, ## If not provided, will use peak index
                             feature_column:str=None,
+                            var_column_tolerance:float=0.999, ### Tolerance used for determining if a feature should be kept, in case of weird things
                             distal:bool=True, ### Use nearest gene to a peak if unassigned
                             log1p:bool=False,
                             layer:str=None):
@@ -117,7 +118,7 @@ def estimate_features_archr(adata, feature_df,
         if gf.index.duplicated().sum() > 0:
             ### Get columns that are the same across repeated indices
             nf = gf.groupby(level=0).nunique()
-            gf = gf.loc[~gf.index.duplicated(keep="first"), nf.columns[(nf==1).all()]]
+            gf = gf.loc[~gf.index.duplicated(keep="first"), nf.columns[(nf==1).mean() >= var_column_tolerance]]
         S = scipy.sparse.csr_matrix((df["weight"].values,
                                      (pf.index.get_indexer(df["peak_name"].values),
                                       gf.index.get_indexer(df["feature_index"].values))),
@@ -176,6 +177,7 @@ def estimate_genes_archr(adata, gtf:str,
     gdata.var_names_make_unique()
     del gdata.var["gene_name"]
     gdata.var.columns = ["gene_ids"]
+    add_gene_length(gdata.var, gtf)
     return gdata
 
 def get_tss(tss:str):

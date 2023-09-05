@@ -1,5 +1,6 @@
 
 def read_peaks(peaks:str, bed:bool=False, qc=[]):
+    import pandas as pd
     if bed:
         pk = pd.read_csv(peaks, sep="\t", header=None).iloc[:, [0,1,2]]
         pk.columns = ["seqnames", "start", "end"]

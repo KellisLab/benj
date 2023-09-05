@@ -16,7 +16,7 @@ def read_peaks(peaks:str, bed:bool=False, qc=[]):
         if col in pk.columns:
             pk = pd.concat([pk, pd.get_dummies(pk[col]) > 0], axis=1)
     return pk
-    
+
 def count_atac(fragments:str,
                sample:str,
                cell_metadata, peaks, output:str=None,
@@ -36,7 +36,8 @@ def count_atac(fragments:str,
     import scanpy as sc
     import pyranges
     from .timer import template as stopwatch
-    from .utils import convert_dict, convert_X
+    from .utils import convert_X
+    from .mu import convert_dict
     sw = stopwatch()
     if not isinstance(cell_metadata, pd.DataFrame):
         with sw("Reading cell metadata"):

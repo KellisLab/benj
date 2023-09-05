@@ -16,20 +16,33 @@ def estimate_and_rank(adata, gtf:str,
                       plot:Iterable[str]=None,
                       celltypist:str=None,
                       over_clustering:str=None,
+                      distal:bool=True,
+                      log1p:bool=True,
                       tss:str=None,
+                      gene:bool=True,
                       **kwargs):
     import os
     import scanpy as sc
+    import pyranges
     from benj.gene_estimation import estimate_genes_archr, add_interval
-    gdata = estimate_genes_archr(adata, gtf=gtf,
-                                 min_upstream=min_upstream, max_upstream=max_upstream,
-                                 min_downstream=min_downstream, max_downstream=max_downstream,
-                                 gene_upstream=gene_upstream, gene_downstream=gene_downstream,
-                                 target_sum=target_sum, gene_scale_factor=gene_scale_factor,
-                                 layer=layer)
+    if gene:
+        gdata = estimate_genes_archr(adata, gtf=gtf,
+                                     min_upstream=min_upstream, max_upstream=max_upstream,
+                                     min_downstream=min_downstream, max_downstream=max_downstream,
+                                     gene_upstream=gene_upstream, gene_downstream=gene_downstream,
+                                     target_sum=target_sum, gene_scale_factor=gene_scale_factor,
+                                     layer=layer, log1p=log1p, distal=distal)
+    else:
+        from benj.count_atac import read_peaks
+        feature_df = read_peaks(gtf).rename({"seqnames": "Chromosome", "start": "Start", "end": "End"}, axis=1)
+        gdata = estimate_features_archr(adata, feature_df=feature_df,
+                                        min_upstream=min_upstream, max_upstream=max_upstream,
+                                        min_downstream=min_downstream, max_downstream=max_downstream,
+                                        gene_upstream=gene_upstream, gene_downstream=gene_downstream,
+                                        target_sum=target_sum, gene_scale_factor=gene_scale_factor,
+                                        layer=layer, log1p=log1p, distal=distal)
     if tss is not None and os.path.exists(tss):
         add_interval(gdata.var, tss)
-    sc.pp.log1p(gdata)
     if celltypist is not None:
         from celltypist import annotate
         if over_clustering is not None:
@@ -66,10 +79,17 @@ if __name__ == "__main__":
     ap.add_argument("--target-sum", type=int, default=10000)
     ap.add_argument("--gene-scale-factor", type=float, default=5.)
     ap.add_argument("--layer", type=str, default=None)
-    ap.add_argument("--compression", type=int, default=9)
+    ap.add_argument("--compression", type=int, default=6)
     ap.add_argument("--celltypist", default=None)
     ap.add_argument("--tss", help="TSS.bed file from refdata-cellranger-arc-*/regions/tss.bed used to generate \"interval\" field")
     ap.add_argument("--over-clustering", default=None, help="Overclustering column e.g. leiden used for assigning cell type")
+    ap.add_argument("--log1p", dest="log1p", action="store_true")
+    ap.add_argument("--no-log1p", dest="log1p", action="store_false")
+    ap.add_argument("--distal", dest="distal", action="store_true")
+    ap.add_argument("--no-distal", dest="distal", action="store_false")
+    ap.add_argument("--gene", dest="gene", action="store_true")
+    ap.add_argument("--arbitrary-feature", dest="gene", action="store_false")
+    ap.set_defaults(distal=True, log1p=True, gene=True)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     sw = benj.stopwatch()
     with sw("Reading H5AD"):

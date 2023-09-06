@@ -131,6 +131,7 @@ def count_atac(fragments:str,
                 ### Make sure column exists, and each value in column is also a dummy!
                 qc_vars += list(set(pk.columns) & set(pk[col]))
         sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=None)
+    adata.var.columns = adata.var.columns.map(lambda x: x.replace("/", "_"))
     if output is not None:
         with sw("Writing to H5AD"):
             adata.write_h5ad(output, compression="gzip", compression_opts=compression)

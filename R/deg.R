@@ -69,6 +69,31 @@ deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes_
     }
     return(se)
 }
+
+#'
+#' Idea: use corrected counts to 
+#' 
+#' @export
+deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verbose=TRUE) {
+    ### Compute cell type pseudobulk
+    pb = calculate_qc_metrics(se_make_pseudobulk(sce, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
+    pb = se_tmm(pb, log=TRUE)
+    cd = SummarizedExperiment::colData(pb)
+    X = SummarizedExperiment::assays(pb)$TMM
+    covariates = covariates[covariates %in% names(SummarizedExperiment::colData(pb))]
+    if (verbose) {
+        cat("Design matrix for dysregulation score:\n")
+        print(tibble::as_tibble(cd[c(covariates)]), n=nrow(cd))
+    }
+    covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
+    design = model.matrix(as.formula(paste0(c("~0", covariates), collapse="+")), data=cd) ### No pathology!
+    design = deg.filter.design(design)
+    X1 = limma::removeBatchEffect(X, covariates=design)
+    MP = make_pseudobulk(cd$Dx)
+    D = X1 %*% MP %*% diag(1/colSums(MP))
+    dnum = sum(dist(t(D)))
+    return(dnum)
+}
 #' Prepare SummarizedExperiment object for DEG calling.
 #' @export
 deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_case_control=TRUE,
@@ -180,6 +205,8 @@ deg <- function(se, pathology, case, control, covariates,
         covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
     }
     S4Vectors::metadata(se)$deg$covariates = paste0(covariates, collapse=" + ")
+    dys = deg.dysregulation(se, pathology=pathology, sample.col=sample.col, covariates=covariates, verbose=verbose)
+    S4Vectors::metadata(se)$deg$dysregulation = dys
     ### Iterate through methods
     for (meth in method) {
         if (meth == "deseq2") {

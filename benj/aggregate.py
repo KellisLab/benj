@@ -25,7 +25,7 @@ def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True)
         return ac[adata.obs_names, adata.var_names]
     else:
         ac
-        
+
 
 def aggregate_var(tbl:dict):
     import numpy as np
@@ -130,10 +130,11 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
         ### options: pass H5AD with or without metadata,
         ### or pass directory with metadata
         metadata = pd.DataFrame(index=list(h5ad.keys()))
-    elif os.path.exists(metadata):
-        metadata = pd.read_csv(metadata, sep=sep, index_col=0, low_memory=False)
     elif not isinstance(metadata, pd.DataFrame):
-        raise ValueError("Metadata does not exist!")
+        if os.path.exists(metadata):
+            metadata = pd.read_csv(metadata, sep=sep, index_col=0, low_memory=False)
+        else:
+            raise ValueError("Metadata does not exist!")
     if directory is None and len(h5ad) == 0:
         raise ValueError("Must provide either directory or h5ad")
     if verbose and isinstance(metadata, pd.DataFrame):

@@ -1,4 +1,4 @@
-g
+
 
 #' Filtering of design matrix for DEG comparisons
 #' This method modifies a design matrix such that combinations or unused comparisons are removed.

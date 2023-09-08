@@ -100,7 +100,7 @@ calculate_qc_metrics <- function(se, assay=NULL, log1p=TRUE, qc_vars=c()) {
 ### check if logical
         vals = SummarizedExperiment::rowData(se)[[qcv]]
         if (is.logical(vals)) {
-            tc_qc = Matrix::colSums(X[vals,])
+            tc_qc = setNames(Matrix::colSums(X[vals,]), NULL)
             SummarizedExperiment::colData(se)[[paste0("total_counts_", qcv)]] = tc_qc
             SummarizedExperiment::colData(se)[[paste0("pct_counts_", qcv)]] = 100 * tc_qc / cs
             if (log1p) {

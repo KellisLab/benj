@@ -1,4 +1,4 @@
-
+g
 
 #' Filtering of design matrix for DEG comparisons
 #' This method modifies a design matrix such that combinations or unused comparisons are removed.
@@ -7,6 +7,15 @@
 #' @param rename Whether to use make.names to rename columns
 #' @export
 deg.filter.design <- function(design, rename=TRUE) {
+    if (!is.null(attr(design, "assign")) & (ncol(design) > nrow(design))) { ### Make sure not overspecified
+        agn = attr(design, "assign")
+        over.factors = names(which(table(agn) >= nrow(design) / 2))
+        flag.remove = agn %in% as.integer(over.factors)
+        design = design[,!flag.remove]
+        attr(design, "assign") = agn[!flag.remove]
+        ## col.idx = head(order(apply(design, 2, sd), decreasing=TRUE), nrow(design))
+        ## design = design[, col.idx, drop=FALSE]
+    }
     nzv = caret::nearZeroVar(design, saveMetrics=TRUE)
     design = design[,!nzv$nzv | rownames(nzv) == "(Intercept)",drop=FALSE]
     tryCatch({
@@ -71,8 +80,8 @@ deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes_
 }
 
 #'
-#' Idea: use corrected counts to 
-#' 
+#' Idea: use corrected counts to
+#'
 #' @export
 deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verbose=TRUE) {
     ### Compute cell type pseudobulk

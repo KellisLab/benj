@@ -13,8 +13,6 @@ deg.filter.design <- function(design, rename=TRUE) {
         flag.remove = agn %in% as.integer(over.factors)
         design = design[,!flag.remove]
         attr(design, "assign") = agn[!flag.remove]
-        ## col.idx = head(order(apply(design, 2, sd), decreasing=TRUE), nrow(design))
-        ## design = design[, col.idx, drop=FALSE]
     }
     nzv = caret::nearZeroVar(design, saveMetrics=TRUE)
     design = design[,!nzv$nzv | rownames(nzv) == "(Intercept)",drop=FALSE]
@@ -31,6 +29,10 @@ deg.filter.design <- function(design, rename=TRUE) {
         if (ncol(design) > 1) {
             colnames(design) = make.names(colnames(design)) ### need spaces to be removed
         }
+    }
+    if (ncol(design) > nrow(design)) { ### overdetermined
+        col.idx = head(order(apply(design, 2, sd), decreasing=TRUE), nrow(design))
+        design = design[, col.idx, drop=FALSE]
     }
     return(design)
 }

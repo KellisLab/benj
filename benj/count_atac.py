@@ -42,7 +42,7 @@ def count_atac(fragments:str,
     sw = stopwatch()
     if not isinstance(cell_metadata, pd.DataFrame):
         with sw("Reading cell metadata"):
-            cm = pd.read_csv(cell_metadata, sep="\t", index_col=0)
+            cm = pd.read_csv(cell_metadata, sep="\t", index_col=0, low_memory=False)
     else:
         cm = cell_metadata
     cm = cm.loc[cm[sample_name] == sample, :]

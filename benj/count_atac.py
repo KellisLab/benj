@@ -134,6 +134,13 @@ def count_atac(fragments:str,
     adata.var.columns = adata.var.columns.map(lambda x: x.replace("/", "_"))
     adata.obs.columns = adata.obs.columns.map(lambda x: x.replace("/", "_"))
     if output is not None:
+        from pandas.api.types import is_string_dtype
+        for col in adata.obs.columns:
+            if is_string_dtype(adata.obs[col]):
+                adata.obs[col] = adata.obs[col].astype(str)
+        for col in adata.var.columns:
+            if is_string_dtype(adata.var[col]):
+                adata.var[col] = adata.var[col].astype(str)
         with sw("Writing to H5AD"):
             adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata

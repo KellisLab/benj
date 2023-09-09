@@ -29,7 +29,7 @@ def load_anndata(h5ad:_PathLike,
         obs_annotation = obs_annotation.loc[obs_annotation.index.isin(obs.index.values), :]
         adata = adata[obs_annotation.index.values, :].copy()
         for cn in obs_annotation.columns.values:
-            obs[cn] = annot[cn].values
+            obs[cn] = obs_annotation[cn].values
     if isinstance(subset, dict):
         for sub_k, sub_v in subset.items():
             if not isinstance(sub_v, list):

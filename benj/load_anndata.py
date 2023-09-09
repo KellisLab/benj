@@ -27,7 +27,7 @@ def load_anndata(h5ad:_PathLike,
     obs = adata.obs.copy()
     if isinstance(obs_annotation, pd.DataFrame):
         obs_annotation = obs_annotation.loc[obs_annotation.index.isin(obs.index.values), :]
-        adata = adata[obs_annotation.index.values, :].copy()
+        obs = obs.loc[obs_annotation.index.values, :]
         for cn in obs_annotation.columns.values:
             obs[cn] = obs_annotation[cn].values
     if isinstance(subset, dict):

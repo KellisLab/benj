@@ -52,7 +52,7 @@ def count_atac(fragments:str,
     else:
         cm.index = [x[1] for x in cm.index.str.split("#")]
     with sw("Reading peaks"):
-        pk = read_peaks(peaks, qc=qc)
+        pk = read_peaks(peaks, qc=qc, bed=bed)
     with sw("Filtering contigs"):
         import pysam
         contigs = pysam.TabixFile(fragments, parser=pysam.asBed()).contigs

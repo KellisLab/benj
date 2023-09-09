@@ -92,6 +92,7 @@ def count_atac(fragments:str,
     ac.tl.locate_fragments(adata, os.path.abspath(fragments))
     if pkbl is not None and isinstance(pkbl, pd.DataFrame) and pkbl.shape[0] > 0:
         with sw("Converting raw counts to int"):
+            adata.X.sum_duplicates()
             adata.X = convert_X(adata.X)
         with sw("Removing reads in peaks overlapping blacklist"):
             import scipy.sparse
@@ -113,6 +114,7 @@ def count_atac(fragments:str,
             adata.X.data = adata.X.data.clip(0, max_value)
     with sw("Converting counts to int"):
         from .utils import convert_X
+        adata.X.sum_duplicates()
         adata.X = convert_X(adata.X)
     adata.obs.index = old_index
     if len(set(adata.var.columns) & set(["interval", "nearestGene", "distToGeneStart", "peakType"])) == 4:

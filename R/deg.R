@@ -97,7 +97,7 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
         print(tibble::as_tibble(cd[c(covariates)]), n=nrow(cd))
     }
     covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
-    design = model.matrix(as.formula(paste0(c("~0", covariates), collapse="+")), data=cd) ### No pathology!
+    design = model.matrix(as.formula(paste0("~", paste0(covariates, collapse="+"))), data=cd) ### No pathology!
     design = deg.filter.design(design)
     print(tibble::as_tibble(design), n=nrow(design))
     X1 = limma::removeBatchEffect(X, covariates=design)

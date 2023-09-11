@@ -22,6 +22,7 @@ def setup_args_anndata(ap, parse_anndata_prefix=""):
         ap.add_argument("--%ssubset" % parse_anndata_prefix, nargs="+", metavar="KEY=VALUE")
         ap.add_argument("--%ssubsample" % parse_anndata_prefix, default=1, type=int)
         ap.add_argument("--%ssplit" % parse_anndata_prefix, default=",")
+        ap.add_argument("--%sload" % parse_anndata_prefix, nargs="+", default="all", help="Load X, layers, or all, or none")
     else:
         ap.add_argument("-a", "--annotation", nargs="+")
         ap.add_argument("--min", nargs="+", metavar="KEY=VALUE")
@@ -29,6 +30,7 @@ def setup_args_anndata(ap, parse_anndata_prefix=""):
         ap.add_argument("--subset", nargs="+", metavar="KEY=VALUE")
         ap.add_argument("--subsample", default=1, type=int)
         ap.add_argument("--split", default=",")
+        ap.add_argument("--load", nargs="+", default="all", help="Load X, layers, or all, or none")
     return ap
 
 def parse_anndata_options(parse_anndata_prefix="", **args):
@@ -38,7 +40,8 @@ def parse_anndata_options(parse_anndata_prefix="", **args):
     h5ad = args.get(parse_anndata_prefix + "h5ad",
                     args.get(parse_anndata_prefix + "input", ""))
     ### h5ad can be either str or list[str]
-    out = {"h5ad": h5ad}
+    load = args.get(parse_anndata_prefix + "load", "all")
+    out = {"h5ad": h5ad, "load": load}
     if args.get(parse_anndata_prefix + "subset") and isinstance(args[parse_anndata_prefix + "subset"], list):
         subset = {}
         for ss in args[parse_anndata_prefix + "subset"]:
@@ -75,7 +78,7 @@ def parse_anndata(parse_anndata_prefix="", **args):
     from .aggregate import aggregate_concat, aggregate_load
     opt = parse_anndata_options(parse_anndata_prefix=parse_anndata_prefix, **args)
     adata = aggregate_concat(**opt)
-    return aggregate_load(adata, which="all")
+    return aggregate_load(adata, which=opt.get("load", "all"))
 
 def _old_parse_anndata(parse_anndata_prefix="", **args):
     import os

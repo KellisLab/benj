@@ -54,6 +54,7 @@ def estimate_features_archr(adata, feature_df,
                             var_column_tolerance:float=0.999, ### Tolerance used for determining if a feature should be kept, in case of weird things
                             distal:bool=True, ### Use nearest gene to a peak if unassigned
                             log1p:bool=False,
+                            save_raw:bool=False,
                             layer:str=None):
     import numpy as np
     import pandas as pd
@@ -129,6 +130,8 @@ def estimate_features_archr(adata, feature_df,
             X = adata.X
         gdata = anndata.AnnData(X.dot(S), obs=adata.obs, var=gf, dtype=np.float32, obsm=adata.obsm, obsp=adata.obsp,
                                 uns={k: v for k, v in adata.uns.items() if k in ["neighbors", "files", "lsi", "pca", "umap", "leiden"]})
+    if save_raw:
+        gdata.layers["raw"] = gdata.X.copy()
     if target_sum is not None and target_sum > 0:
         sc.pp.normalize_total(gdata, target_sum=target_sum)
     else:
@@ -151,6 +154,7 @@ def estimate_genes_archr(adata, gtf:str,
                          feature_column:str="gene_id", ### If not provided, will use feature index
                          log1p:bool=True,
                          distal:bool=True,
+                         save_raw:bool=False,
                          layer:str=None):
     import numpy as np
     import pandas as pd
@@ -172,7 +176,7 @@ def estimate_genes_archr(adata, gtf:str,
                                    target_sum=target_sum, gene_scale_factor=gene_scale_factor,
                                    peak_column=peak_column,
                                    feature_column=feature_column,
-                                   log1p=log1p, layer=layer)
+                                    log1p=log1p, layer=layer, save_raw=save_raw)
     gdata.var = gdata.var.loc[:, ["gene_id", "gene_name"]]
     gdata.var_names = gdata.var["gene_name"].values
     gdata.var_names_make_unique()

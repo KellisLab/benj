@@ -90,7 +90,9 @@ if __name__ == "__main__":
     ap.add_argument("--gene", dest="gene", action="store_true")
     ap.add_argument("--arbitrary-feature", dest="gene", action="store_false")
     ap.add_argument("--feature-column", default="gene_id")
-    ap.set_defaults(distal=True, log1p=True, gene=True)
+    ap.add_argument("--save-raw", dest="save_raw", action="store_true")
+    ap.add_argument("--no-save-raw", dest="save_raw", action="store_false")
+    ap.set_defaults(distal=True, log1p=True, gene=True, save_raw=False)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     sw = benj.stopwatch()
     with sw("Reading H5AD"):

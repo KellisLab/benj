@@ -7,7 +7,7 @@ def load_anndata(h5ad:_PathLike,
                  obs_annotation:Union[_PathLike, List[_PathLike]]=None,
                  subset:dict=None, qc:bool=True,
                  elt:Union[str, List[str]]=None, logger="benj", verbose:bool=True,
-                 obs_min:dict=None, obs_max:dict=None, sep:str="\t"):
+                 obs_min:dict=None, obs_max:dict=None, sep:str="\t", **kwargs):
     import numpy as np
     import pandas as pd
     import anndata

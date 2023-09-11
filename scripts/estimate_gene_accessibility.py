@@ -24,7 +24,7 @@ def estimate_and_rank(adata, gtf:str,
     import os
     import scanpy as sc
     import pyranges
-    from benj.gene_estimation import estimate_genes_archr, add_interval
+    from benj.gene_estimation import estimate_genes_archr, estimate_features_archr, add_interval
     if gene:
         gdata = estimate_genes_archr(adata, gtf=gtf, feature_column=kwargs.get("feature_column"),
                                      min_upstream=min_upstream, max_upstream=max_upstream,

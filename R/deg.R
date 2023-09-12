@@ -100,12 +100,12 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     design = model.matrix(as.formula(paste0("~", paste0(covariates, collapse="+"))), data=cd) ### No pathology!
     design = deg.filter.design(design)
     design = design[,-grep("^X.Intercept.$", colnames(design))] ### stopgap
-    print(tibble::as_tibble(design), n=nrow(design))
+    ## print(tibble::as_tibble(design), n=nrow(design))
     X1 = limma::removeBatchEffect(X, covariates=design)
-    MP = make_pseudobulk(cd$Dx)
-    print(str(X1))
-    print(str(MP))
-    print(str(diag(1/colSums(MP))))
+    MP = make_pseudobulk(cd[[pathology]])
+    ## print(str(X1))
+    ## print(str(MP))
+    ## print(str(diag(1/colSums(MP))))
     D = X1 %*% MP %*% diag(1/colSums(MP))
     dnum = sum(dist(t(D)))
     return(dnum)

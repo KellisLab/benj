@@ -20,6 +20,7 @@ def estimate_and_rank(adata, gtf:str,
                       log1p:bool=True,
                       tss:str=None,
                       gene:bool=True,
+                      save_raw:bool=False,
                       **kwargs):
     import os
     import scanpy as sc
@@ -31,7 +32,7 @@ def estimate_and_rank(adata, gtf:str,
                                      min_downstream=min_downstream, max_downstream=max_downstream,
                                      gene_upstream=gene_upstream, gene_downstream=gene_downstream,
                                      target_sum=target_sum, gene_scale_factor=gene_scale_factor,
-                                     layer=layer, log1p=log1p, distal=distal)
+                                     layer=layer, log1p=log1p, distal=distal, save_raw=save_raw)
     else:
         from benj.count_atac import read_peaks
         feature_df = read_peaks(gtf).rename({"seqnames": "Chromosome", "start": "Start", "end": "End"}, axis=1)
@@ -40,7 +41,7 @@ def estimate_and_rank(adata, gtf:str,
                                         min_downstream=min_downstream, max_downstream=max_downstream,
                                         gene_upstream=gene_upstream, gene_downstream=gene_downstream,
                                         target_sum=target_sum, gene_scale_factor=gene_scale_factor,
-                                        layer=layer, log1p=log1p, distal=distal)
+                                        layer=layer, log1p=log1p, distal=distal, save_raw=save_raw)
     if tss is not None and os.path.exists(tss):
         add_interval(gdata.var, tss)
     if celltypist is not None:

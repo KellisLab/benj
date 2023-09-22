@@ -4,6 +4,7 @@ class _RawNormalizeLogScaler:
                 self.std = std
                 self.target_sum = target_sum
                 self.eps = eps
+                self.pre_normalized = pre_normalized
                 if target_sum is None: ### weird python thing
                         self.target_sum = None
         def transform(self, data):
@@ -13,7 +14,7 @@ class _RawNormalizeLogScaler:
                 import scanpy as sc
                 if not isinstance(data, anndata.AnnData):
                         data = anndata.AnnData(data)
-                if pre_normalized:
+                if self.pre_normalized:
                         X = data.X
                 else:
                         X = sc.pp.normalize_total(data, target_sum=self.target_sum, inplace=False)["X"]

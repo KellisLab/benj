@@ -91,6 +91,18 @@ def index_of(values, idx):
     values_idx = sort_idx[np.searchsorted(idx, values, sorter=sort_idx)]
     return values_idx
 
+def as_ranges(var, interval="interval", extend_left:int=0, extend_right:int=0, index_col="_index"):
+    import numpy as np
+    import pyranges
+    rvar = var[interval].str.extract(r"^([^:]+):([0-9]+)-([0-9]+)$")
+    var = var.loc[rvar.isna().sum(1) == 0, :].copy()
+    rvar = rvar.loc[rvar.isna().sum(1) == 0, :]
+    var["Chromosome"] = rvar[0]
+    var["Start"] = rvar[1].astype(int) - extend_left
+    var["End"] = rvar[2].astype(int) + extend_right
+    var[index_col] = var.index.values
+    return pyranges.from_dict({k: var[k].values for k in var.columns})
+
 def weighted_pearson_correlation(A, B, wt=None):
     import numpy as np
     if wt is None:

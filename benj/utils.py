@@ -103,6 +103,13 @@ def as_ranges(var, interval="interval", extend_left:int=0, extend_right:int=0, i
     var[index_col] = var.index.values
     return pyranges.from_dict({k: var[k].values for k in var.columns})
 
+def powerlaw_at_distance(distance, hic_power=0.87):
+    """ABC raw distance; has to be scaled by denom"""
+    import numpy as np
+    scale = -4.80 + 11.63 * hic_power
+    offset = np.clip(np.abs(distance), 5000, np.Inf)
+    return np.exp(scale + -1 * hic_power * np.log1p(offset))
+
 def weighted_pearson_correlation(A, B, wt=None):
     import numpy as np
     if wt is None:

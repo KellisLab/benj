@@ -98,6 +98,9 @@ def aggregate_load(adata, which:Union[str, List[str]]="X"):
         which = [which]
     ac = aggregate_collection(adata, which=which)
     if "X" in which or "all" in which:
+        if adata.X is None:
+            import scipy.sparse
+            adata.X = scipy.sparse.lil_matrix(adata.shape, dtype="i8").tocsr()
         with sw("Loading X (%d, %d)" % adata.shape):
             adata.X = ac.X
     if "layers" in which or "all" in which:

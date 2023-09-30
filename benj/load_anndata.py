@@ -26,6 +26,8 @@ def load_anndata(h5ad:_PathLike,
     temp_X = qc and "X" not in elt and "X" in fk
     if temp_X:
         elt.append("X")
+    if "X" not in elt:
+        qc = False
     adata = anndata.AnnData(**read_elems(h5ad, elt))
     obs = adata.obs.copy()
     if isinstance(obs_annotation, pd.DataFrame):

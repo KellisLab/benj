@@ -11,6 +11,7 @@ def load_anndata(h5ad:_PathLike,
     import numpy as np
     import pandas as pd
     import anndata
+    import h5py
     from .utils import read_elems
     if isinstance(obs_annotation, str):
         obs_annotation = pd.read_csv(obs_annotation, sep=sep, index_col=0, low_memory=False)

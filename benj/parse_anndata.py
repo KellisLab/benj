@@ -77,7 +77,7 @@ def parse_anndata(parse_anndata_prefix="", **args):
     """Legacy option, uses aggregate_concat and aggregate_load"""
     from .aggregate import aggregate_concat, aggregate_load
     opt = parse_anndata_options(parse_anndata_prefix=parse_anndata_prefix, **args)
-    adata = aggregate_concat(**opt)
+    adata = aggregate_concat(**opt, elt=None)
     return aggregate_load(adata, which=opt.get("load", "all"))
 
 def _old_parse_anndata(parse_anndata_prefix="", **args):

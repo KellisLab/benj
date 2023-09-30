@@ -20,7 +20,9 @@ def load_anndata(h5ad:_PathLike,
         elt = ["obs", "var", "obsm", "varm", "varp", "uns"]
     elif elt == "all":
         elt = ["obs", "var", "obsm", "varm", "varp", "uns", "X", "layers", "raw"]
-    temp_X = qc and "X" not in elt
+    with h5py.File(h5ad, "r") as F:
+        fk = F.keys()
+    temp_X = qc and "X" not in elt and "X" in fk
     if temp_X:
         elt.append("X")
     adata = anndata.AnnData(**read_elems(h5ad, elt))

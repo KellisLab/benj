@@ -146,9 +146,11 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
     adata_tbl = {}
     fname_tbl = {}
     scrub_tbl = {}
+    h5ad_tbl = {}
     bad = []
     with sw("Reading H5AD files"):
         for sample in tqdm(metadata.index.values):
+            ### TODO sample may be aggr not actual sample
             ### find sample checks 1: h5ad 2: directory+metadata, 3: sample.h5ad
             adata, fname = find_sample(directory=directory, h5ad=h5ad.get(sample),
                                        sample=sample, metadata=metadata, qc=calc_qc,
@@ -158,9 +160,13 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
             if adata is None:
                 bad.append(sample)
             else:
-                adata.obs[sample_key] = sample
                 adata_tbl[sample] = adata
                 fname_tbl[sample] = fname
+                if "H5AD" in adata.uns and adata.uns["H5AD"].get("sample_key", "") == sample_key:
+                    ### Aggregating raw
+                    h5ad_tbl |= adata.uns["H5AD"]["files"]
+                else: ### already set, using wrong sample/md combo
+                    adata.obs[sample_key] = sample
                 if "scrublet" in adata.uns:
                     if "batches" in adata.uns["scrublet"]:
                         scrub_tbl |= adata.uns["scrublet"]["batches"]
@@ -178,9 +184,13 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
         if len(tk) == len(scrub_tbl.keys()):
             adata.uns["scrublet"] = {"batches": scrub_tbl,
                                      "batched_by": sample_key}
+        if len(h5ad_tbl) > 0:
+            adata.uns["H5AD"] = {"sample_key": sample_key, "files": h5ad_tbl}
         if isinstance(calc_qc, pd.DataFrame):
             for col in calc_qc.columns:
                 adata.var[col] = calc_qc.loc[adata.var_names, col].values
-    adata.uns["H5AD"] = {"sample_key": sample_key,
-                         "files": fname_tbl}
+    if "H5AD" not in adata.uns:
+        ### Creating raw
+        adata.uns["H5AD"] = {"sample_key": sample_key,
+                             "files": fname_tbl}
     return adata

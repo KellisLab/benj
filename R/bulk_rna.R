@@ -42,6 +42,20 @@ se_tmm <- function(se, method="TMM", log=FALSE) {
     return(se)
 }
 
+
+#' Calculate module score
+#'
+#' @export
+se_module_score <- function(se, module_genes) {
+    valid_genes = intersect(rownames(se), module_genes)
+    if(length(valid_genes) < length(module_genes)) {
+        warning("Some module genes are not present in the expression matrix!")
+    }
+    M = SummarizedExperiment::assays(se)$TMM
+    module_scores = colMeans(M[valid_genes, ], na.rm=TRUE)
+    bg_scores = colMeans(M, na.rm=TRUE)
+    return(module_scores - bg_scores)
+}
 #' Add genomicranges of gene to
 #' @export
 se_gene_ranges <- function(se, gtf, by="gene_id") {

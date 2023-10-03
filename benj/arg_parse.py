@@ -4,11 +4,11 @@ from .setup_scanpy import *
 from .log import setup_args_log, setup_logging
 from .mudata import setup_args_mudata
 
-def parse_args(ap, which=["log"], parse_anndata_prefix=[]):
+def parse_args(ap, which=["log"], parse_anndata_prefix=[], load_all:bool=True):
     if "anndata" in which:
         if parse_anndata_prefix is not None and len(parse_anndata_prefix) > 0:
             for pap in parse_anndata_prefix:
-                ap = setup_args_anndata(ap, parse_anndata_prefix=pap)
+                ap = setup_args_anndata(ap, parse_anndata_prefix=pap, load_all=load_all)
         else:
             ap = setup_args_anndata(ap)
     if "mudata" in which:

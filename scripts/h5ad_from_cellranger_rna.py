@@ -88,6 +88,8 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:
                     sc.external.pp.scrublet(adata, n_prin_comps=5)
                     pass
                 pass
+            if "predicted_doublet" in adata.obs.columns:
+                adata.obs.loc[adata.obs["predicted_doublet"].isna(), "predicted_doublet"] = True
     with sw("Writing H5AD"):
         adata.uns = benj.convert_dict(adata.uns)
         adata.write_h5ad(output, compression="gzip", compression_opts=compression)

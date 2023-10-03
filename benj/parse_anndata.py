@@ -81,7 +81,10 @@ def parse_anndata(parse_anndata_prefix="", **args):
     from .aggregate import aggregate_concat, aggregate_load
     opt = parse_anndata_options(parse_anndata_prefix=parse_anndata_prefix, **args)
     adata = aggregate_concat(**opt)
-    return aggregate_load(adata, which=opt.get("load", "all"))
+    if opt.get("load"):
+        return aggregate_load(adata, which=opt["load"])
+    else:
+        return adata
 
 def _old_parse_anndata(parse_anndata_prefix="", **args):
     import os

@@ -13,7 +13,10 @@ def annotation_to_numbered(df, sample_order, index_unique="#", startnum:int=1, l
         out.append(nf)
     return pd.concat(out)
 
-def setup_args_anndata(ap, parse_anndata_prefix=""):
+def setup_args_anndata(ap, parse_anndata_prefix="", load_all:bool=True):
+    load_def = []
+    if load_all:
+        load_def = ["all"]
     if parse_anndata_prefix:
         parse_anndata_prefix = parse_anndata_prefix.replace("_", "-") + "-"
         ap.add_argument("--%sannotation" % parse_anndata_prefix, nargs="+")
@@ -22,7 +25,7 @@ def setup_args_anndata(ap, parse_anndata_prefix=""):
         ap.add_argument("--%ssubset" % parse_anndata_prefix, nargs="+", metavar="KEY=VALUE")
         ap.add_argument("--%ssubsample" % parse_anndata_prefix, default=1, type=int)
         ap.add_argument("--%ssplit" % parse_anndata_prefix, default=",")
-        ap.add_argument("--%sload" % parse_anndata_prefix, nargs="+", default="all", help="Load X, layers, or all, or none")
+        ap.add_argument("--%sload" % parse_anndata_prefix, nargs="+", default=load_def, help="Load X, layers, or all, or none")
     else:
         ap.add_argument("-a", "--annotation", nargs="+")
         ap.add_argument("--min", nargs="+", metavar="KEY=VALUE")
@@ -30,7 +33,7 @@ def setup_args_anndata(ap, parse_anndata_prefix=""):
         ap.add_argument("--subset", nargs="+", metavar="KEY=VALUE")
         ap.add_argument("--subsample", default=1, type=int)
         ap.add_argument("--split", default=",")
-        ap.add_argument("--load", nargs="+", default="all", help="Load X, layers, or all, or none")
+        ap.add_argument("--load", nargs="+", default=load_def, help="Load X, layers, or all, or none")
     return ap
 
 def parse_anndata_options(parse_anndata_prefix="", **args):

@@ -98,9 +98,6 @@ def aggregate_load(adata, which:Union[str, List[str]]="X"):
         which = [which]
     ac = aggregate_collection(adata, which=which)
     if "X" in which or "all" in which:
-        if adata.X is None:
-            import scipy.sparse
-            adata.X = scipy.sparse.lil_matrix(adata.shape, dtype="i8").tocsr()
         with sw("Loading X (%d, %d)" % adata.shape):
             adata.X = ac.X
     if "layers" in which or "all" in which:
@@ -177,7 +174,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
     total_cells = np.sum([adata.shape[0] for _, adata in adata_tbl.items()])
     with sw("Concatenating %d cells into one AnnData object" % total_cells):
         if calc_qc:
-            calc_qc = aggregate_var(adata_tbl)
+            var = aggregate_var(adata_tbl)
         adata = anndata.concat(adata_tbl, merge="same", uns_merge="same")
         tk = list(adata_tbl.keys())
         del adata_tbl

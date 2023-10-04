@@ -22,8 +22,8 @@ def load_anndata(h5ad:_PathLike,
     elif elt == "all":
         elt = ["obs", "var", "obsm", "varm", "varp", "uns", "X", "layers", "raw"]
     with h5py.File(h5ad, "r") as F:
-        fk = F.keys()
-    temp_X = qc and "X" not in elt and "X" in fk
+        h5_keys = list(F.keys())
+    temp_X = qc and "X" not in elt and "X" in h5_keys
     if temp_X:
         elt.append("X")
     if "X" not in elt:
@@ -98,7 +98,7 @@ def find_sample(sample:str, metadata=None, directory:Union[_PathLike, List[_Path
             raise RuntimeError("Sample %s.h5ad did not exist in the directories: %s" % (sample, ",".join(directory)))
     else:
         fname = "%s.h5ad" % sample
-    adata = load_anndata(h5ad=fname, **kwargs)
+    adata = load_anndata(h5ad=fname, qc=qc, **kwargs)
     if metadata is not None:
         for cn in metadata.columns:
             adata.obs[cn] = metadata.loc[sample, cn]

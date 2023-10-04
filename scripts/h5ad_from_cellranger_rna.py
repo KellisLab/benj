@@ -13,7 +13,7 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:
     outs_dir = os.path.dirname(h5)
     vdata = None
     if use_scrublet:
-        min_n_genes = max(min_n_genes, 3)
+        min_n_genes = max(min_n_genes, 5)
     if use_velocyto:
         vdir = os.path.join(outs_dir, "velocyto")
         if not os.path.isdir(vdir):

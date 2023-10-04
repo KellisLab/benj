@@ -174,7 +174,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
     total_cells = np.sum([adata.shape[0] for _, adata in adata_tbl.items()])
     with sw("Concatenating %d cells into one AnnData object" % total_cells):
         if calc_qc:
-            var = aggregate_var(adata_tbl)
+            calc_qc = aggregate_var(adata_tbl)
         adata = anndata.concat(adata_tbl, merge="same", uns_merge="same")
         tk = list(adata_tbl.keys())
         del adata_tbl

@@ -214,3 +214,25 @@ def ac_var_qc(ac, batch_size:int=10000, meansd:bool=True):
         var["mean"] = mean
         var["std"] = np.sqrt(var)
     return var
+
+def leiden_multiplex(mdata, resolution:float=1., key_added="mleiden", prefix="C", **kwargs):
+    import scipy.sparse
+    from scanpy._utils import get_igraph_from_adjacency
+    import leidenalg
+    obs_names = mdata.obs_names
+    tbl = {}
+    for k in mdata.mod.keys():
+        ### Translate per-modality indices into union of anndata indices
+        S = scipy.sparse.csr_matrix((np.ones(mdata.mod[k].shape[0], dtype=int),
+                                     (obs_names.get_indexer(mdata.mod[k].obs_names),
+                                      np.arange(mdata.mod[k].shape[0]))),
+                                     shape=(len(obs_names), mdata.mod[k].shape[0]),
+                                    dtype=int)
+        ### Sandwich to become UxU matrix
+        g = S.dot(mdata.mod[k].obsp["connectivities"].dot(S.T))
+        tbl[k] = get_igraph_from_adjacency(g)
+    clust, _ = leidenalg.find_partition_multiplex(tbl.values(),
+                                                  leidenalg.RBConfigurationVertexPartition,
+                                                  resolution_parameter=resolution,
+                                                  **kwargs)
+    mdata.obs[key_added] = prefix + np.asarray(clust).astype(str)

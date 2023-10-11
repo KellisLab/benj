@@ -215,9 +215,13 @@ def ac_var_qc(ac, batch_size:int=10000, meansd:bool=True):
         var["std"] = np.sqrt(var)
     return var
 
-def leiden_multiplex(mdata, resolution:float=1., key_added="mleiden", prefix="C", **kwargs):
+def leiden_multiplex(mdata, resolution:float=1., key_added="mleiden",
+                     neighbors_key:str=None,
+                     prefix="C", **kwargs):
+    import numpy as np
     import scipy.sparse
     from scanpy._utils import get_igraph_from_adjacency
+    from scanpy.tools._utils import _choose_graph
     import leidenalg
     obs_names = mdata.obs_names
     tbl = {}
@@ -229,7 +233,8 @@ def leiden_multiplex(mdata, resolution:float=1., key_added="mleiden", prefix="C"
                                      shape=(len(obs_names), mdata.mod[k].shape[0]),
                                     dtype=int)
         ### Sandwich to become UxU matrix
-        g = S.dot(mdata.mod[k].obsp["connectivities"].dot(S.T))
+        adjacency = _choose_graph(mdata.mod[k], None, neighbors_key)
+        g = S.dot(adjacency.dot(S.T))
         tbl[k] = get_igraph_from_adjacency(g)
     clust, _ = leidenalg.find_partition_multiplex(tbl.values(),
                                                   leidenalg.RBConfigurationVertexPartition,

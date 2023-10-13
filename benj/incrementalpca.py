@@ -19,7 +19,7 @@ class _RawNormalizeLogScaler:
                 else:
                         X = sc.pp.normalize_total(data, target_sum=self.target_sum, inplace=False)["X"]
                         X = sc.pp.log1p(X)
-                X = (X - np.reshape(self.mean, (1, -1))) / np.reshape(self.std, (1, -1)).clip(self.eps, np.inf)
+                X = (X - np.reshape(np.ravel(self.mean), (1, -1))) / np.reshape(np.ravel(self.std), (1, -1)).clip(self.eps, np.inf)
                 return np.asarray(X)
 
 class IncrementalPCA:

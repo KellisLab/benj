@@ -8,6 +8,7 @@ def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True)
     import numpy as np
     import pandas as pd
     import scanpy as sc
+    import anndata
     from anndata.experimental.multi_files import AnnCollection
     if isinstance(which, str):
         which = [which]
@@ -16,7 +17,7 @@ def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True)
     for k, v in tqdm(adata.uns["H5AD"]["files"].items()):
         if k not in good_samples:
                 continue
-        tbl[k] = sc.read(v, backed="r")
+        tbl[k] = anndata.read_h5ad(v, backed="r")
         del tbl[k].raw
         if "layers" not in which and "all" not in which:
                 del tbl[k].layers

@@ -248,3 +248,17 @@ se_concat <- function(se.list) {
     })
     return(se)
 }
+
+se_as_Seurat <- function(sce) {
+    C = SummarizedExperiment::assays(sce)$counts
+    cd = SummarizedExperiment::colData(sce)
+    s.obj = Seurat::CreateSeuratObject(counts=C, meta.data=as.data.frame(cd))
+    s.obj[["X_umap"]] <- Seurat::CreateDimReducObject(
+         embeddings = SingleCellExperiment::reducedDims(sce)$X_umap,
+         key = "UMAP_", assay = "RNA")
+    s.obj[["X_pca"]] <- Seurat::CreateDimReducObject(
+         embeddings = SingleCellExperiment::reducedDims(sce)$X_pca,
+         key = "PC_", assay = "RNA")
+    s.obj = Seurat::NormalizeData(s.obj)
+    return(s.obj)
+}

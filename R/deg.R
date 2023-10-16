@@ -102,12 +102,14 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     design = design[,-grep("^X.Intercept.$", colnames(design))] ### stopgap
     ## print(tibble::as_tibble(design), n=nrow(design))
     X1 = limma::removeBatchEffect(X, covariates=design)
-    MP = make_pseudobulk(cd[[pathology]])
-    ## print(str(X1))
-    ## print(str(MP))
-    ## print(str(diag(1/colSums(MP))))
-    D = X1 %*% MP %*% diag(1/colSums(MP))
-    dnum = sum(dist(t(D)))
+    if (is.numeric(cd[[pathology]]) | is.integer(cd[[pathology]])) {
+        ## TODO take PC1 and cor?
+        dnum = 0
+    } else {
+        MP = make_pseudobulk(cd[[pathology]])
+        D = X1 %*% MP %*% diag(1/colSums(MP))
+        dnum = sum(dist(t(D)))
+    }
     return(dnum)
 }
 #' Prepare SummarizedExperiment object for DEG calling.
@@ -124,6 +126,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
         }
     }
     stopifnot("counts" %in% names(SummarizedExperiment::assays(se)))
+    colnames(SummarizedExperiment::rowData(se))[colnames(SummarizedExperiment::rowData(se))=="strand"] = "Strand"
     pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     stopifnot(S4Vectors::ncol(pb) <= 1000) ### we can't have uber-large sample numbers
     if (any(SummarizedExperiment::colData(pb)$total_counts < min.total.counts.per.sample)) {

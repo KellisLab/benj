@@ -117,6 +117,11 @@ dependencies:
   - bioconda::bioconductor-gviz
   - bioconda::bioconductor-geoquery
   - bioconda::bioconductor-rols
+  - bioconda::bioconductor-kegg.db
+  - bioconda::bioconductor-stringdb
+  - bioconda::bioconductor-gsva
+  - bioconda::bioconductor-gsvadata
+  - bioconda::bioconductor-reactome.db
   - conda-forge::r-seurat
   - bioconda::r-harmony
   - bioconda::r-signac
@@ -124,6 +129,7 @@ dependencies:
   - bioconda::r-monocle3
   - conda-forge::gxx_linux-64
   - conda-forge::gcc_linux-64
+  - conda-forge::gfortran_linux-64
   ### deg
   - bioconda::bioconductor-deseq2
   - bioconda::bioconductor-ruvseq
@@ -202,14 +208,19 @@ dependencies:
   - conda-forge::dunamai
   - conda-forge::nbsphinx
   - conda-forge::tbb
+  ## for scopen
+  - conda-forge::kneed
   #- episcanpy
   - pip:
       - snapatac2
       - magic-impute
       - scalex
       #- scopen
-      - ctxcore
+      #- ctxcore
       # - mofapy2 ### requires anndata<0.9
       # - cellphonedb ### requires sklearn==0.24.0
       - pychromvar
       - bbknn ### for some reason the bioconda bbknn doesn't work
+      - git+https://github.com/CostaLab/scopen ### pip link doesn't work
+      - symphonypy
+#      - cca-zoo ## TODO dependencies check

@@ -206,7 +206,7 @@ deg <- function(se, pathology, case, control, covariates,
                 min.total.counts.per.sample=100, IQR.factor=1.5,
                 outlier.covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"),
                 verbose=TRUE,
-                ensure.integer.counts=TRUE) {
+                ensure.integer.counts=TRUE, mc.cores=getOption("mc.cores", 12)) {
     method = match.arg(gsub(" ", "-", tolower(method)),
                        c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer"), several.ok=TRUE)
     se = deg.prepare(se, pathology=pathology,
@@ -228,7 +228,12 @@ deg <- function(se, pathology, case, control, covariates,
     S4Vectors::metadata(se)$deg$dysregulation = dys
     ### Iterate through methods
     for (meth in method) {
-        if (meth == "deseq2") {
+         if (grepl("^wilcox", meth)) {
+            se = deg.wilcoxon(se, pathology=pathology,
+                              case=case, control=control,
+                              sample.col=sample.col,
+                              nbootstrap=1000, mc.cores=mc.cores)
+        } else if (meth == "deseq2") {
             se = deg.deseq2(se, pathology=pathology,
                             case=case, control=control,
                             sample.col=sample.col,
@@ -475,8 +480,67 @@ deg.deseq2 <- function(se,
     return(se)
 }
 
+#' @export
+deg.wilcoxon <- function(sce, sample.col, pathology, case, control, nbootstrap=1000, prefix="wilcox", mc.cores=getOption("mc.cores", 12)) {
+    set.seed(0)
+    M = SummarizedExperiment::assays(sce)$counts
+    M = M %*% Matrix::Diagonal(x=1e4 / Matrix::colSums(M))
+    M = log1p(M) / log(2)
+    cd = as.data.frame(SummarizedExperiment::colData(sce))
+    cd[[pathology]] = relevel(as.factor(cd[[pathology]]), ref=control)
+    pcd = cd[!duplicated(cd[[sample.col]]),c(sample.col, pathology)]
+    rownames(pcd) = pcd[[sample.col]]
+    B = do.call(cbind, lapply(levels(pcd[[pathology]]), function(p) {
+        ind = which(p==pcd[[pathology]])
+        matrix(sample(ind, nbootstrap*length(ind), replace=TRUE), nrow=nbootstrap)
+    }))
+    S = sapply(1:nbootstrap, function(i) {
+        sc = pcd[[sample.col]]
+        I = cd[[sample.col]] %in% sc[unique(B[i,])]
+        np = I & (cd[[pathology]] == case)
+        nn = I & (cd[[pathology]] == control)
+        ### If TRUE,
+        as.integer(np)/sum(np) - as.integer(nn)/sum(nn)
+    })
+    D = parallel::mclapply(1:nrow(M), function(i) {
+        Mi = M[i,]
+        pos = cd[[pathology]] == case
+        neg = cd[[pathology]] == control
+        ## W = sapply(1:ncol(S), function(b) {
+        ##     X1 = Mi[S[,b] > 0]
+        ##     X2 = Mi[S[,b] < 0]
+        ##     wt = wilcox.test(X1, X2)
+        ##     return(wt$p.value)
+        ## })
+        rs = min(limma::rankSumTestWithCorrelation(statistics=Mi, index=which(pos)))
+        return(c(min(2*min(rs), 1),
+                 mean(Mi[pos]) - mean(Mi[neg])))
+        ## ret = c(ret, quantile(W, c(0.025, 0.5, 0.975), na.rm=TRUE))
+    }, mc.cores=mc.cores)
+    M = as.matrix(M %*% S)
+    Q = sapply(1:nrow(M), function(i) {
+        quantile(M[i,], c(0.025, 0.975), na.rm=TRUE)
+    })
+    df = data.frame(pvalue=sapply(D, "[[", 1),
+                    log2FC=sapply(D, "[[", 2),
+                    log2FC_95CI_low=Q[1,],
+                    log2FC_95CI_high=Q[2,])
+    df$FDR = p.adjust(df$pvalue, "fdr")
+    rownames(df) = rownames(M)
+    rd = as.data.frame(SummarizedExperiment::rowData(sce))
+    rd[[paste0(prefix, "_log2FC")]] = NA
+    rd[rownames(df), paste0(prefix, "_log2FC")] = df$log2FC
+    rd[[paste0(prefix, "_FDR")]] = NA
+    rd[rownames(df), paste0(prefix, "_FDR")] = df$FDR
+    rd[[paste0(prefix, "_log2FC_95CI_low")]] = NA
+    rd[rownames(df), paste0(prefix, "_log2FC_95CI_low")] = df$log2FC_95CI_low
+    rd[[paste0(prefix, "_log2FC_95CI_high")]] = NA
+    rd[rownames(df), paste0(prefix, "_log2FC_95CI_high")] = df$log2FC_95CI_high
+    SummarizedExperiment::rowData(sce) = rd
+    return(sce)
+}
 deg.lmer <- function(se, sample.col, pathology, case, control, covariates=NULL,
-                     weights="log1p_total_counts", mc.cores=2,
+                     weights="log1p_total_counts", mc.cores=getOption("mc.cores", 12),
                      prefix="lmer") {
     stop("not implemented yet")
     M = SummarizedExperiment::assays(se)$counts

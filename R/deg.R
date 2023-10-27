@@ -347,13 +347,13 @@ deg.ruvseq <- function(sce, sample.col, pathology, covariates=NULL, NRUV=3, norm
     design = model.matrix(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), data=cd)
     design = deg.filter.design(design)
 ### Use LRT workflow
+    dgel = edgeR::calcNormFactors(dgel, method=norm)
+    dgel = edgeR::estimateGLMCommonDisp(dgel, design)
+    dgel = edgeR::estimateGLMTagwiseDisp(dgel, design)
     if (verbose) {
         cat("Design matrix:\n")
         print(tibble::as_tibble(design), n=nrow(cd))
     }
-    dgel = edgeR::calcNormFactors(dgel, method=norm)
-    dgel = edgeR::estimateGLMCommonDisp(dgel, design)
-    dgel = edgeR::estimateGLMTagwiseDisp(dgel, design)
     fit1 = edgeR::glmFit(dgel, design)
     res1 = RUVSeq:::residuals.DGEGLM(fit1, type="deviance")
     ruv = RUVSeq::RUVr(dgel$counts,

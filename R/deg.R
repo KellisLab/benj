@@ -208,7 +208,7 @@ deg <- function(se, pathology, case, control, covariates,
                 verbose=TRUE,
                 ensure.integer.counts=TRUE, mc.cores=getOption("mc.cores", 12)) {
     method = match.arg(gsub(" ", "-", tolower(method)),
-                       c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer"), several.ok=TRUE)
+                       c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer", "wilcoxon", "wilcox"), several.ok=TRUE)
     se = deg.prepare(se, pathology=pathology,
                      case=case, control=control,
                      sample.col=sample.col,

@@ -1,11 +1,16 @@
 
+def leiden(adata, key_added="leiden", prefix="C", resolution:float=1):
+    sc.tl.leiden(adata, key_added=key_added, resolution=resolution)
+    adata.obs[key_added] = ["%s%s" % (prefix, v) for v in adata.obs[key_added].values.astype(str)]
+    return adata
+
 def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_bbknn:bool=True,
                    leiden="overall_clust", resolution:float=1., prefix="C",
                    tsv=None, min_dist:float=0.3, compression:int=6,
                    min_n_cells_by_counts:int=2, cor_cutoff:float=0.8,
                    max_iter_harmony:int=50,
                    genome:str=None, release:str="JASPAR2022", species:int=-1,
-                   plot=[],
+                   plot=[], save_data:bool=False,
                    qc_cols=["log1p_total_counts"], sw=None, **kwargs):
     import os
     import numpy as np
@@ -103,6 +108,8 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
             import pychromvar as pc
             pc.match_motif(adata, motifs=motifs)
     if output is not None:
+        if not save_data:
+            del adata.X
         with sw("Writing to H5AD"):
             for col in adata.obs.columns:
                 if np.all(adata.obs[col].isna()):
@@ -115,7 +122,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
                   leiden:str="overall_clust", resolution:float=1., min_dist:float=0.3,
                   dotplot=None, celltypist=None, tsv=None,
                   rgg_ng:int=5, max_iter_harmony:int=50, prefix:str="C",
-                  sw=None, use_rgg:bool=True, target_sum:int=None, compression:int=6, **kwargs):
+                  sw=None, use_rgg:bool=True, target_sum:int=None, compression:int=6, save_data:bool=False, **kwargs):
     import scanpy as sc
     import anndata
     import pandas as pd
@@ -227,6 +234,10 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
             with sw("Re-setting counts") as _:
                 adata.X = adata.layers["raw"].copy()
                 del adata.layers["raw"]
+        if not save_data:
+            del adata.X
+            del adata.layers
+            del adata.raw
         with sw("Writing to H5AD"):
             adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata

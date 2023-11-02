@@ -124,6 +124,31 @@ def weighted_pearson_correlation(A, B, wt=None):
     cor = np.divide(numer, denom, out=np.zeros_like(numer), where=denom != 0)
     return cor
 
+def is_gzip(filename):
+    with open(filename, "rb") as f:
+        return f.read(2) == b"\x1f\x8b"
+
+def parse_gmt(filename, genes):
+    import gzip
+    import pandas as pd
+    import scipy.sparse
+    import anndata
+    genes = pd.Index(genes)
+    mat_rows = []
+    with (gzip.open(filename, "r") if is_gzip(filename) else open(filename, "r")) as F:
+        for row_idx, line in enumerate(F):
+            tokens = line.strip().split("\t")
+            gsname = tokens[0]
+            ind = genes.get_indexer(tokens[2:])
+            val_ind = ind[ind != -1]
+            row = scipy.sparse.lil_matrix((1, len(genes)), dtype="i1")
+            row[0, val_ind] = 1
+            mat_rows.append(row)
+    mat = scipy.sparse.lil_matrix((len(mat_rows), len(genes)), dtype="i1")
+    for i, row in enumerate(mat_rows):
+        mat[i, :] = row
+    return anndata.AnnData(mat.T.tocsr(), obs=pd.DataFrame(index=genes))
+
 def pseudobulk_valid_columns(obs, inv):
     ### find cols that don't change within cols
     from functools import reduce
@@ -137,6 +162,13 @@ def pseudobulk_valid_columns(obs, inv):
         goodcols &= set(df.columns.values[flag])
     return list(goodcols)
 
+def pseudobulk_hash_rows(df):
+    def _hash_row(row):
+        import hashlib
+        row_str = "".join(map(str, row.values))
+        return hashlib.sha256(row_str.encode()).hexdigest()
+    return df.apply(_hash_row, axis=1).values
+
 def pseudobulk(adata, cols, which:str="sum", dense:bool=True):
     import numpy as np
     import scipy.sparse
@@ -145,6 +177,7 @@ def pseudobulk(adata, cols, which:str="sum", dense:bool=True):
     from tqdm.auto import tqdm
     import anndata
     ug, gidx, ginv, gcnt = np.unique(adata.obs.groupby(cols).ngroup(), return_inverse=True, return_counts=True, return_index=True)
+    orig_cols = cols
     cols = pseudobulk_valid_columns(adata.obs, ginv)
     if which == "sum":
         S = scipy.sparse.csr_matrix((np.ones_like(ginv), (ginv, np.arange(len(ginv)))),
@@ -155,6 +188,7 @@ def pseudobulk(adata, cols, which:str="sum", dense:bool=True):
     else:
         raise ValueError("Which is not supported")
     obs = adata.obs.loc[:, cols].iloc[gidx, :]
+    obs.index = pseudobulk_hash_rows(obs.loc[:, orig_cols])
     if adata.isbacked:
         if dense:
             PX = np.zeros(shape=(S.shape[0], adata.shape[1]), dtype=S.dtype)
@@ -240,4 +274,4 @@ def leiden_multiplex(mdata, resolution:float=1., key_added="mleiden",
                                                   leidenalg.RBConfigurationVertexPartition,
                                                   resolution_parameter=resolution,
                                                   **kwargs)
-    mdata.obs[key_added] = prefix + np.asarray(clust).astype(str)
+    mdata.obs[key_added] = ["%s%s" % (prefix, s) for s in np.asarray(clust).astype(str)]

@@ -137,7 +137,7 @@ def parse_gmt(filename, genes):
     mat_rows = []
     with (gzip.open(filename, "r") if is_gzip(filename) else open(filename, "r")) as F:
         for row_idx, line in enumerate(F):
-            tokens = line.strip().split("\t")
+            tokens = line.decode("utf-8").strip().split("\t")
             gsname = tokens[0]
             ind = genes.get_indexer(tokens[2:])
             val_ind = ind[ind != -1]

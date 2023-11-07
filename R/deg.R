@@ -495,15 +495,18 @@ deg.limma <- function(se, pathology, case, control, sample.col="Sample", covaria
     cd[[pathology]] = relevel(as.factor(cd[[pathology]]), ref=control)
     covariates = covariates[covariates %in% colnames(cd)]
     covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
-    design = model.matrix(as.formula(paste0("~", c(pathology, covariates), collapse=" + ")),
+    design = model.matrix(as.formula(paste0(c("~0", pathology, covariates), collapse=" + ")),
                           data=cd)
+    design = deg.filter.design(design, rename=FALSE)
     v = limma::voom(counts, design, plot=FALSE)
     fit = limma::lmFit(v, design)
     fit = limma::eBayes(fit, robust=robust, trend=trend)
-    contrasts = limma::makeContrasts(contrasts=paste0(make.names(paste0(pathology, case)), "-(Intercept)"),
+    contrasts = limma::makeContrasts(contrasts=paste0(make.names(paste0(pathology, case)),
+                                                      "-",
+                                                      make.names(paste0(pathology, control))),
                                      levels=design)
     fit2 = limma::contrasts.fit(fit, contrasts)
-    fit2 = limma::eBayes(fit2)
+    fit2 = limma::eBayes(fit2, robust=robust, trend=trend)
     results = limma::topTable(fit2, adjust.method="BH", sort.by="P", number=Inf, confint=CI)
     rd = as.data.frame(SummarizedExperiment::rowData(se))
     if (trend) {

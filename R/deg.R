@@ -209,7 +209,7 @@ deg <- function(se, pathology, case, control, covariates,
                 verbose=TRUE,
                 ensure.integer.counts=TRUE, mc.cores=getOption("mc.cores", 12)) {
     method = match.arg(gsub(" ", "-", tolower(method)),
-                       c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer", "wilcoxon", "wilcox", "limma"), several.ok=TRUE)
+                       c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer", "wilcoxon", "wilcox", "limma", "limma-trend", "limma-voom"), several.ok=TRUE)
     se = deg.prepare(se, pathology=pathology,
                      case=case, control=control,
                      sample.col=sample.col,
@@ -249,7 +249,8 @@ deg <- function(se, pathology, case, control, covariates,
             se = deg.limma(se, pathology=pathology,
                            case=case, control=control,
                            sample.col=sample.col,
-                           covariates=covariates)
+                           covariates=covariates,
+                           trend=grepl("trend$", meth))
         } else if (meth == "nebula") {
             se = deg.nebula(se, pathology=pathology,
                             case=case, control=control,
@@ -487,7 +488,7 @@ deg.deseq2 <- function(se,
 }
 
 #' @export
-deg.limma <- function(se, pathology, case, control, sample.col="Sample", covariates=NULL, prefix="limma", robust=TRUE, method="voom", CI=0.95) {
+deg.limma <- function(se, pathology, case, control, sample.col="Sample", covariates=NULL, prefix="limma", robust=TRUE, trend=TRUE, CI=0.95) {
     pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     counts = SummarizedExperiment::assays(pb)$counts
     cd = as.data.frame(SummarizedExperiment::colData(pb))
@@ -498,13 +499,16 @@ deg.limma <- function(se, pathology, case, control, sample.col="Sample", covaria
                           data=cd)
     v = limma::voom(counts, design, plot=FALSE)
     fit = limma::lmFit(v, design)
-    fit = limma::eBayes(fit, robust=robust, trend=grepl("trend$", method))
+    fit = limma::eBayes(fit, robust=robust, trend=trend)
     contrasts = limma::makeContrasts(contrasts=paste0(make.names(paste0(pathology, case)), "-(Intercept)"),
                                      levels=design)
     fit2 = limma::contrasts.fit(fit, contrasts)
     fit2 = limma::eBayes(fit2)
     results = limma::topTable(fit2, adjust.method="BH", sort.by="P", number=Inf, confint=CI)
     rd = as.data.frame(SummarizedExperiment::rowData(se))
+    if (trend) {
+        prefix = paste0(prefix, "_trend")
+    }
     rd[[paste0(prefix, "_log2FC")]] = NA
     rd[rownames(results), paste0(prefix, "_log2FC")] = results$logFC
     rd[[paste0(prefix, "_FDR")]] = NA

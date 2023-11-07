@@ -6,7 +6,7 @@
 #' @param design Design matrix.
 #' @param rename Whether to use make.names to rename columns
 #' @export
-deg.filter.design <- function(design, rename=TRUE) {
+deg.filter.design <- function(design, rename=TRUE, max.ncol=0) {
     if (!is.null(attr(design, "assign")) & (ncol(design) > nrow(design))) { ### Make sure not overspecified
         agn = attr(design, "assign")
         over.factors = names(which(table(agn) >= nrow(design) / 2))
@@ -30,7 +30,8 @@ deg.filter.design <- function(design, rename=TRUE) {
             colnames(design) = make.names(colnames(design)) ### need spaces to be removed
         }
     }
-    if (ncol(design) > nrow(design)) { ### overdetermined
+    if (max.ncol<0) { max.ncol=nrow(design) }
+    if (ncol(design) > max.ncol) { ### overdetermined
         col.idx = head(order(apply(design, 2, sd), decreasing=TRUE), nrow(design))
         design = design[, col.idx, drop=FALSE]
     }
@@ -208,7 +209,7 @@ deg <- function(se, pathology, case, control, covariates,
                 verbose=TRUE,
                 ensure.integer.counts=TRUE, mc.cores=getOption("mc.cores", 12)) {
     method = match.arg(gsub(" ", "-", tolower(method)),
-                       c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer", "wilcoxon", "wilcox"), several.ok=TRUE)
+                       c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer", "wilcoxon", "wilcox", "limma"), several.ok=TRUE)
     se = deg.prepare(se, pathology=pathology,
                      case=case, control=control,
                      sample.col=sample.col,
@@ -244,6 +245,11 @@ deg <- function(se, pathology, case, control, covariates,
                            sample.col=sample.col,
                            covariates=covariates,
                            method=ifelse(grepl("lrt$",meth), "LRT", "QL"))
+        } else if (grepl("^limma", meth)) {
+            se = deg.limma(se, pathology=pathology,
+                           case=case, control=control,
+                           sample.col=sample.col,
+                           covariates=covariates)
         } else if (meth == "nebula") {
             se = deg.nebula(se, pathology=pathology,
                             case=case, control=control,
@@ -476,6 +482,37 @@ deg.deseq2 <- function(se,
     rd[rownames(df), paste0(prefix, "_FDR")] = df$padj
     rd[[paste0(prefix, "_stat")]] = NA
     rd[rownames(df), paste0(prefix, "_stat")] = df$stat
+    SummarizedExperiment::rowData(se) = rd
+    return(se)
+}
+
+#' @export
+deg.limma <- function(se, pathology, case, control, sample.col="Sample", covariates=NULL, prefix="limma", robust=TRUE, method="voom", CI=0.95) {
+    pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
+    counts = SummarizedExperiment::assays(pb)$counts
+    cd = as.data.frame(SummarizedExperiment::colData(pb))
+    cd[[pathology]] = relevel(as.factor(cd[[pathology]]), ref=control)
+    covariates = covariates[covariates %in% colnames(cd)]
+    covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
+    design = model.matrix(as.formula(paste0("~", c(pathology, covariates), collapse=" + ")),
+                          data=cd)
+    v = limma::voom(counts, design, plot=FALSE)
+    fit = limma::lmFit(v, design)
+    fit = limma::eBayes(fit, robust=robust, trend=grepl("trend$", method))
+    contrasts = limma::makeContrasts(contrasts=paste0(make.names(paste0(pathology, case)), "-(Intercept)"),
+                                     levels=design)
+    fit2 = limma::contrasts.fit(fit, contrasts)
+    fit2 = limma::eBayes(fit2)
+    results = limma::topTable(fit2, adjust.method="BH", sort.by="P", number=Inf, confint=CI)
+    rd = as.data.frame(SummarizedExperiment::rowData(se))
+    rd[[paste0(prefix, "_log2FC")]] = NA
+    rd[rownames(results), paste0(prefix, "_log2FC")] = results$logFC
+    rd[[paste0(prefix, "_FDR")]] = NA
+    rd[rownames(results), paste0(prefix, "_FDR")] = results$adj.P.Val
+    rd[[paste0(prefix, "_log2FC_95CI_low")]] = NA
+    rd[rownames(results), paste0(prefix, "_log2FC_95CI_low")] = results$CI.L
+    rd[[paste0(prefix, "_log2FC_95CI_high")]] = NA
+    rd[rownames(results), paste0(prefix, "_log2FC_95CI_high")] = results$CI.R
     SummarizedExperiment::rowData(se) = rd
     return(se)
 }

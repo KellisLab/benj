@@ -36,13 +36,13 @@
         }
     }
     tryCatch({
-    which.bool = names(which(as.logical(sapply(colnames(df), function(cname) {
+    which.bool = names(which(sapply(colnames(df), function(cname) {
         if (is.character(df[[cname]]) | is.factor(df[[cname]])) {
             return(all(df[[cname]] %in% c("FALSE", "TRUE")))
         } else {
             return(FALSE)
         }
-    }))))
+    })))
     for (ci in which.bool) {
         df[[ci]] = df[[ci]] == "TRUE"
     }

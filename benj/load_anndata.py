@@ -7,7 +7,7 @@ def load_anndata(h5ad:_PathLike,
                  obs_annotation:Union[_PathLike, List[_PathLike]]=None,
                  subset:dict=None, qc:bool=True,
                  elt:Union[str, List[str]]=None, logger="benj", verbose:bool=True,
-                 obs_min:dict=None, obs_max:dict=None, sep:str="\t", **kwargs):
+                 obs_min:dict=None, obs_max:dict=None, sep:str="\t", force_qc:bool=False, **kwargs):
     import numpy as np
     import pandas as pd
     import anndata
@@ -60,7 +60,7 @@ def load_anndata(h5ad:_PathLike,
     if qc:
         import scanpy as sc
         sc.pp.calculate_qc_metrics(adata, inplace=True)
-        if "gene_ids" in adata.var.columns and adata.shape[0] > 0:
+        if (force_qc or ("gene_ids" in adata.var.columns)) and adata.shape[0] > 0:
             import anndata
             bdata = anndata.AnnData(sc.pp.normalize_total(adata, target_sum=10000, inplace=False)["X"],
                                     obs=adata.obs, var=adata.var)

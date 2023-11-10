@@ -249,6 +249,21 @@ def ac_var_qc(ac, batch_size:int=10000, meansd:bool=True):
         var["std"] = np.sqrt(var)
     return var
 
+def transform_matrix_index(index_from, index_to):
+    import scipy.sparse
+    import numpy as np
+    import pandas as pd
+    if not isinstance(index_from, pd.Index):
+        index_from = pd.Index(index_from)
+    if not isinstance(index_to, pd.Index):
+        index_to = pd.Index(index_to)
+    comm = index_from.intersection(index_to)
+    S = scipy.sparse.csr_matrix((np.ones(len(comm), dtype=int),
+                                 (index_from.get_indexer(comm),
+                                  index_to.get_indexer(comm))),
+                                 shape=(len(index_from), len(index_to)), dtype=int)
+    return S
+
 def leiden_multiplex(mdata, resolution:float=1., key_added="mleiden",
                      neighbors_key:str=None,
                      prefix="C", **kwargs):

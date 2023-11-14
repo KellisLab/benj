@@ -218,7 +218,7 @@ def dotplot_summarize(adata, groupby, expression_cutoff:float=0, which="mean"):
     adata.layers["expressed"] = adata.X > expression_cutoff
     return pseudobulk(adata, cols=groupby, which=which)
 
-def ac_var_qc(ac, batch_size:int=10000, meansd:bool=True):
+def ac_var_qc(ac, batch_size:int=10000, meansd:bool=True, layer:str=None):
     import numpy as np
     import pandas as pd
     import anndata
@@ -228,7 +228,10 @@ def ac_var_qc(ac, batch_size:int=10000, meansd:bool=True):
     mean = np.zeros(ac.shape[1], dtype="f8")
     var = np.zeros(ac.shape[1], dtype="f8")
     for batch, _ in tqdm(ac.iterate_axis(10000, shuffle=meansd)):
-        X = batch.X
+        if layer is not None:
+            X = batch.X
+        else:
+            X = batch.layers[layer]
         total_counts += np.ravel(X.sum(0))
         if meansd:
             batch = anndata.AnnData(X)

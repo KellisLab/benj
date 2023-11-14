@@ -25,7 +25,7 @@ def load_anndata(h5ad:_PathLike,
         h5_keys = list(F.keys())
     temp_X = qc and "X" not in elt and "X" in h5_keys
     if temp_X:
-        elt.append("X")
+        elt += ["X", "layers"]
     if "X" not in elt:
         qc = False
     adata = anndata.AnnData(**read_elems(h5ad, elt))
@@ -69,8 +69,19 @@ def load_anndata(h5ad:_PathLike,
             sc.pp.scale(bdata)
             adata.var = bdata.var
             del bdata
+            layers = [] if adata.layers is None else list(adata.layers.keys())
+            for lay in layers:
+                bdata = anndata.AnnData(sc.pp.normalize_total(adata, layer=lay,
+                                                              target_sum=10000, inplace=False)["X"],
+                                        obs=adata.obs, var=adata.var)
+                sc.pp.log1p(bdata)
+                sc.pp.scale(bdata)
+                adata.var["%s_mean" % lay] = bdata.var["mean"]
+                adata.var["%s_std" % lay] = bdata.var["std"]
+                del bdata
     if temp_X:
         del adata.X
+        del adata.layers
     if verbose:
         import logging
         logger = logging.getLogger(logger)

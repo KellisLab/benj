@@ -14,3 +14,4 @@ from .mudata import parse_mudata
 from .integration import *
 from .utils import convert_X, index_of, pseudobulk
 from .cca import *
+from .metacell import metacell

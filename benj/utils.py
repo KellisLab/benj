@@ -265,7 +265,7 @@ def transform_matrix_index(index_from, index_to):
     return S
 
 def leiden_multiplex(mdata, resolution:float=1., key_added="mleiden",
-                     neighbors_key:str=None,
+                     neighbors_key:str=None, n_iterations=-1,
                      prefix="C", **kwargs):
     import numpy as np
     import scipy.sparse
@@ -288,5 +288,6 @@ def leiden_multiplex(mdata, resolution:float=1., key_added="mleiden",
     clust, _ = leidenalg.find_partition_multiplex(tbl.values(),
                                                   leidenalg.RBConfigurationVertexPartition,
                                                   resolution_parameter=resolution,
+                                                  n_iterations=n_iterations,
                                                   **kwargs)
     mdata.obs[key_added] = ["%s%s" % (prefix, s) for s in np.asarray(clust).astype(str)]

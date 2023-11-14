@@ -29,20 +29,22 @@ def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True)
 
 
 def aggregate_var(tbl:dict):
+    import re
     import numpy as np
     import pandas as pd
     import anndata
-    def _aggregate_stats(df_tbl):
+    def _aggregate_stats(df_tbl, prefix=""):
+        ### get number of cells per .var
         nf = {s: df.get("total_ncells", df.get("n_cells_by_counts")).max() for s, df in df_tbl.items()}
-        mf = pd.concat({s: df["mean"] for s, df in df_tbl.items()}, axis=1)
-        sf = pd.concat({s: df["std"] for s, df in df_tbl.items()}, axis=1)
+        mf = pd.concat({s: df[prefix + "mean"] for s, df in df_tbl.items()}, axis=1)
+        sf = pd.concat({s: df[prefix + "std"] for s, df in df_tbl.items()}, axis=1)
         sf = sf.loc[mf.index.values, mf.columns.values]
         nf = pd.Series(nf, index=mf.columns.values)
         overall_mean = (mf * nf).sum(1) / nf.sum()
         weighted_var = (nf - 1) * sf * sf
         mean_diff_sq = nf * (mf - overall_mean.values[:, None])**2
         overall_var = (weighted_var + mean_diff_sq).sum(1) / (nf.sum() - len(df_tbl))
-        return pd.DataFrame({"mean": overall_mean, "std": np.sqrt(overall_var)})
+        return pd.DataFrame({prefix + "mean": overall_mean, prefix + "std": np.sqrt(overall_var)})
     def _aggregate_hvg(gb,
                        min_disp: Optional[float] = 0.5,
                        max_disp: Optional[float] = np.inf,
@@ -87,6 +89,12 @@ def aggregate_var(tbl:dict):
             var[col] = dvar.loc[var.index.values, col].values
     if "std" in cf.columns and "mean" in cf.columns:
         svar = _aggregate_stats(var_tbl)
+        for col in svar.columns:
+            var[col] = svar.loc[var.index.values, col].values
+    layers = set([re.sub("_mean$", "", s) for s in cf.columns if s.endswith("_mean")])
+    layers &= set([re.sub("_std$", "", s) for s in cf.columns if s.endswith("_std")])
+    for lay in layers:
+        svar = _aggregate_stats(var_tbl, prefix="%s_" % lay)
         for col in svar.columns:
             var[col] = svar.loc[var.index.values, col].values
     return var

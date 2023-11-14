@@ -15,7 +15,7 @@ def h5ad_per_sample_to_xlsx(adata, output, target_sum:float=None, **kwargs):
     import pandas as pd
     import scipy.sparse
     import scanpy as sc
-    from benj.utils import pseudobulk
+    from benj import pseudobulk
     import benj
     sw = benj.stopwatch()
     with sw("Pseudobulking"):

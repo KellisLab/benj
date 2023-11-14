@@ -15,3 +15,4 @@ from .integration import *
 from .utils import convert_X, index_of, pseudobulk
 from .cca import *
 from .metacell import metacell
+from .pseudobulk import pseudobulk

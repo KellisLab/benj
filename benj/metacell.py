@@ -69,16 +69,17 @@ def metacell_anndata(adata, idx, resolution:float=None, neighbors_key:str=None,
 def metacell(data, niter:int=100,
              resolution:float=None,
              ### neighbors
-             neighbors_key:str=None, ### either str or dict[str->str]
+             neighbors_key:str=None, ### requires neighbors() to be run beforehand
              ### leiden
              n_leiden_iterations:int=-1,
              max_comm_size:int=0,
              layer_weights=None):
         import pandas as pd
         import anndata
+        from tqdm.auto import tqdm
         R = [resample(data) for _ in range(niter)]
         out = []
-        for i, idx in enumerate(R):
+        for idx in tqdm(R, desc="Computing metacells"):
                 if isinstance(data, anndata.AnnData):
                         mc = metacell_anndata(data, idx, resolution=resolution, neighbors_key=neighbors_key, max_comm_size=max_comm_size, n_leiden_iterations=n_leiden_iterations)
 

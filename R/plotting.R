@@ -194,6 +194,42 @@ volcano <- function(df, label="gene", title="Volcano plot of",
     g = g + ggpubr::theme_pubr() + ggtitle(title)
     return(g)
 }
+
+#' @export
+pbviolin <- function(sce, gene, groupby, sample.col="Sample", target_sum=10000, plot=TRUE) {
+    require(ggplot2)
+    X = SummarizedExperiment::assays(sce)$counts
+    cd = as.data.frame(SummarizedExperiment::colData(sce))
+    if ("total_counts" %in% colnames(cd)) {
+        D = Matrix::Diagonal(x=target_sum / cd$total_counts)
+    } else {
+        D = Matrix::Diagonal(x=target_sum / Matrix::colSums(X))
+    }
+    X = as.matrix(X[gene,,drop=FALSE] %*% D)
+    X = as.data.frame(log1p(t(X)))
+    cd = cbind(cd, X)
+    ## pseudobulk
+    pb = se_make_pseudobulk(sce, sample.col)
+    pd = as.data.frame(SummarizedExperiment::colData(pb))
+    PX = SummarizedExperiment::assays(pb)$counts
+    D = Matrix::Diagonal(x=target_sum / Matrix::colSums(PX))
+    PX = as.matrix(PX[gene,,drop=FALSE] %*% D)
+    PX = as.data.frame(log1p(t(PX)))
+    PX$modality="pseudobulk"
+    pd = cbind(pd, PX)
+    if (!plot) {
+        return(list(sc=cd, pb=pd))
+    } else {
+        L = lapply(setNames(gene, gene), function(gx) {
+            ggplot(cd, aes_string(x=groupby, y=gx, fill=groupby)) + geom_violin() + geom_point(data=pd, position = position_jitter(width = 0.2)) + ggpubr::theme_pubr() + ylab(gx) + xlab(groupby) + ggtitle(gx)
+        })
+        if (length(L) == 1) {
+            return(L[[1]])
+        } else {
+            return(L)
+        }
+    }
+}
 ## manhattan <- function(gr, chrom.sizes) {
 
 ## }

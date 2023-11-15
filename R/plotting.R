@@ -171,6 +171,7 @@ ht_asterisks <- function(p.matrix, gp, ...) {
 volcano <- function(df, label="gene", title="Volcano plot of",
                     threshold.FDR=0.99999, threshold.log2FC=0.5,
                     force=1, max.overlaps = getOption("ggrepel.max.overlaps", default = 10),
+                    repel=TRUE,
                     prefix="",
                     quantile.log2FC=1) {
     require(ggplot2)
@@ -184,7 +185,13 @@ volcano <- function(df, label="gene", title="Volcano plot of",
     }
     df$label = ifelse(df$FDR <= threshold.FDR, df$label, rep("", nrow(df)))
     df$label = ifelse(abs(df$log2FC) >= threshold.log2FC, df$label, rep("", nrow(df)))
-    g = ggplot(df, aes(x=log2FC, y=-log10(FDR), label=label)) + geom_point() + ggrepel::geom_text_repel(force=force, max.overlaps=max.overlaps) + ggpubr::theme_pubr() + ggtitle(title)
+    g = ggplot(df, aes(x=log2FC, y=-log10(FDR), label=label))
+    if (repel) {
+        g = g + geom_point() + ggrepel::geom_text_repel(force=force, max.overlaps=max.overlaps)
+    } else {
+        g = g + geom_text()
+    }
+    g = g + ggpubr::theme_pubr() + ggtitle(title)
     return(g)
 }
 ## manhattan <- function(gr, chrom.sizes) {
@@ -231,4 +238,13 @@ colorRamp2 <- function(breaks, colors, transparency=0, space="LAB", hcl_palette=
     } else {
         return(cr)
     }
+}
+
+#' @export
+convert_pvalue_to_star <- function(pvalue) {
+    stars = rep("", length(pvalue))
+    stars[pvalue < 0.05] = "*"
+    stars[pvalue < 0.01] = "**"
+    stars[pvalue < 0.001] = "***"
+    return(setNames(stars, names(pvalue)))
 }

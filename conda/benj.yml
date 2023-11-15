@@ -61,6 +61,16 @@ dependencies:
   - conda-forge::r-hdf5r
   - conda-forge::pyjulia
   - conda-forge::r-juliacall
+  - conda-forge::r-upsetr
+  - conda-forge::r-ggupset
+  ## c++
+  - conda-forge::eigen
+  - conda-forge::pybind11
+  - conda-forge::gdb
+  - conda-forge::armadillo
+  - conda-forge::boost-cpp
+  - conda-forge::cmake
+  - conda-forge::pkg-config
   ## other
   - bioconda::bioawk
   - conda-forge::jupyterlab
@@ -117,11 +127,13 @@ dependencies:
   - bioconda::bioconductor-gviz
   - bioconda::bioconductor-geoquery
   - bioconda::bioconductor-rols
-  - bioconda::bioconductor-kegg.db
+  - bioconda::bioconductor-keggrest
   - bioconda::bioconductor-stringdb
   - bioconda::bioconductor-gsva
   - bioconda::bioconductor-gsvadata
+  - bioconda::bioconductor-rdgidb
   - bioconda::bioconductor-reactome.db
+  - bioconda::bioconductor-mirbase.db
   - conda-forge::r-seurat
   - bioconda::r-harmony
   - bioconda::r-signac

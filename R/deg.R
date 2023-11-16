@@ -86,7 +86,7 @@ deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes_
 #' Idea: use corrected counts to
 #'
 #' @export
-deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verbose=TRUE) {
+deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verbose=TRUE, method="pearson") {
     ### Compute cell type pseudobulk
     pb = calculate_qc_metrics(se_make_pseudobulk(sce, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     pb = se_tmm(pb, log=TRUE)
@@ -109,7 +109,12 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     } else {
         MP = make_pseudobulk(cd[[pathology]])
         D = X1 %*% MP %*% diag(1/colSums(MP))
-        dnum = sum(dist(t(D)))
+        if (method=="euclidean") {
+            dnum = sum(dist(t(D)))
+        } else {
+            C = cor(D, method=method)
+            dnum = 1 - mean(C[upper.tri(C)])
+        }
     }
     return(dnum)
 }

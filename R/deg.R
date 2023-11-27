@@ -358,7 +358,7 @@ deg.ruvseq <- function(sce, sample.col, pathology, covariates=NULL, NRUV=3, norm
     }
     covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
     design = model.matrix(as.formula(paste0("~", paste0(c(pathology, covariates), collapse="+"))), data=cd)
-    design = deg.filter.design(design)
+    design = deg.filter.design(design, max.ncol=nrow(design)-1)
 ### Use LRT workflow
     dgel = edgeR::calcNormFactors(dgel, method=norm)
     dgel = edgeR::estimateGLMCommonDisp(dgel, design)

@@ -60,11 +60,23 @@ class IncrementalLSI:
                      ):
                 import pandas as pd
                 from .incrementalsvd import IncrementalSVD
-                self.tfidf = IncrementalTFIDF(var_means=var["var_means"].values,
-                                              log_tf=log_tf, log_idf=log_idf,
-                                              log_tfidf=log_tfidf,
-                                              scale_factor=scale_factor)
-                self.svd = IncrementalSVD(n_comps)
+                if isinstance(var, pd.DataFrame):
+                        self.tfidf = IncrementalTFIDF(var_means=var["var_means"].values,
+                                                      log_tf=log_tf, log_idf=log_idf,
+                                                      log_tfidf=log_tfidf,
+                                                      scale_factor=scale_factor)
+                        self.svd = IncrementalSVD(n_comps)
+                else:## extract from anndata
+                        adata = var
+                        var = adata.var
+                        s = adata.uns["lsi"]["stdev"] * np.sqrt(adata.shape[0] - 1)
+                        self.svd = IncrementalSVD(len(s))
+                        self.svd.s = s
+                        self.svd.V = adata.varm["LSI"]
+                        self.tfidf = IncrementalTFIDF(var_means=var["var_means"].values,
+                                                      log_tf=log_tf, log_idf=log_idf,
+                                                      log_tfidf=log_tfidf,
+                                                      scale_factor=scale_factor)
         def partial_fit(self, X):
                 self.svd.partial_fit(self.tfidf.transform(X))
                 return self

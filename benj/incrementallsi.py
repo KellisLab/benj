@@ -59,6 +59,7 @@ class IncrementalLSI:
                      scale_factor:Union[int, float]=1e4,
                      ):
                 import pandas as pd
+                import numpy as np
                 from .incrementalsvd import IncrementalSVD
                 if isinstance(var, pd.DataFrame):
                         self.tfidf = IncrementalTFIDF(var_means=var["var_means"].values,

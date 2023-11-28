@@ -16,3 +16,4 @@ from .utils import convert_X, index_of
 from .cca import *
 from .metacell import metacell
 from .pseudobulk import pseudobulk
+from .window import *

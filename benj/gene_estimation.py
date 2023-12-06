@@ -63,6 +63,7 @@ def estimate_features_archr(adata, feature_df,
     import anndata
     import scanpy as sc
     from .timer import template
+    from .aggregate import aggregate_load
     sw = template()
     if not isinstance(feature_df, pd.DataFrame):
         raise ValueError("Feature_df is not a dataframe")
@@ -126,6 +127,9 @@ def estimate_features_archr(adata, feature_df,
                                     shape=(pf.shape[0], gf.shape[0]))
         if layer is not None and layer in adata.layers:
             X = adata.layers[layer]
+        elif adata.X is None:
+            adata = aggregate_load(adata)
+            X = adata.X
         else:
             X = adata.X
         gdata = anndata.AnnData(X.dot(S), obs=adata.obs, var=gf, dtype=np.float32, obsm=adata.obsm, obsp=adata.obsp,

@@ -94,9 +94,15 @@ def aggregate_var(tbl:dict):
     layers = set([re.sub("_mean$", "", s) for s in cf.columns if s.endswith("_mean")])
     layers &= set([re.sub("_std$", "", s) for s in cf.columns if s.endswith("_std")])
     for lay in layers:
-        svar = _aggregate_stats(var_tbl, prefix="%s_" % lay)
-        for col in svar.columns:
-            var[col] = svar.loc[var.index.values, col].values
+        try:
+            svar = _aggregate_stats(var_tbl, prefix="%s_" % lay)
+            for col in svar.columns:
+                var[col] = svar.loc[var.index.values, col].values
+        except:
+            print("layer:", lay)
+            print("mean:", [k for k, var in var_tbl.items() if "%s_mean" % lay not in var.columns ])
+            print("std:", [k for k, var in var_tbl.items() if "%s_std" % lay not in var.columns ])
+            pass
     return var
 
 def aggregate_load(adata, which:Union[str, List[str]]="X"):

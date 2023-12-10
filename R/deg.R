@@ -504,9 +504,11 @@ deg.limma <- function(se, pathology, case, control, sample.col="Sample", covaria
     design = model.matrix(as.formula(paste0(c("~0", pathology, covariates), collapse=" + ")),
                           data=cd)
     design = deg.filter.design(design, rename=FALSE)
+    colnames(design) = make.names(colnames(design))
     v = limma::voom(counts, design, plot=FALSE)
     fit = limma::lmFit(v, design)
     fit = limma::eBayes(fit, robust=robust, trend=trend)
+
     contrasts = limma::makeContrasts(contrasts=paste0(make.names(paste0(pathology, case)),
                                                       "-",
                                                       make.names(paste0(pathology, control))),

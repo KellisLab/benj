@@ -89,6 +89,7 @@ dependencies:
   - conda-forge::python-igraph
   - conda-forge::networkx
   - conda-forge::fa2
+  - conda-forge::faiss
   ## ml
   - conda-forge::xgboost
   - conda-forge::ngboost
@@ -229,7 +230,7 @@ dependencies:
       - scalex
       #- scopen
       #- ctxcore
-      # - mofapy2 ### requires anndata<0.9
+      - mofapy2 
       # - cellphonedb ### requires sklearn==0.24.0
       - pychromvar
       - bbknn ### for some reason the bioconda bbknn doesn't work

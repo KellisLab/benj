@@ -150,6 +150,7 @@ dependencies:
   - bioconda::bioconductor-sva
   - bioconda::bioconductor-edger
   - bioconda::bioconductor-mast
+  - bioconda::bioconductor-glmgampoi
   # - bioconda::bioconductor-scde
   # - bioconda::bioconductor-scdd
   # - bioconda::bioconductor-emdomics
@@ -230,7 +231,7 @@ dependencies:
       - scalex
       #- scopen
       #- ctxcore
-      - mofapy2 
+      - mofapy2
       # - cellphonedb ### requires sklearn==0.24.0
       - pychromvar
       - bbknn ### for some reason the bioconda bbknn doesn't work

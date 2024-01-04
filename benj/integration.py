@@ -1,5 +1,6 @@
 
 def leiden(adata, key_added="leiden", prefix="C", resolution:float=1):
+    import scanpy as sc
     sc.tl.leiden(adata, key_added=key_added, resolution=resolution)
     adata.obs[key_added] = ["%s%s" % (prefix, v) for v in adata.obs[key_added].values.astype(str)]
     return adata

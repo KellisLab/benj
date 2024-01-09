@@ -37,8 +37,8 @@ jobs:
           python-version: '3.10'
       - name: Install Sphinx
         run: |
-	  sudo apt-get update
-	  sudo apt-get install -y pandoc
+          sudo apt-get update
+          sudo apt-get install -y pandoc
           pip install -r docs/sphinx/requirements.txt
       - name: Build Sphinx Docs
         run: |

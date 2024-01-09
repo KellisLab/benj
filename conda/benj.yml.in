@@ -81,6 +81,8 @@ dependencies:
   - conda-forge::openai
   - bioconda::snakemake
   - bioconda::nextflow
+  - bioconda::plink
+  - bioconda::plink2
   ## plots
   - conda-forge::seaborn
   - conda-forge::matplotlib<3.7
@@ -122,6 +124,7 @@ dependencies:
   - bioconda::bioconductor-genomeinfodb
   - bioconda::bioconductor-bsgenome
   - bioconda::bioconductor-bsgenome.hsapiens.ucsc.hg38
+  - bioconda::bioconductor-snplocs.hsapiens.dbsnp151.grch38
   - bioconda::bioconductor-bsgenome.mmusculus.ucsc.mm10
   - bioconda::bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
   - bioconda::bioconductor-txdb.mmusculus.ucsc.mm10.knowngene

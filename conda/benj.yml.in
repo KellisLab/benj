@@ -74,6 +74,7 @@ dependencies:
   - conda-forge::autoconf
   - conda-forge::automake
   - conda-forge::libtool
+  - conda-forge::m4
   ## other
   - bioconda::bioawk
   - conda-forge::jupyterlab

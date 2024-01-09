@@ -23,7 +23,8 @@ jobs:
     - name: Substitute VERSION into DESCRIPTION
       run: |
         VERSION=$(cat VERSION)
-	sed "s/@VERSION@/$VERSION/g" DESCRIPTION.in > DESCRIPTION
+        sed "s/@VERSION@/$VERSION/g" DESCRIPTION.in > DESCRIPTION
+
     - name: Push to Main Branch
       run: |
         git config --global user.name 'GitHub Action'

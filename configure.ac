@@ -1,4 +1,8 @@
 AC_INIT([benj], [0.0.7])
+
+AC_MSG_NOTICE([Creating VERSION file])
+echo m4_defn([AC_PACKAGE_VERSION]) > VERSION
+
 AC_CHECK_PROG([R_FOUND], [R], [yes], [no])
 if test "x$R_FOUND" = xno; then
   AC_MSG_ERROR([R is required but it's not installed.])
@@ -33,5 +37,26 @@ for file in $REQUIRED_FILES; do
   fi
 done
 
-AC_CONFIG_FILES([Makefile])
+AC_CANONICAL_HOST
+# Detect OS and substitute the appropriate compilers
+AC_MSG_CHECKING([for operating system $host_os])
+case "$host_os" in
+  *darwin*)
+    AC_MSG_RESULT([Mac OS X detected])
+    AC_SUBST([CC], [conda-forge::clang_osx-64])
+    AC_SUBST([CXX], [conda-forge::clangxx_osx-64])
+    AC_SUBST([FC], [conda-forge::gfortran_osx-64])
+    ;;
+  *linux*)
+    AC_MSG_RESULT([Linux detected])
+    AC_SUBST([CC], [conda-forge::gcc_linux-64])
+    AC_SUBST([CXX], [conda-forge::gxx_linux-64])
+    AC_SUBST([FC], [conda-forge::gfortran_linux-64])
+    ;;
+  *)
+    AC_MSG_ERROR([unsupported operating system])
+    ;;
+esac
+
+AC_CONFIG_FILES([Makefile conda/benj.yml DESCRIPTION])
 AC_OUTPUT

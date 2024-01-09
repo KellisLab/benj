@@ -145,9 +145,9 @@ dependencies:
   - bioconda::r-signac
   # - r-seuratdisk # icu error forces R below 4.1
   - bioconda::r-monocle3
-  - conda-forge::gxx_linux-64
-  - conda-forge::gcc_linux-64
-  - conda-forge::gfortran_linux-64
+  - @CC@
+  - @CXX@
+  - @FC@
   ### deg
   - bioconda::bioconductor-deseq2
   - bioconda::bioconductor-ruvseq

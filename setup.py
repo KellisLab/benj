@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 import setuptools
 from glob import glob
+with open("VERSION", "r") as version_file:
+        version = version_file.read().strip()
 setuptools.setup(name="benj",
-                 version="0.0.6",
+                 version=version,
                  author="Benjamin James",
                  author_email="benjames@mit.edu",
                  url="https://github.com/KellisLab/benj",

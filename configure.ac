@@ -11,10 +11,6 @@ AC_CHECK_PROG([R_FOUND], [R], [yes], [no])
 if test "x$R_FOUND" = xno; then
   AC_MSG_ERROR([R is required but it's not installed.])
 fi
-AC_CHECK_PROG([WGET_FOUND], [wget], [yes], [no])
-if test "x$WGET_FOUND" = xno; then
-  AC_MSG_ERROR([wget is required but it's not installed.])
-fi
 AC_PROG_MAKE_SET
 
 # Automake initialization
@@ -33,10 +29,12 @@ AC_MSG_RESULT([created])
 # Download files using wget if they don't exist
 AC_MSG_CHECKING([for required files])
 REQUIRED_FILES="Dual_Index_Kit_TT_Set_A.csv Dual_Index_Kit_NN_Set_A.csv Dual_Index_Kit_NT_Set_A.csv Single_Index_Kit_T_Set_A.csv Single_Index_Kit_N_Set_A.csv"
+BASE_URL="https://cdn.10xgenomics.com/raw/upload/v1655151897/support/in-line documents"
+
 for file in $REQUIRED_FILES; do
   if test ! -f "${TENX_DIR}/$file"; then
     AC_MSG_RESULT([missing $file, downloading...])
-    wget -P ${TENX_DIR} --no-check-certificate "https://cdn.10xgenomics.com/raw/upload/v1655151897/support/in-line documents/$file"
+    Rscript -e "download.file(url = paste('${BASE_URL}', '$file', sep = '/'), destfile = paste('${TENX_DIR}', '$file', sep = '/'), method = 'libcurl')"
   else
     AC_MSG_RESULT([found $file])
   fi

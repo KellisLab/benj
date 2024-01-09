@@ -2,7 +2,7 @@ name: Autoreconf Mirror Branch
 
 on:
   push:
-    branches: [ main ]
+    branches: [ dev ]
 
 jobs:
   autoreconf:

@@ -15,12 +15,16 @@ jobs:
         ref: 'dev'
 
     - name: Set up Autotools
-      run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool
+      run: sudo apt-get update && sudo apt-get install -y autoconf automake libtool sed
 
     - name: Run autoreconf
       run: autoreconf -i
 
-    - name: Push to Mirror Branch
+    - name: Substitute VERSION into DESCRIPTION
+      run: |
+        VERSION=$(cat VERSION)
+	sed "s/@VERSION@/$VERSION/g" DESCRIPTION.in > DESCRIPTION
+    - name: Push to Main Branch
       run: |
         git config --global user.name 'GitHub Action'
         git config --global user.email 'action@github.com'

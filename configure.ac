@@ -1,5 +1,9 @@
 AC_INIT([benj], [0.0.7])
 
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+
 AC_MSG_NOTICE([Creating VERSION file])
 echo m4_defn([AC_PACKAGE_VERSION]) > VERSION
 
@@ -15,6 +19,7 @@ AC_PROG_MAKE_SET
 
 # Automake initialization
 AM_INIT_AUTOMAKE([foreign])
+AM_MAINTAINER_MODE
 
 # Define the directory where files should be downloaded
 TENX_DIR="inst/extdata/10x"

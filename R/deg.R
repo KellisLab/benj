@@ -86,12 +86,17 @@ deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes_
 #' Idea: use corrected counts to
 #'
 #' @export
-deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verbose=TRUE, method="pearson") {
+deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verbose=TRUE, method="pearson", reduction="X_pca") {
     ### Compute cell type pseudobulk
     pb = calculate_qc_metrics(se_make_pseudobulk(sce, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
-    pb = se_tmm(pb, log=TRUE)
     cd = SummarizedExperiment::colData(pb)
-    X = SummarizedExperiment::assays(pb)$TMM
+    if (attr(pb, "class") == "SingleCellExperiment") {
+        rd = SingleCellExperiment::reducedDims(se)[[reduction]]
+        X = t(rd)
+    } else {
+        pb = se_tmm(pb, log=TRUE)
+        X = SummarizedExperiment::assays(pb)$TMM
+    }
     covariates = covariates[covariates %in% names(SummarizedExperiment::colData(pb))]
     if (verbose) {
         cat("Design matrix for dysregulation score:\n")
@@ -107,8 +112,8 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
         ## TODO take PC1 and cor?
         dnum = 0
     } else {
-        MP = make_pseudobulk(cd[[pathology]])
-        D = X1 %*% MP %*% diag(1/colSums(MP))
+        MP = make_average(cd[[pathology]])
+        D = X1 %*% MP
         if (method=="euclidean") {
             dnum = sum(dist(t(D)))
         } else {

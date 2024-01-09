@@ -77,6 +77,7 @@ load.persample.excel <- function(xlsx) {
 }
 
 
+
 #' Draw triangles in heatmap
 #' Pass cell_fun=ht_triangle_split(...) to Heatmap()
 #' @param mat.ul Upper left matrix
@@ -102,7 +103,8 @@ ht_boxplot <- function(se, box_width=0.6, direction=c("vertical", "horizontal"),
         denom = extremes$max - extremes$min
         denom[denom < 1e-100] = mean(denom)
         (vec - extremes$min) / denom - 0.5
-    }), c(3, 1, 2))
+    }), c(3, 2, 1))
+    print(str(boxplot_stats))
 ### https://github.com/jokergoo/ComplexHeatmap/blob/ae0ec42cd2e4e0446c114d23dcf43cf2c2f585c8/R/utils.R#L945
     if(direction == "vertical") {
         return(function(j, i, x, y, width, height, fill) {

@@ -32,10 +32,22 @@ se_make_pseudobulk <- function(se, on, missing.levels=FALSE, unlevel=TRUE) {
             }
         }
     }
-    return(SummarizedExperiment::SummarizedExperiment(assays=P,
-                                                      rowData=rd,
-                                                      colData=pcd,
-                                                      metadata=S4Vectors::metadata(se)))
+    if (attr(se, "class") == "SingleCellExperiment") {
+        to_AP = make_average(cd[[on]], unlevel=unlevel)
+        newred = lapply(SingleCellExperiment::reducedDims(se), function(x) {
+            t(to_AP) %*% x
+        })
+        return(SingleCellExperiment::SingleCellExperiment(assays=P,
+                                                          rowData=rd,
+                                                          colData=pcd,
+                                                          metadata=S4Vectors::metadata(se),
+                                                          reducedDims=S4Vectors::SimpleList(newred)))
+    } else {
+        return(SummarizedExperiment::SummarizedExperiment(assays=P,
+                                                          rowData=rd,
+                                                          colData=pcd,
+                                                          metadata=S4Vectors::metadata(se)))
+    }
 }
 
 

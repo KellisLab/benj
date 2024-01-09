@@ -15,8 +15,8 @@ channels:
 
 dependencies:
   ## Must have
-  - conda-forge::anndata>=0.9.1
-  - conda-forge::scanpy>=1.9.3
+  - conda-forge::anndata>=0.10.4
+  - conda-forge::scanpy>=1.9.6
   - conda-forge::muon
   - conda-forge::pandas>=1.5.0
   - conda-forge::numpy>=1.21.6
@@ -71,6 +71,9 @@ dependencies:
   - conda-forge::boost-cpp
   - conda-forge::cmake
   - conda-forge::pkg-config
+  - conda-forge::autoconf
+  - conda-forge::automake
+  - conda-forge::libtool
   ## other
   - bioconda::bioawk
   - conda-forge::jupyterlab
@@ -90,6 +93,7 @@ dependencies:
   - conda-forge::networkx
   - conda-forge::fa2
   - conda-forge::faiss
+  - conda-forge::python-annoy
   ## ml
   - conda-forge::xgboost
   - conda-forge::ngboost
@@ -108,7 +112,7 @@ dependencies:
   ### bioconductor
   - bioconda::bioconductor-motifmatchr
   - bioconda::bioconductor-tfbstools
-  - bioconda::bioconductor-jaspar2022
+  - bioconda::bioconductor-jaspar2024
   - bioconda::bioconductor-chromvar
   - bioconda::bioconductor-annotationdbi
   - bioconda::bioconductor-go.db
@@ -136,6 +140,7 @@ dependencies:
   - bioconda::bioconductor-reactome.db
   - bioconda::bioconductor-mirbase.db
   - conda-forge::r-seurat
+  - conda-forge::r-seuratobject
   - bioconda::r-harmony
   - bioconda::r-signac
   # - r-seuratdisk # icu error forces R below 4.1
@@ -159,10 +164,13 @@ dependencies:
   ### extra
   - conda-forge::r-nloptr
   - conda-forge::r-nlme
+  - conda-forge::r-sandwich
+  - conda-forge::r-lmtest
   - conda-forge::r-mass
   - conda-forge::r-rfast
   - conda-forge::r-trust
   - conda-forge::r-rcpp>=1.0.7 ## nebula
+  - conda-forge::r-rcppannoy
   - conda-forge::r-rcppziggurat
   - conda-forge::r-rcppeigen
   - conda-forge::r-caret
@@ -226,7 +234,6 @@ dependencies:
   - conda-forge::kneed
   #- episcanpy
   - pip:
-      - snapatac2
       - magic-impute
       - scalex
       #- scopen

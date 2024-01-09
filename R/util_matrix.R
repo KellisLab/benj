@@ -57,6 +57,27 @@ make_pseudobulk <- function(x, u=NULL, unlevel=FALSE) {
     }))
 }
 
+#' Collapse a matrix into pseudobulk, such that the resulting
+#' matrix is an average
+#' @param x a matrix
+#' @param u unique levels to set
+#' @return collapsed pseudobulk matrix
+#' @export
+make_average <- function(x, u=NULL, unlevel=FALSE) {
+    if (is.factor(x)) {
+        if (unlevel) {
+            x = as.factor(as.character(x))
+        }
+        u = levels(x)
+    } else if (is.null(u)) {
+        u = unique(x)
+    }
+    u = u[!is.na(u)]
+    names(u) = u
+    return(sapply(u, function(y) {
+        (x == y) / sum(x==y)
+    }))
+}
 #' Reorder a matrix based on TSP solver
 #'
 #' @param mat a matrix

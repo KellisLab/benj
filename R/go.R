@@ -60,3 +60,18 @@ gseGO <- function(geneList, ranks, OrgDb, filter=NULL, keyType="SYMBOL", ont="AL
     }
     return(.proc.go.result(ego))
 }
+
+goMatrix <- function() {
+    L = as.list(org.Hs.eg.db::org.Hs.egGO2ALLEG)
+    X = lapply(L, function(gl) {
+        AnnotationDbi::mapIds(org.Hs.eg.db::org.Hs.eg.db, keys=gl, column="SYMBOL", keytype="ENTREZID", multiVals="first")
+    })
+    allg = Reduce(union, X)
+}
+
+keggMatrix_fromGenes <- function(geneList, keytype="SYMBOL") {
+    keggTerms = as.list(KEGG.db::KEGGPATHID2EXTID)
+}
+goMatrix_fromGenes <- function(geneList, keytype="SYMBOL") {
+
+}

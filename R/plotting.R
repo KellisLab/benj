@@ -64,10 +64,12 @@ htSortMatrix <- function(M, method="euclidean", ratio=0.5, cutoff=0.25, sort=c(1
 #' @param ux millimeters per grid
 #' @param sort Axes to sort upon. Be careful as the matrix is re-sorted before plotting with htSortMatrix
 #' @export
-autoHeatmap <- function(M, ux=1.5, sort=c(1, 2), method="euclidean", dimname_fontsize=3.5, ratio=0.5, cutoff=0.25, ...) {
+autoHeatmap <- function(M, ux=1.5, sort=c(1, 2), method="euclidean",
+                        dimname_fontsize=3.5, ratio=0.5, cutoff=0.25,
+                        cluster_rows=FALSE, cluster_columns=FALSE, ...) {
     M = htSortMatrix(M, method=method, ratio=ratio, cutoff=cutoff, sort=sort)
     return(ComplexHeatmap::Heatmap(
-        M, cluster_rows=FALSE, cluster_columns=FALSE,
+        M, cluster_rows=cluster_rows, cluster_columns=cluster_columns,
         width = ncol(M)*grid::unit(ux, "mm"),
         height = nrow(M)*grid::unit(ux, "mm"),
         row_names_gp=grid::gpar(fontsize=dimname_fontsize),

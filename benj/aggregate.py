@@ -111,7 +111,7 @@ def aggregate_load(adata, which:Union[str, List[str]]="X"):
             with sw("Loading X (%d, %d)" % adata.shape):
                 adata.X = ac.X
         except:
-
+            pass
     if "layers" in which or "all" in which:
         with sw("Loading layers (%d, %d)" % adata.shape):
             adata.layers = ac.layers

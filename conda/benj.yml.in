@@ -65,10 +65,16 @@ dependencies:
   - conda-forge::r-ggupset
   ## c++
   - conda-forge::eigen
-  - conda-forge::pybind11
-  - conda-forge::gdb
   - conda-forge::armadillo
+  - conda-forge::hdf5
+  - conda-forge::igraph
+  - conda-forge::arrow-cpp
+  - conda-forge::highfive
+  - conda-forge::dlib
+  - conda-forge::pybind11
   - conda-forge::boost-cpp
+  - conda-forge::gdb
+  - conda-forge::valgrind
   - conda-forge::cmake
   - conda-forge::pkg-config
   - conda-forge::autoconf
@@ -177,6 +183,7 @@ dependencies:
   - conda-forge::r-rcppannoy
   - conda-forge::r-rcppziggurat
   - conda-forge::r-rcppeigen
+  - conda-forge::r-rcppprogress
   - conda-forge::r-caret
   - conda-forge::r-glmnet
   - conda-forge::r-rmagic

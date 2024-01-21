@@ -33,9 +33,12 @@ def aggregate_var(tbl:dict):
     import numpy as np
     import pandas as pd
     import anndata
-    def _aggregate_stats(df_tbl, prefix=""):
+    def _aggregate_stats(dtbl, prefix=""):
         ### get number of cells per .var
-        df_tbl = {k: v for k, v in df_tbl.items() if "%smean" % prefix in df.columns and "%sstd" % prefix in df.columns}
+        df_tbl = {}
+        for k, df in dtbl.items():
+            if "%smean" % prefix in df.columns and "%sstd" % prefix in df.columns:
+                df_tbl[k] = df
         nf = {s: df.get("total_ncells", df.get("n_cells_by_counts")).max() for s, df in df_tbl.items()}
         mf = pd.concat({s: df[prefix + "mean"] for s, df in df_tbl.items()}, axis=1)
         sf = pd.concat({s: df[prefix + "std"] for s, df in df_tbl.items()}, axis=1)

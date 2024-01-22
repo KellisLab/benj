@@ -34,7 +34,7 @@ def _mc_prepare(adata, idx, neighbors_key:str=None):
         neighbors_key = "neighbors" if neighbors_key is None else neighbors_key
         P = adata.uns[neighbors_key].get("params")
         rep = P.get("use_rep", "X_pca")
-        xdata = anndata.AnnData(obsm={rep: adata.obsm[rep][flag,:]}, obs=adata.iloc[flag,:])
+        xdata = anndata.AnnData(obsm={rep: adata.obsm[rep][flag,:]}, obs=adata.obs.iloc[flag,:])
         method = P.get("method", "umap")
         metric = P.get("metric", "euclidean")
         n_neighbors = P.get("n_neighbors", 15)
@@ -79,7 +79,7 @@ def metacell(data, niter:int=100,
         import pandas as pd
         import anndata
         from tqdm.auto import tqdm
-        R = [resample(data.obs) for _ in range(niter)]
+         R = [resample(data.obs) for _ in range(niter)]
         out = []
         for idx in tqdm(R, desc="Computing metacells"):
                 if isinstance(data, anndata.AnnData):

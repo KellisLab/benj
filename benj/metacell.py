@@ -79,7 +79,7 @@ def metacell(data, niter:int=100,
         import pandas as pd
         import anndata
         from tqdm.auto import tqdm
-         R = [resample(data.obs) for _ in range(niter)]
+        R = [resample(data.obs) for _ in range(niter)]
         out = []
         for idx in tqdm(R, desc="Computing metacells"):
                 if isinstance(data, anndata.AnnData):

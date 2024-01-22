@@ -225,6 +225,7 @@ dependencies:
   - conda-forge::mudata
   - bioconda::scglue
   - conda-forge::bamnostic
+  - bioconda::r-liger
   ## for snapatac2
   - conda-forge::pytables>=3.6.1
   - conda-forge::natsort
@@ -243,7 +244,7 @@ dependencies:
   - conda-forge::tbb
   ## for scopen
   - conda-forge::kneed
-  #- episcanpy
+  #- episcanpyp
   - pip:
       - magic-impute
       - scalex

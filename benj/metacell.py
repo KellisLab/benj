@@ -28,6 +28,8 @@ def over_cluster_resolution(resolution, n_obs):
     return resolution
 
 def _mc_prepare(adata, idx, neighbors_key:str=None):
+	import scanpy as sc
+        import anndata
         flag = adata.obs_names.isin(idx)
         neighbors_key = "neighbors" if neighbors_key is None else neighbors_key
         P = adata.uns[neighbors_key].get("params")

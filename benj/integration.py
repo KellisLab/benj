@@ -158,7 +158,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     else:
         print("Data looks normalized already")
     adata.raw = adata
-    if hvg > 0:
+    if hvg > 0 and "highly_variable" not in adata.var.columns:
         with sw("Calculating %d HVG" % hvg):
             sc.pp.highly_variable_genes(adata, n_top_genes=hvg, batch_key=batch, subset=True)
     if batch is not None and use_combat:
@@ -168,7 +168,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
         with sw("Scaling data"):
             sc.pp.scale(adata, max_value=10)
     with sw("Running PCA"):
-        sc.pp.pca(adata, zero_center=not (use_scaling or use_combat))
+        sc.pp.pca(adata, zero_center=not (use_scaling or use_combat), use_highly_variable=hvg>0)
     if batch is not None and use_harmony:
         with sw("Running Harmony"):
             try:

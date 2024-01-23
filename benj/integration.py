@@ -122,7 +122,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
 def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=False, use_scaling:bool=False, use_harmony:bool=False, use_bbknn:bool=True, plot=None,
                   leiden:str="overall_clust", resolution:float=1., min_dist:float=0.3,
                   dotplot=None, celltypist=None, tsv=None,
-                  rgg_ng:int=5, max_iter_harmony:int=50, prefix:str="C",
+                  rgg_ng:int=5, rgg_tsv:str=None, max_iter_harmony:int=50, prefix:str="C",
                   sw=None, use_rgg:bool=True, target_sum:int=None, compression:int=6, save_data:bool=False, **kwargs):
     import scanpy as sc
     import anndata
@@ -224,12 +224,18 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     for vv in np.intersect1d(["pct_counts_mt", "doublet_score", "log1p_total_counts"], adata.obs.columns):
         sc.pl.violin(adata, vv, groupby=leiden, save="_%s_%s.png" % (leiden, vv))
     if use_rgg:
+        from .rgg import extract_rank_genes_groups
         sc.tl.dendrogram(adata, groupby=leiden)
         with sw("Ranking genes"):
             sc.tl.rank_genes_groups(adata, groupby=leiden, method="wilcoxon", pts=True)
+        sc.tl.filter_rank_genes_groups(adata)
         sc.pl.rank_genes_groups_dotplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
         sc.pl.rank_genes_groups_matrixplot(adata, save="rgg_%s.png" % leiden, n_genes=rgg_ng)
         sc.pl.rank_genes_groups_heatmap(adata, save="_rgg_%s.png" % leiden, n_genes=rgg_ng)
+        rgg = extract_rank_genes_groups(adata)
+        del adata.uns["rank_genes_groups_filtered"]
+        if rgg_tsv is not None:
+            rgg.to_csv(rgg_tsv, sep="\t", index=False)
     if output is not None:
         if "raw" in adata.layers.keys():
             with sw("Re-setting counts") as _:

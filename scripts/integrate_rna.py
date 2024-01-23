@@ -28,6 +28,7 @@ if __name__ == "__main__":
     ap.add_argument("--min-dist", type=float, default=0.3)
     ap.add_argument("--no-rgg", "--no-rank-genes", dest="use_rgg", action="store_false")
     ap.add_argument("--rgg", "--rank-genes", dest="use_rgg", action="store_true")
+    ap.add_argument("--rgg-tsv", type=str, default=None)
     ap.add_argument("--max-iter-harmony", type=int, default=50)
     ap.add_argument("--save-data", dest="save_data", action="store_true")
     ap.add_argument("--no-save-data", dest="save_data", action="store_false")

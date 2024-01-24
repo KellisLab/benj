@@ -16,6 +16,7 @@ installExtraPackages <- function(upgrade="never", seurat=TRUE, ...) {
     devtools::install_github('bnprks/BPCells', upgrade=never, ...)
     devtools::install_github('chrchang/plink-ng', subdir='2.0/pgenlibr', upgrade=never, ...)
     devtools::install_github('GreenleafLab/ArchR', ref='master', repos=BiocManager::repositories(), upgrade=never, ...)
+    devtools::install_github("caleblareau/gchromVAR", upgrade=never, ...)
     BiocManager::install("SNPlocs.Hsapiens.dbSNP155.GRCh38")
     ArchR::installExtraPackages()
 }

@@ -72,6 +72,7 @@ dependencies:
   - conda-forge::arrow-cpp
   - conda-forge::highfive
   - conda-forge::dlib
+  - conda-forge::zlib
   - conda-forge::pybind11
   - conda-forge::boost-cpp
   - conda-forge::gdb
@@ -84,6 +85,8 @@ dependencies:
   - conda-forge::m4
   ## other
   - bioconda::bioawk
+  - conda-forge::pigz
+  - conda-forge::zstd
   - conda-forge::jupyterlab
   - conda-forge::nbconvert
   - conda-forge::openai
@@ -134,8 +137,12 @@ dependencies:
   - bioconda::bioconductor-genomeinfodb
   - bioconda::bioconductor-bsgenome
   - bioconda::bioconductor-bsgenome.hsapiens.ucsc.hg38
+  - bioconda::bioconductor-bsgenome.hsapiens.ucsc.hg19
+  - bioconda::bioconductor-bsgenome.mmusculus.ucsc.mm39
   - bioconda::bioconductor-bsgenome.mmusculus.ucsc.mm10
   - bioconda::bioconductor-txdb.hsapiens.ucsc.hg38.knowngene
+  - bioconda::bioconductor-txdb.hsapiens.ucsc.hg19.knowngene
+  - bioconda::bioconductor-txdb.mmusculus.ucsc.mm39.knowngene
   - bioconda::bioconductor-txdb.mmusculus.ucsc.mm10.knowngene
   - bioconda::bioconductor-ensdb.hsapiens.v86
   - bioconda::bioconductor-rgreat
@@ -199,6 +206,7 @@ dependencies:
   - conda-forge::r-vgam
   - conda-forge::r-shiny
   - conda-forge::r-dendextend
+  - conda-forge::r-roxygen2>=7.2.3
   ### archr
   - conda-forge::r-rhandsontable
   - conda-forge::r-shinythemes

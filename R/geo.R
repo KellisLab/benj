@@ -2,7 +2,7 @@
 #' Get SRA ID and GEO accession from GEO id
 #'
 #' @export
-sra_from_geo <- function(geo) {
+sra_from_geo <- function(geo_list) {
     L = unlist(lapply(geo_list, GEOquery::getGEO))
     pf = dplyr::bind_rows(lapply(L, Biobase::pData))
     pf = pf[c("geo_accession", "relation", "relation.1")]

@@ -148,9 +148,11 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     if "raw" in adata.layers:
         with sw("Copying .layers[\"raw\"] to .X"):
             adata.X = adata.layers["raw"].copy()
-    elif np.issubdtype(adata.X.dtype, np.integer) and not save_data:
+    elif np.issubdtype(adata.X.dtype, np.integer) and save_data:
         with sw("Copying .X to .layers[\"raw\"]"):
             adata.layers["raw"] = adata.X.copy()
+    if not save_data and (celltypist is not None) and target_sum != 10000:
+        del adata.layers
     if np.issubdtype(adata.X.dtype, np.integer):
         with sw("Normalizing data"):
             if target_sum is not None and target_sum > 0:
@@ -161,8 +163,6 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
             sc.pp.log1p(adata)
     else:
         print("Data looks normalized already")
-    if not save_data and (celltypist is not None) and target_sum != 10000:
-        del adata.layers
     adata.raw = adata
     if hvg > 0 and "highly_variable" not in adata.var.columns:
         with sw("Calculating %d HVG" % hvg):

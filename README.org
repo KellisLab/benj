@@ -1,39 +1,19 @@
 * Benj
 
 Benj utility scripts
-
-** R installation
-
-Note that r-anndata must be installed for all unit tests to pass
-#+BEGIN_SRC bash
-## Install under current environment
-make
+** Installation
+R installation: Use devtools to install
+#+BEGIN_SRC R
+devtools::install_github("kellislab/benj")
 #+END_SRC
-** Python installation
-
+Python installation: Use pip
 #+BEGIN_SRC bash
-pip install .
+  pip install git+https://github.com/kellislab/benj
 #+END_SRC
+
 ** Conda environments
 Environments under [[conda/]] can be used. Mamba is recommended for environment creation because of the number of packages
-*** rbenj
-#+BEGIN_SRC bash
-mamba env create --file=conda/rbenj.yml
-R --slave -e 'devtools::install_github(c("GreenleafLab/ArchR", "lhe17/nebula"), ref="master", repos = BiocManager::repositories())'
-make
-#+END_SRC
-*** pybenj
-#+BEGIN_SRC bash
-mamba env create --file=conda/pybenj.yml
-pip install .
-#+END_SRC
-*** benj
-#+BEGIN_SRC bash
-mamba env create --file=conda/benj.yml
-R --slave -e 'devtools::install_github(c("GreenleafLab/ArchR", "lhe17/nebula"), ref="master", repos = BiocManager::repositories())'
-make
-pip install .
-#+END_SRC
+
 ** Luria installation
 On Luria, you can put this script in =~/src/conda_init.sh=, where you can run =source ~/src/conda_init.sh= to activate Conda,
 and then you can run =conda activate benj= to activate the =benj= environment.

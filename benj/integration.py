@@ -79,7 +79,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
             elif "atac" in adata.uns and "peak_annotation" in adata.uns["atac"] and col in adata.uns["atac"]["peak_annotation"].index:
                 ac.pl.umap(adata, color=col, save="_%s.png" % col, use_raw=False)
     with sw("Clustering cells"):
-        sc.tl.leiden(adata, key_added=leiden, resolution=resolution, n_iterations=n_iterations)
+        sc.tl.leiden(adata, key_added=leiden, resolution=resolution, n_iterations=leiden_n_iterations)
         adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
     if tsv is not None:
         with sw("Writing TSV"):
@@ -203,7 +203,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
         if col in adata.obs.columns or col in adata.var.index:
             sc.pl.umap(adata, color=col, save="_%s.png" % col)
     with sw("Running Leiden"):
-        sc.tl.leiden(adata, resolution=resolution, key_added=leiden, n_iterations=n_iterations)
+        sc.tl.leiden(adata, resolution=resolution, key_added=leiden, n_iterations=leiden_n_iterations)
         adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
     if celltypist is not None:
         with sw("Annotating from CellTypist"):

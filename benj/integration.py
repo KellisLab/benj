@@ -1,7 +1,7 @@
 
-def leiden(adata, key_added="leiden", prefix="C", resolution:float=1):
+def leiden(adata, key_added="leiden", prefix="C", resolution:float=1, n_iterations:int=-1):
     import scanpy as sc
-    sc.tl.leiden(adata, key_added=key_added, resolution=resolution)
+    sc.tl.leiden(adata, key_added=key_added, resolution=resolution, n_iterations=n_iterations)
     adata.obs[key_added] = ["%s%s" % (prefix, v) for v in adata.obs[key_added].values.astype(str)]
     return adata
 
@@ -10,6 +10,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
                    tsv=None, min_dist:float=0.3, compression:int=6,
                    min_n_cells_by_counts:int=2, cor_cutoff:float=0.8,
                    max_iter_harmony:int=50,
+                   leiden_n_iterations:int=-1,
                    genome:str=None, release:str="JASPAR2022", species:int=-1,
                    plot=[], save_data:bool=False,
                    qc_cols=["log1p_total_counts"], sw=None, **kwargs):
@@ -44,7 +45,8 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
         ac.pp.tfidf(adata)
     with sw("Running LSI"):
         ac.tl.lsi(adata)
-        del adata.X
+        if not save_data:
+            del adata.X
     filter_LSI(adata, qc_cols=qc_cols, cor_cutoff=cor_cutoff, sw=sw)
     use_rep="X_lsi"
     n_pcs=len(adata.uns["lsi"]["stdev"])
@@ -77,7 +79,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
             elif "atac" in adata.uns and "peak_annotation" in adata.uns["atac"] and col in adata.uns["atac"]["peak_annotation"].index:
                 ac.pl.umap(adata, color=col, save="_%s.png" % col, use_raw=False)
     with sw("Clustering cells"):
-        sc.tl.leiden(adata, key_added=leiden, resolution=resolution)
+        sc.tl.leiden(adata, key_added=leiden, resolution=resolution, n_iterations=n_iterations)
         adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
     if tsv is not None:
         with sw("Writing TSV"):
@@ -122,7 +124,9 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
 def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=False, use_scaling:bool=False, use_harmony:bool=False, use_bbknn:bool=True, plot=None,
                   leiden:str="overall_clust", resolution:float=1., min_dist:float=0.3,
                   dotplot=None, celltypist=None, tsv=None,
-                  rgg_ng:int=5, rgg_tsv:str=None, max_iter_harmony:int=50, prefix:str="C",
+                  rgg_ng:int=5, rgg_tsv:str=None, max_iter_harmony:int=50,
+                  leiden_n_iterations:int=-1,
+                  prefix:str="C",
                   sw=None, use_rgg:bool=True, target_sum:int=None, compression:int=6, save_data:bool=False, **kwargs):
     import scanpy as sc
     import anndata
@@ -144,7 +148,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     if "raw" in adata.layers:
         with sw("Copying .layers[\"raw\"] to .X"):
             adata.X = adata.layers["raw"].copy()
-    elif np.issubdtype(adata.X.dtype, np.integer):
+    elif np.issubdtype(adata.X.dtype, np.integer) and not save_data:
         with sw("Copying .X to .layers[\"raw\"]"):
             adata.layers["raw"] = adata.X.copy()
     if np.issubdtype(adata.X.dtype, np.integer):
@@ -157,6 +161,8 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
             sc.pp.log1p(adata)
     else:
         print("Data looks normalized already")
+    if not save_data:
+        del adata.layers
     adata.raw = adata
     if hvg > 0 and "highly_variable" not in adata.var.columns:
         with sw("Calculating %d HVG" % hvg):
@@ -169,6 +175,8 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
             sc.pp.scale(adata, max_value=10)
     with sw("Running PCA"):
         sc.pp.pca(adata, zero_center=not (use_scaling or use_combat), use_highly_variable=hvg>0)
+        if not save_data:
+            del adata.X
     if batch is not None and use_harmony:
         with sw("Running Harmony"):
             try:
@@ -195,7 +203,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
         if col in adata.obs.columns or col in adata.var.index:
             sc.pl.umap(adata, color=col, save="_%s.png" % col)
     with sw("Running Leiden"):
-        sc.tl.leiden(adata, resolution=resolution, key_added=leiden)
+        sc.tl.leiden(adata, resolution=resolution, key_added=leiden, n_iterations=n_iterations)
         adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
     if celltypist is not None:
         with sw("Annotating from CellTypist"):

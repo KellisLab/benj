@@ -24,6 +24,7 @@ if __name__ == "__main__":
     ap.add_argument("--qc-cols", nargs="+", default=["log1p_total_counts"])
     ap.add_argument("--min-dist", type=float, default=0.3)
     ap.add_argument("--max-iter-harmony", type=int, default=50)
+    ap.add_argument("--leiden-n-iterations", type=int, default=-1)
     ap.add_argument("--compression", type=int, default=6)
     ap.set_defaults(use_harmony=False, use_bbknn=True)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])

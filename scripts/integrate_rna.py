@@ -30,6 +30,7 @@ if __name__ == "__main__":
     ap.add_argument("--rgg", "--rank-genes", dest="use_rgg", action="store_true")
     ap.add_argument("--rgg-tsv", type=str, default=None)
     ap.add_argument("--max-iter-harmony", type=int, default=50)
+    ap.add_argument("--leiden-n-iterations", type=int, default=-1)
     ap.add_argument("--save-data", dest="save_data", action="store_true")
     ap.add_argument("--no-save-data", dest="save_data", action="store_false")
     ap.set_defaults(use_combat=False, use_harmony=False, use_bbknn=True, use_scaling=False, use_rgg=True, save_data=False)

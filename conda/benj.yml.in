@@ -32,7 +32,7 @@ dependencies:
   - conda-forge::rpy2
   - conda-forge::squidpy
   ## r
-  - conda-forge::r-base>=4.3.1
+  - conda-forge::r-base>=4.3.2
   - conda-forge::r-devtools
   - conda-forge::r-biocmanager
   - conda-forge::r-matrix
@@ -83,6 +83,8 @@ dependencies:
   - conda-forge::automake
   - conda-forge::libtool
   - conda-forge::m4
+  - conda-forge::libcxxwrap-julia
+  - conda-forge::doxygen
   ## other
   - bioconda::bioawk
   - conda-forge::pigz
@@ -159,10 +161,10 @@ dependencies:
   - bioconda::bioconductor-reactome.db
   - bioconda::bioconductor-mirbase.db
   - bioconda::bioconductor-milor
-  - conda-forge::r-seurat
-  - conda-forge::r-seuratobject
+  - conda-forge::r-seurat>=5.0.0
+  - conda-forge::r-seuratobject>=5.0.0
   - bioconda::r-harmony
-  - bioconda::r-signac
+  - bioconda::r-signac>=1.12.0
   # - r-seuratdisk # icu error forces R below 4.1
   - bioconda::r-monocle3
   - @CC@
@@ -259,6 +261,10 @@ dependencies:
   ## for scopen
   - conda-forge::kneed
   - conda-forge::py-bgzip
+  ## language server
+  - conda-forge::r-languageserver
+  - conda-forge::python-lsp-server
+  - conda-forge::black
   #- episcanpyp
   - pip:
       - magic-impute

@@ -161,7 +161,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
             sc.pp.log1p(adata)
     else:
         print("Data looks normalized already")
-    if not save_data:
+    if not save_data and (celltypist is not None) and target_sum != 10000:
         del adata.layers
     adata.raw = adata
     if hvg > 0 and "highly_variable" not in adata.var.columns:
@@ -228,6 +228,8 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     sc.pl.umap(adata, color=leiden, save="_%s_beside.png" % leiden)
     sc.pl.umap(adata, color=leiden, save="_%s_ondata.png" % leiden, legend_loc="on data", legend_fontsize=2)
     if dotplot is not None:
+        if not isinstance(dotplot, str):
+            dotplot = np.ravel([x.split(",") for x in dotplot])
         sc.pl.dotplot(adata, var_names=dotplot, groupby=leiden, save="%s.png" % leiden, standard_scale="var")
     for vv in np.intersect1d(["pct_counts_mt", "doublet_score", "log1p_total_counts"], adata.obs.columns):
         sc.pl.violin(adata, vv, groupby=leiden, save="_%s_%s.png" % (leiden, vv))

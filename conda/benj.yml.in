@@ -32,7 +32,7 @@ dependencies:
   - conda-forge::rpy2
   - conda-forge::squidpy
   ## r
-  - conda-forge::r-base>=4.3.2
+  - conda-forge::r-base>=4.3.1
   - conda-forge::r-devtools
   - conda-forge::r-biocmanager
   - conda-forge::r-matrix
@@ -237,7 +237,7 @@ dependencies:
   - bioconda::mnnpy
   - bioconda::celltypist
   - bioconda::velocyto.py
-  - bioconda::scvelo
+  - conda-forge::scvelo
   - bioconda::multivelo
   - conda-forge::mudata
   - bioconda::scglue

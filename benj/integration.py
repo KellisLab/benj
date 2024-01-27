@@ -230,7 +230,8 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     if dotplot is not None:
         if not isinstance(dotplot, str):
             dotplot = np.intersect1d(np.ravel([x.split(",") for x in dotplot]), adata.var_names)
-        sc.pl.dotplot(adata, var_names=dotplot, groupby=leiden, save="%s.png" % leiden, standard_scale="var")
+        if len(dotplot) > 0:
+            sc.pl.dotplot(adata, var_names=dotplot, groupby=leiden, save="%s.png" % leiden, standard_scale="var")
     for vv in np.intersect1d(["pct_counts_mt", "doublet_score", "log1p_total_counts"], adata.obs.columns):
         sc.pl.violin(adata, vv, groupby=leiden, save="_%s_%s.png" % (leiden, vv))
     if use_rgg:

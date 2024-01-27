@@ -46,7 +46,7 @@ dependencies:
   - conda-forge::r-pryr
   - conda-forge::r-circlize
   - conda-forge::r-optparse
-  - conda-forge::rstudio
+  #- conda-forge::rstudio
   - bioconda::bioconductor-singlecellexperiment
   - bioconda::bioconductor-rhdf5
   - bioconda::bioconductor-rhdf5filters
@@ -84,7 +84,7 @@ dependencies:
   - conda-forge::automake
   - conda-forge::libtool
   - conda-forge::m4
-  - conda-forge::libcxxwrap-julia
+  #- conda-forge::libcxxwrap-julia
   - conda-forge::doxygen
   ## other
   - bioconda::bioawk
@@ -210,7 +210,7 @@ dependencies:
   - conda-forge::r-vgam
   - conda-forge::r-shiny
   - conda-forge::r-dendextend
-  - conda-forge::r-roxygen2>=7.2.3
+  - conda-forge::r-roxygen2
   ### archr
   - conda-forge::r-rhandsontable
   - conda-forge::r-shinythemes
@@ -263,7 +263,7 @@ dependencies:
   - conda-forge::kneed
   - conda-forge::py-bgzip
   ## language server
-  - conda-forge::r-languageserver
+  #- conda-forge::r-languageserver ## old r required
   - conda-forge::python-lsp-server
   - conda-forge::black
   #- episcanpyp

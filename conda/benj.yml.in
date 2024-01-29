@@ -15,8 +15,8 @@ channels:
 
 dependencies:
   ## Must have
-  - conda-forge::anndata>=0.10.4
-  - conda-forge::scanpy>=1.9.6
+  - conda-forge::anndata>=0.10.5
+  - conda-forge::scanpy>=1.9.7
   - conda-forge::muon
   - conda-forge::pandas>=1.5.0
   - conda-forge::numpy>=1.21.6

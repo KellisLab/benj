@@ -5,14 +5,23 @@ def pg(adata, color_map="Reds"):
     return lambda x, **kwargs: sc.pl.umap(adata, color=x, color_map=color_map, save="_%s.png" % x, **kwargs)
 
 
-def read_elems(path: str, elems: Union[str, List[str]]) -> Union[Dict[str, any], any]:
+def read_elems(path: str, elems: Union[str, List[str]], retry:int=2) -> Union[Dict[str, any], any]:
     import h5py
     import anndata.experimental
-    with h5py.File(path, "r") as F:
-        if isinstance(elems, str):
-            return anndata.experimental.read_elem(F[elems])
-        else:
-            return {elem: anndata.experimental.read_elem(F[elem]) for elem in elems}
+    if retry < 0:
+        return {}
+    try:
+        with h5py.File(path, "r") as F:
+            if isinstance(elems, str):
+                return anndata.experimental.read_elem(F[elems])
+            else:
+                return {elem: anndata.experimental.read_elem(F[elem]) for elem in elems}
+    except KeyError:
+        import time
+        print("Key error for %s, sleeping 5 seconds and retrying..." % path)
+        time.sleep(5)
+        ### NFS error
+        return read_elems(path=path, elems=elems, retry=retry-1)
 
 def filter_LSI(adata, qc_cols, cor_cutoff:float=0.8, sw=None):
     import numpy as np

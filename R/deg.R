@@ -92,7 +92,12 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     cd = SummarizedExperiment::colData(pb)
     if (attr(pb, "class") == "SingleCellExperiment") {
         rd = SingleCellExperiment::reducedDims(sce)[[reduction]]
-        X = t(rd)
+        if (!is.null(rd)) {
+            X = t(rd)
+        } else {
+            pb = se_tmm(pb, log=TRUE)
+            X = SummarizedExperiment::assays(pb)$TMM
+        }
     } else {
         pb = se_tmm(pb, log=TRUE)
         X = SummarizedExperiment::assays(pb)$TMM

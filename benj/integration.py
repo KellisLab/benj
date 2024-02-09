@@ -164,7 +164,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     else:
         print("Data looks normalized already")
     adata.raw = adata
-    if hvg > 0 and "highly_variable" not in adata.var.columns:
+    if hvg > 0:
         with sw("Calculating %d HVG" % hvg):
             sc.pp.highly_variable_genes(adata, n_top_genes=hvg, batch_key=batch, subset=True)
     if batch is not None and use_combat:

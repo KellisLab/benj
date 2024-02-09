@@ -7,7 +7,7 @@ buildbin:
 	Rscript -e "devtools::build(binary = TRUE, args = c('--preclean'))"
 
 buildsrc:
-	Rscript -e "devtools::build(args=c('--no-buildvignettes'))"
+	Rscript -e "devtools::build(args=c('--no-build-vignettes'))"
 
 install:
 	Rscript -e "devtools::install_local(force=TRUE, upgrade=FALSE)"

@@ -91,7 +91,7 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     pb = calculate_qc_metrics(se_make_pseudobulk(sce, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     cd = SummarizedExperiment::colData(pb)
     if (attr(pb, "class") == "SingleCellExperiment") {
-        rd = SingleCellExperiment::reducedDims(se)[[reduction]]
+        rd = SingleCellExperiment::reducedDims(sce)[[reduction]]
         X = t(rd)
     } else {
         pb = se_tmm(pb, log=TRUE)

@@ -233,7 +233,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
         if len(dotplot) > 0:
             sc.pl.dotplot(adata, var_names=dotplot, groupby=leiden, save="%s.png" % leiden, standard_scale="var")
     for vv in np.intersect1d(["pct_counts_mt", "doublet_score", "log1p_total_counts"], adata.obs.columns):
-        sc.pl.violin(adata, vv, groupby=leiden, save="_%s_%s.png" % (leiden, vv))
+        sc.pl.violin(adata, vv, groupby=leiden, save="_%s_%s.png" % (leiden, vv), rotation=90)
     if use_rgg:
         from .rgg import extract_rank_genes_groups
         sc.tl.dendrogram(adata, groupby=leiden)

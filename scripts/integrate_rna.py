@@ -35,5 +35,6 @@ if __name__ == "__main__":
     ap.add_argument("--no-save-data", dest="save_data", action="store_false")
     ap.set_defaults(use_combat=False, use_harmony=False, use_bbknn=True, use_scaling=False, use_rgg=True, save_data=False)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
+    print(args)
     adata = benj.parse_anndata(**args)
     benj.integrate_rna(adata, **args)

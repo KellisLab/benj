@@ -165,11 +165,15 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
         for sample in tqdm(metadata.index.values):
             ### TODO sample may be aggr not actual sample
             ### find sample checks 1: h5ad 2: directory+metadata, 3: sample.h5ad
-            adata, fname = find_sample(directory=directory, h5ad=h5ad.get(sample),
-                                       sample=sample, metadata=metadata, qc=calc_qc,
-                                       min_cells_per_sample=min_cells_per_sample,
-                                       verbose=verbose,
-                                       **kwargs)
+            try:
+                adata, fname = find_sample(directory=directory, h5ad=h5ad.get(sample),
+                                           sample=sample, metadata=metadata, qc=calc_qc,
+                                           min_cells_per_sample=min_cells_per_sample,
+                                           verbose=verbose,
+                                           **kwargs)
+            except:
+                adata = None
+                pass
             if adata is None:
                 bad.append(sample)
             else:

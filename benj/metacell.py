@@ -52,13 +52,17 @@ def metacell_mudata(mdata, idx, resolution:float=None, neighbors_key:str=None,
         for k, adata in mdata.mod.items():
                 xdata[k] = _mc_prepare(adata, idx=idx, neighbors_key=neighbors_key)
         xdata = mu.MuData(xdata)
+        resolution = over_cluster_resolution(resolution, n_obs=xdata.shape[0])
+        kwargs = {}
+        if max_comm_size > 0:
+                kwargs["max_comm_size"] = max_comm_size
         if layer_weights is not None:
                 if isinstance(layer_weights, dict):
                         layer_weights = [layer_weights[k] for k in xdata.mod.keys()]
         leiden_multiplex(xdata, resolution=resolution,
                          max_comm_size=max_comm_size, n_iterations=n_leiden_iterations,
                          layer_weights=layer_weights)
-        return xdata.obs["leiden"]
+        return xdata.obs["mleiden"]
 
 def metacell_anndata(adata, idx, resolution:float=None, neighbors_key:str=None,
                      max_comm_size:int=0, n_leiden_iterations:int=-1):

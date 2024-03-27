@@ -1,0 +1,21 @@
+
+name: chrombpnet
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - conda-forge::python==3.8
+  - conda-forge::h5py>=2.10.0
+  - conda-forge::numpy==1.23.4
+  - conda-forge::cudatoolkit=11.2
+  - conda-forge::tensorflow==2.8.0=*cuda112py*
+  - bioconda::samtools
+  - bioconda::bedtools
+  - bioconda::ucsc-bedgraphtobigwig
+  - bioconda::pybigwig
+  - bioconda::meme
+  - conda-forge::pip
+  - pip:
+    - chrombpnet

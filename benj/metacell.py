@@ -38,7 +38,7 @@ def _mc_prepare(adata, idx, neighbors_key:str=None):
         method = P.get("method", "umap")
         metric = P.get("metric", "euclidean")
         n_neighbors = P.get("n_neighbors", 15)
-        n_pcs = P.get("n_pcs", 50)
+        n_pcs = P.get("n_pcs", adata.obsm[rep].shape[1])
         sc.pp.neighbors(xdata, n_neighbors=n_neighbors,
                         n_pcs=n_pcs, use_rep=rep,
                         metric=metric, method=method)
@@ -98,3 +98,4 @@ def metacell(data, niter:int=100,
         out = pd.concat(out, axis=1)
         out.columns = list(range(out.shape[1]))
         return out
+

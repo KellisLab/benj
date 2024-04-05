@@ -66,11 +66,14 @@ htSortMatrix <- function(M, method="euclidean", ratio=0.5, cutoff=0.25, sort=c(1
 #' @export
 autoHeatmap <- function(M, ux=1.5, sort=c(1, 2), method="euclidean",
                         dimname_fontsize=3.5, ratio=0.5, cutoff=0.25,
+                        aspect_ratio=1, 
                         cluster_rows=FALSE, cluster_columns=FALSE, ...) {
+    cluster_rows = cluster_rows || -1 %in% sort 
+    cluster_columns = cluster_columns || -2 %in% sort
     M = htSortMatrix(M, method=method, ratio=ratio, cutoff=cutoff, sort=sort)
     return(ComplexHeatmap::Heatmap(
         M, cluster_rows=cluster_rows, cluster_columns=cluster_columns,
-        width = ncol(M)*grid::unit(ux, "mm"),
+        width = ncol(M)*grid::unit(aspect_ratio * ux, "mm"),
         height = nrow(M)*grid::unit(ux, "mm"),
         row_names_gp=grid::gpar(fontsize=dimname_fontsize),
         column_names_gp=grid::gpar(fontsize=dimname_fontsize),

@@ -239,6 +239,9 @@ deg <- function(se, pathology, case, control, covariates,
         se = deg.ruvseq(se, pathology=pathology, covariates=covariates, sample.col=sample.col, NRUV=NRUV, verbose=verbose)
         covariates = c(covariates, paste0("RUV_", 1:NRUV))
         covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
+        if (length(covariates) > 0) {
+            covariates = covariates[grep("^RUV_[0-9]+$", covariates)]
+        }
     }
     S4Vectors::metadata(se)$deg$covariates = paste0(covariates, collapse=" + ")
     dys = deg.dysregulation(se, pathology=pathology, sample.col=sample.col, covariates=covariates, verbose=verbose)

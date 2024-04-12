@@ -6,6 +6,7 @@ def leiden(adata, key_added="leiden", prefix="C", resolution:float=1, n_iteratio
     return adata
 
 def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_bbknn:bool=True,
+                   compute_umap:bool=True, compute_leiden:bool=True,
                    leiden="overall_clust", resolution:float=1., prefix="C",
                    tsv=None, min_dist:float=0.3, compression:int=6,
                    min_n_cells_by_counts:int=2, cor_cutoff:float=0.8,
@@ -36,37 +37,38 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
             batch = None
         else:
             adata.obs[batch] = adata.obs[batch].values.astype(str)
-    with sw("Re-calculating qc metrics"):
-        sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True)
-    if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
-        with sw("Filtering peaks with cells by counts >= %d" % min_n_cells_by_counts):
-            mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
-    with sw("Running TF-IDF"):
-        ac.pp.tfidf(adata)
-    with sw("Running LSI"):
-        ac.tl.lsi(adata)
-        if not save_data:
-            del adata.X
-    filter_LSI(adata, qc_cols=qc_cols, cor_cutoff=cor_cutoff, sw=sw)
-    use_rep="X_lsi"
-    n_pcs=len(adata.uns["lsi"]["stdev"])
-    if batch is not None and use_harmony:
-        with sw("Running Harmony"):
-            use_rep_adj = "%s_harmony" % use_rep
-            try:
-                import symphonypy as sp
-                sp.pp.harmony_integrate(adata, batch, ref_basis_source=use_rep, ref_basis_adjusted=use_rep_adj, ref_basis_loadings="LSI", max_iter_harmony=max_iter_harmony, verbose=True)
-            except ImportError:
-                sc.external.pp.harmony_integrate(adata, batch, basis=use_rep, adjusted_basis=use_rep_adj, max_iter_harmony=max_iter_harmony)
-            use_rep = use_rep_adj
-    if batch is not None and use_bbknn:
-        with sw("Running BB-KNN"):
-            sc.external.pp.bbknn(adata, batch, use_rep=use_rep, n_pcs=n_pcs)
-    else:
-        with sw("Running nearest neighbors"):
-            sc.pp.neighbors(adata, use_rep=use_rep, n_pcs=n_pcs)
-    with sw("Computing UMAP"):
-        sc.tl.umap(adata, min_dist=min_dist)
+    if compute_umap:
+        with sw("Re-calculating qc metrics"):
+            sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True)
+        if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
+            with sw("Filtering peaks with cells by counts >= %d" % min_n_cells_by_counts):
+                mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
+        with sw("Running TF-IDF"):
+            ac.pp.tfidf(adata)
+        with sw("Running LSI"):
+            ac.tl.lsi(adata)
+            if not save_data:
+                del adata.X
+        filter_LSI(adata, qc_cols=qc_cols, cor_cutoff=cor_cutoff, sw=sw)
+        use_rep="X_lsi"
+        n_pcs=len(adata.uns["lsi"]["stdev"])
+        if batch is not None and use_harmony:
+            with sw("Running Harmony"):
+                use_rep_adj = "%s_harmony" % use_rep
+                try:
+                    import symphonypy as sp
+                    sp.pp.harmony_integrate(adata, batch, ref_basis_source=use_rep, ref_basis_adjusted=use_rep_adj, ref_basis_loadings="LSI", max_iter_harmony=max_iter_harmony, verbose=True)
+                except ImportError:
+                    sc.external.pp.harmony_integrate(adata, batch, basis=use_rep, adjusted_basis=use_rep_adj, max_iter_harmony=max_iter_harmony)
+                use_rep = use_rep_adj
+        if batch is not None and use_bbknn:
+            with sw("Running BB-KNN"):
+                sc.external.pp.bbknn(adata, batch, use_rep=use_rep, n_pcs=n_pcs)
+        else:
+            with sw("Running nearest neighbors"):
+                sc.pp.neighbors(adata, use_rep=use_rep, n_pcs=n_pcs)
+        with sw("Computing UMAP"):
+            sc.tl.umap(adata, min_dist=min_dist)
     with sw("Plotting"):
         if plot is not None:
             plot = np.union1d(plot, ["log1p_total_counts", "TSSEnrichment", "tss_score"])
@@ -78,9 +80,10 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
                     sc.pl.umap(adata, color=col, save="_%s.png" % col)
             elif "atac" in adata.uns and "peak_annotation" in adata.uns["atac"] and col in adata.uns["atac"]["peak_annotation"].index:
                 ac.pl.umap(adata, color=col, save="_%s.png" % col, use_raw=False)
-    with sw("Clustering cells"):
-        sc.tl.leiden(adata, key_added=leiden, resolution=resolution, n_iterations=leiden_n_iterations)
-        adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
+    if compute_leiden:
+        with sw("Clustering cells"):
+            sc.tl.leiden(adata, key_added=leiden, resolution=resolution, n_iterations=leiden_n_iterations)
+            adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
     if tsv is not None:
         with sw("Writing TSV"):
             obs = adata.obs
@@ -116,12 +119,16 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
         with sw("Writing to H5AD"):
             for col in adata.obs.columns:
                 if np.all(adata.obs[col].isna()):
-                    del adata.obs[col] ### will fail
+                    try:
+                        del adata.obs[col] ### will fail
+                    except:
+                        pass
             adata.write_h5ad(output, compression="gzip", compression_opts=compression)
     return adata
 
 
 def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=False, use_scaling:bool=False, use_harmony:bool=False, use_bbknn:bool=True, plot=None,
+                  compute_umap:bool=True, compute_leiden:bool=True,
                   leiden:str="overall_clust", resolution:float=1., min_dist:float=0.3,
                   dotplot=None, celltypist=None, tsv=None,
                   rgg_ng:int=5, rgg_tsv:str=None, max_iter_harmony:int=50,
@@ -164,37 +171,38 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     else:
         print("Data looks normalized already")
     adata.raw = adata
-    if hvg > 0:
-        with sw("Calculating %d HVG" % hvg):
-            sc.pp.highly_variable_genes(adata, n_top_genes=hvg, batch_key=batch, subset=True)
-    if batch is not None and use_combat:
-        with sw("Running ComBat"):
-            sc.pp.combat(adata, batch)
-    elif use_scaling:
-        with sw("Scaling data"):
-            sc.pp.scale(adata, max_value=10)
-    with sw("Running PCA"):
-        sc.pp.pca(adata, zero_center=not (use_scaling or use_combat), use_highly_variable=hvg>0)
-        if not save_data:
-            del adata.X
-    if batch is not None and use_harmony:
-        with sw("Running Harmony"):
-            try:
-                import symphonypy as sp
-                sp.pp.harmony_integrate(adata, batch, max_iter_harmony=max_iter_harmony, verbose=True)
-            except ImportError:
-                sc.external.pp.harmony_integrate(adata, batch, max_iter_harmony=max_iter_harmony)
-            rep = "X_pca_harmony"
-    else:
-        rep = "X_pca"
-    if batch is not None and use_bbknn:
-        with sw("Running BBKNN"):
-            sc.external.pp.bbknn(adata, batch_key=batch, use_rep=rep)
-    else:
-        with sw("Running neighbors"):
-            sc.pp.neighbors(adata, use_rep=rep)
-    with sw("Running UMAP"):
-        sc.tl.umap(adata, min_dist=min_dist)
+    if compute_umap:
+    	if hvg > 0:
+        	with sw("Calculating %d HVG" % hvg):
+                    sc.pp.highly_variable_genes(adata, n_top_genes=hvg, batch_key=batch, subset=True)
+        if batch is not None and use_combat:
+            with sw("Running ComBat"):
+                sc.pp.combat(adata, batch)
+        elif use_scaling:
+            with sw("Scaling data"):
+                sc.pp.scale(adata, max_value=10)
+        with sw("Running PCA"):
+            sc.pp.pca(adata, zero_center=not (use_scaling or use_combat), use_highly_variable=hvg>0)
+            if not save_data:
+                del adata.X
+        if batch is not None and use_harmony:
+            with sw("Running Harmony"):
+                try:
+                    import symphonypy as sp
+                    sp.pp.harmony_integrate(adata, batch, max_iter_harmony=max_iter_harmony, verbose=True)
+                except ImportError:
+                    sc.external.pp.harmony_integrate(adata, batch, max_iter_harmony=max_iter_harmony)
+                rep = "X_pca_harmony"
+        else:
+            rep = "X_pca"
+        if batch is not None and use_bbknn:
+            with sw("Running BBKNN"):
+                sc.external.pp.bbknn(adata, batch_key=batch, use_rep=rep)
+        else:
+            with sw("Running neighbors"):
+                sc.pp.neighbors(adata, use_rep=rep)
+        with sw("Running UMAP"):
+            sc.tl.umap(adata, min_dist=min_dist)
     if plot is not None:
         plot = np.union1d(["biosample", "pathology", "log1p_total_counts"], plot)
     else:
@@ -202,9 +210,10 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     for col in plot:
         if col in adata.obs.columns or col in adata.var.index:
             sc.pl.umap(adata, color=col, save="_%s.png" % col)
-    with sw("Running Leiden"):
-        sc.tl.leiden(adata, resolution=resolution, key_added=leiden, n_iterations=leiden_n_iterations)
-        adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
+    if compute_leiden:
+        with sw("Running Leiden"):
+            sc.tl.leiden(adata, resolution=resolution, key_added=leiden, n_iterations=leiden_n_iterations)
+            adata.obs[leiden] = ["%s%s" % (prefix, v) for v in adata.obs[leiden].values.astype(str)]
     if celltypist is not None:
         with sw("Annotating from CellTypist"):
             from celltypist import annotate

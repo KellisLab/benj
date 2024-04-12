@@ -11,7 +11,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
                    min_n_cells_by_counts:int=2, cor_cutoff:float=0.8,
                    max_iter_harmony:int=50,
                    leiden_n_iterations:int=-1,
-                   genome:str=None, release:str="JASPAR2022", species:int=-1,
+                   genome:str=None, release:str="JASPAR2024", species:int=-1,
                    plot=[], save_data:bool=False,
                    qc_cols=["log1p_total_counts"], sw=None, **kwargs):
     import os

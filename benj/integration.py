@@ -48,7 +48,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
         if adata.X is None:
             if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
                 with sw("Filtering peaks with cells by counts >= %d" % min_n_cells_by_counts):
-                    adata = adata[:, adata.var["n_cells_by_counts"] >= min_cells_by_counts].copy()
+                    adata = adata[:, adata.var["n_cells_by_counts"] >= min_n_cells_by_counts].copy()
             adata.var["var_means"] = adata.var["total_counts"] / adata.shape[0]
             lsi = IncrementalLSI(var=adata.var)
             ac = aggregate_collection(adata)

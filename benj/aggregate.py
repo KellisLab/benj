@@ -104,19 +104,23 @@ def aggregate_var(tbl:dict):
     return var
 
 def aggregate_load(adata, which:Union[str, List[str]]="X"):
+    """TODO: recursive option for .uns["H5AD"]"""
     import scanpy as sc
     from .timer import template as stopwatch
     sw = stopwatch()
     if isinstance(which, str):
         which = [which]
-    ac = aggregate_collection(adata, which=which)
+    ac = None 
     if "X" in which or "all" in which:
+        ac = aggregate_collection(adata, which=which)
         try:
             with sw("Loading X (%d, %d)" % adata.shape):
                 adata.X = ac.X
         except:
             pass
     if "layers" in which or "all" in which:
+        if ac is None:
+            ac = aggregate_collection(adata, which=which)
         with sw("Loading layers (%d, %d)" % adata.shape):
             adata.layers = ac.layers
     return adata

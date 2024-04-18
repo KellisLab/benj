@@ -5,6 +5,8 @@ def leiden(adata, key_added="leiden", prefix="C", resolution:float=1, n_iteratio
     adata.obs[key_added] = ["%s%s" % (prefix, v) for v in adata.obs[key_added].values.astype(str)]
     return adata
 
+## Workflow: 
+##
 def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_bbknn:bool=True,
                    compute_umap:bool=True, compute_leiden:bool=True,
                    leiden="overall_clust", resolution:float=1., prefix="C",
@@ -12,6 +14,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
                    min_n_cells_by_counts:int=2, cor_cutoff:float=0.8,
                    max_iter_harmony:int=50,
                    leiden_n_iterations:int=-1,
+                   batch_size:int=10000,
                    genome:str=None, release:str="JASPAR2024", species:int=-1,
                    plot=[], save_data:bool=False,
                    qc_cols=["log1p_total_counts"], sw=None, **kwargs):
@@ -22,6 +25,8 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
     import muon as mu
     from muon import atac as ac
     from .utils import filter_LSI
+    from .aggregate import aggregate_collection
+    from .incrementallsi import IncrementalLSI
     if sw is None:
         from .timer import template as stopwatch
         sw = stopwatch()
@@ -38,17 +43,34 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
         else:
             adata.obs[batch] = adata.obs[batch].values.astype(str)
     if compute_umap:
-        with sw("Re-calculating qc metrics"):
-            sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True)
-        if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
-            with sw("Filtering peaks with cells by counts >= %d" % min_n_cells_by_counts):
-                mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
-        with sw("Running TF-IDF"):
-            ac.pp.tfidf(adata)
-        with sw("Running LSI"):
-            ac.tl.lsi(adata)
-            if not save_data:
-                del adata.X
+        if adata.X is None:
+            if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
+                with sw("Filtering peaks with cells by counts >= %d" % min_n_cells_by_counts):
+                    mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
+            adata.var["var_means"] = adata.var["total_counts"] / adata.shape[0]
+            lsi = IncrementalLSI(var=adata.var)
+            ac = aggregate_collection(adata)
+            for batch, _ in tqdm(ac.iterate_axis(batch_size),
+                                 total=int(np.ceil(adata.shape[0] / batch_size))):
+                lsi.partial_fit(batch[:, adata.var_names].X)
+            adata.varm["LSI"] = lsi.svd.V
+            adata.uns["lsi"] = {"stdev": lsi.svd.s / np.sqrt(adata.shape[0] - 1)}
+            adata.obsm["X_lsi"] = np.zeros((adata.shape[0], 50))
+            for batch, idx in tqdm(ac.iterate_axis(batch_size),
+                                   total=int(np.ceil(adata.shape[0]/batch_size))):
+                adata.obsm["X_lsi"][idx, :] = lsi.transform(batch[:, adata.var_names].X)
+        else:
+            with sw("Re-calculating qc metrics"):
+                sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True)
+            if min_n_cells_by_counts > 0 and "n_cells_by_counts" in adata.var.columns:
+                with sw("Filtering peaks with cells by counts >= %d" % min_n_cells_by_counts):
+                    mu.pp.filter_var(adata, "n_cells_by_counts", lambda x: x >= min_n_cells_by_counts)
+            with sw("Running TF-IDF"):
+                ac.pp.tfidf(adata)
+            with sw("Running LSI"):
+                ac.tl.lsi(adata, scale_embeddings=False)
+                if not save_data:
+                    del adata.X
         filter_LSI(adata, qc_cols=qc_cols, cor_cutoff=cor_cutoff, sw=sw)
         use_rep="X_lsi"
         n_pcs=len(adata.uns["lsi"]["stdev"])

@@ -51,18 +51,20 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
                     adata = adata[:, adata.var["n_cells_by_counts"] >= min_n_cells_by_counts].copy()
             adata.var["var_means"] = adata.var["total_counts"] / adata.shape[0]
             lsi = IncrementalLSI(var=adata.var)
-            ac = aggregate_collection(adata)
+            with sw("Aggregating H5AD collection"):
+                ac = aggregate_collection(adata)
             with sw("Fitting LSI"):
                 for batch, _ in tqdm(ac.iterate_axis(batch_size),
                                      total=int(np.ceil(adata.shape[0] / batch_size))):
                     lsi.partial_fit(batch[:, adata.var_names].X)
             adata.varm["LSI"] = lsi.svd.V
             adata.uns["lsi"] = {"stdev": lsi.svd.s / np.sqrt(adata.shape[0] - 1)}
-            adata.obsm["X_lsi"] = np.zeros((adata.shape[0], 50))
+            adata.obsm["X_lsi"] = np.zeros((adata.shape[0], len(lsi.svd.s)))
             with sw("Projecting LSI"):
                 for batch, idx in tqdm(ac.iterate_axis(batch_size),
                                        total=int(np.ceil(adata.shape[0]/batch_size))):
                     adata.obsm["X_lsi"][idx, :] = lsi.transform(batch[:, adata.var_names].X)
+            del ac
         else:
             with sw("Re-calculating qc metrics"):
                 sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=True, inplace=True)
@@ -76,6 +78,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
                 if not save_data:
                     del adata.X
         filter_LSI(adata, qc_cols=qc_cols, cor_cutoff=cor_cutoff, sw=sw)
+        print(adata)
         use_rep="X_lsi"
         n_pcs=len(adata.uns["lsi"]["stdev"])
         if batch is not None and use_harmony:
@@ -181,12 +184,12 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     if "raw" in adata.layers:
         with sw("Copying .layers[\"raw\"] to .X"):
             adata.X = adata.layers["raw"].copy()
-    elif np.issubdtype(adata.X.dtype, np.integer) and save_data:
+    elif adata.X is not None and np.issubdtype(adata.X.dtype, np.integer) and save_data:
         with sw("Copying .X to .layers[\"raw\"]"):
             adata.layers["raw"] = adata.X.copy()
     if not save_data and (celltypist is not None) and target_sum != 10000:
         del adata.layers
-    if np.issubdtype(adata.X.dtype, np.integer):
+    if adata.X is not None and np.issubdtype(adata.X.dtype, np.integer):
         with sw("Normalizing data"):
             if target_sum is not None and target_sum > 0:
                 sc.pp.normalize_total(adata, target_sum=target_sum)

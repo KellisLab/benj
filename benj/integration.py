@@ -54,16 +54,16 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
             with sw("Aggregating H5AD collection"):
                 ac = aggregate_collection(adata)
             with sw("Fitting LSI"):
-                for batch, _ in tqdm(ac.iterate_axis(batch_size),
+                for bdata, _ in tqdm(ac.iterate_axis(batch_size),
                                      total=int(np.ceil(adata.shape[0] / batch_size))):
-                    lsi.partial_fit(batch[:, adata.var_names].X)
+                    lsi.partial_fit(bdata[:, adata.var_names].X)
             adata.varm["LSI"] = lsi.svd.V
             adata.uns["lsi"] = {"stdev": lsi.svd.s / np.sqrt(adata.shape[0] - 1)}
             adata.obsm["X_lsi"] = np.zeros((adata.shape[0], len(lsi.svd.s)))
             with sw("Projecting LSI"):
-                for batch, idx in tqdm(ac.iterate_axis(batch_size),
+                for bdata, idx in tqdm(ac.iterate_axis(batch_size),
                                        total=int(np.ceil(adata.shape[0]/batch_size))):
-                    adata.obsm["X_lsi"][idx, :] = lsi.transform(batch[:, adata.var_names].X)
+                    adata.obsm["X_lsi"][idx, :] = lsi.transform(bdata[:, adata.var_names].X)
             del ac
         else:
             with sw("Re-calculating qc metrics"):

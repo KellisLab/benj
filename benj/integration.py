@@ -131,17 +131,18 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
         with sw("Adding GC bias"):
             import pychromvar as pc
             pc.add_gc_bias(adata)
-        with sw("Add background peaks"):
-            import pychromvar as pc
-            pc.get_bg_peaks(adata)
-        with sw("Fetching motifs"):
-            from pyjaspar import jaspardb
-            jargs = {"collection": "CORE", "tax_group": ["vertebrates"], "species": species}
-            jdb_obj = jaspardb(release=release)
-            motifs = jdb_obj.fetch_motifs(**jargs)
-        with sw("Matching motifs"):
-            import pychromvar as pc
-            pc.match_motif(adata, motifs=motifs)
+        if adata.X is not None:
+            with sw("Add background peaks"):
+                import pychromvar as pc
+                pc.get_bg_peaks(adata)
+            with sw("Fetching motifs"):
+                from pyjaspar import jaspardb
+                jargs = {"collection": "CORE", "tax_group": ["vertebrates"], "species": species}
+                jdb_obj = jaspardb(release=release)
+                motifs = jdb_obj.fetch_motifs(**jargs)
+            with sw("Matching motifs"):
+                import pychromvar as pc
+                pc.match_motif(adata, motifs=motifs)
     if output is not None:
         if not save_data:
             del adata.X

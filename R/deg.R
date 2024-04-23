@@ -111,7 +111,8 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     design = model.matrix(as.formula(paste0("~", paste0(covariates, collapse="+"))), data=cd) ### No pathology!
     design = deg.filter.design(design)
     design = design[,-grep("^X.Intercept.$", colnames(design))] ### stopgap
-    ## print(tibble::as_tibble(design), n=nrow(design))
+  ## print(tibble::as_tibble(design), n=nrow(design))
+  tryCatch({
     X1 = limma::removeBatchEffect(X, covariates=design)
     if (is.numeric(cd[[pathology]]) | is.integer(cd[[pathology]])) {
         ## TODO take PC1 and cor?
@@ -127,6 +128,7 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
         }
     }
     return(dnum)
+    }, error=function(e) { return(NA) })
 }
 #' Prepare SummarizedExperiment object for DEG calling.
 #' @export

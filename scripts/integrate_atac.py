@@ -30,6 +30,7 @@ if __name__ == "__main__":
     ap.add_argument("--no-compute-umap", dest="compute_umap", action="store_false")
     ap.add_argument("--compute-leiden", dest="compute_leiden", action="store_true")
     ap.add_argument("--no-compute-leiden", dest="compute_leiden", action="store_false")
+    ap.add_argument("--batch-size", type=int, default=10000)
     ap.set_defaults(use_harmony=False, use_bbknn=True, compute_umap=True, compute_leiden=True)
     args = benj.parse_args(ap, ["log", "scanpy", "anndata"])
     adata = benj.parse_anndata(**args)

@@ -7,7 +7,7 @@ def leiden(adata, key_added="leiden", prefix="C", resolution:float=1, n_iteratio
 
 ## Workflow: 
 ##
-def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_bbknn:bool=True,
+def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_bbknn:bool=True, use_mahalanobis:bool=True,
                    compute_umap:bool=True, compute_leiden:bool=True,
                    leiden="overall_clust", resolution:float=1., prefix="C",
                    tsv=None, min_dist:float=0.3, compression:int=6,
@@ -81,6 +81,13 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
         print(adata)
         use_rep="X_lsi"
         n_pcs=len(adata.uns["lsi"]["stdev"])
+        if use_mahalanobis:
+            use_rep_mod = "%s_mod" % use_rep
+            X = adata.obsm[use_rep][:, :n_pcs]
+            C = np.cov(X.T)
+            vinv = np.linalg.inv(C + 0.01 * np.eye(C.shape[0]))
+            adata.obsm[use_rep_mod] = (X - X.mean(0)) @ np.linalg.cholesky(vinv).T
+            use_rep = use_rep_mod
         if batch is not None and use_harmony:
             with sw("Running Harmony"):
                 use_rep_adj = "%s_harmony" % use_rep

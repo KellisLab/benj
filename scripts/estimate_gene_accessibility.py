@@ -21,6 +21,7 @@ def estimate_and_rank(adata, gtf:str,
                       tss:str=None,
                       gene:bool=True,
                       save_raw:bool=False,
+                      use_scrublet:bool=True,
                       **kwargs):
     import os
     import scanpy as sc
@@ -32,7 +33,7 @@ def estimate_and_rank(adata, gtf:str,
                                      min_downstream=min_downstream, max_downstream=max_downstream,
                                      gene_upstream=gene_upstream, gene_downstream=gene_downstream,
                                      target_sum=target_sum, gene_scale_factor=gene_scale_factor,
-                                     layer=layer, log1p=log1p, distal=distal, save_raw=save_raw)
+                                     layer=layer, log1p=log1p, distal=distal, save_raw=save_raw or use_scrublet)
     else:
         from benj.count_atac import read_peaks
         feature_df = read_peaks(gtf).rename({"seqnames": "Chromosome", "start": "Start", "end": "End"}, axis=1)
@@ -41,7 +42,7 @@ def estimate_and_rank(adata, gtf:str,
                                         min_downstream=min_downstream, max_downstream=max_downstream,
                                         gene_upstream=gene_upstream, gene_downstream=gene_downstream,
                                         target_sum=target_sum, gene_scale_factor=gene_scale_factor,
-                                        layer=layer, log1p=log1p, distal=distal, save_raw=save_raw)
+                                        layer=layer, log1p=log1p, distal=distal, save_raw=save_raw or use_scrublet)
     if tss is not None and os.path.exists(tss):
         add_interval(gdata.var, tss)
     if celltypist is not None:
@@ -52,6 +53,14 @@ def estimate_and_rank(adata, gtf:str,
             ct = annotate(gdata, majority_voting=True, model=celltypist)
         for cn in ct.predicted_labels.columns:
             gdata.obs[cn] = ct.predicted_labels[cn]
+    if use_scrublet and "raw" in gdata.layers:
+        adata = anndata.AnnData(gdata.layers["raw"], obs=gdata.obs, var=gdata.var)
+        sc.pp.scrublet(adata)
+        gdata.uns["scrublet"] = adata.uns.get("scrublet")
+        gdata.obs = adata.obs
+        del adata
+        if not save_raw:
+            del gdata.layers["raw"]
     if plot is None:
         plot = []
     for item in plot:

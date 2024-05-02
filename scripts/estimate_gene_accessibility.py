@@ -54,6 +54,7 @@ def estimate_and_rank(adata, gtf:str,
         for cn in ct.predicted_labels.columns:
             gdata.obs[cn] = ct.predicted_labels[cn]
     if use_scrublet and "raw" in gdata.layers:
+        import anndata
         adata = anndata.AnnData(gdata.layers["raw"], obs=gdata.obs, var=gdata.var)
         sc.pp.scrublet(adata)
         gdata.uns["scrublet"] = adata.uns.get("scrublet")

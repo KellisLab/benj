@@ -56,7 +56,10 @@ def estimate_and_rank(adata, gtf:str,
     if use_scrublet and "raw" in gdata.layers:
         import anndata
         adata = anndata.AnnData(gdata.layers["raw"], obs=gdata.obs, var=gdata.var)
-        sc.pp.scrublet(adata)
+        try:
+            sc.pp.scrublet(adata)
+        except AttributeError:
+            sc.external.pp.scrublet(adata)
         gdata.uns["scrublet"] = adata.uns.get("scrublet")
         gdata.obs = adata.obs
         del adata

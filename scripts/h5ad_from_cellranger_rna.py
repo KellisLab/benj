@@ -80,12 +80,17 @@ def run(h5, output, sample:str=None, compression:int=9, tss:str=None, gene_info:
     if use_scrublet and adata.shape[0] > min_cells_per_sample:
         with sw("Running Scrublet"):
             try:
-                sc.external.pp.scrublet(adata, n_prin_comps=min(min(adata.shape[0], adata.shape[1])-1, 30))
+                from scanpy.external.pp import scrublet
+            except ImportError:
+                from scanpy.pp import scrublet
+                pass
+            try:
+                scrublet(adata, n_prin_comps=min(min(adata.shape[0], adata.shape[1])-1, 30))
             except ValueError:
                 try:
-                    sc.external.pp.scrublet(adata, n_prin_comps=15)
+                    scrublet(adata, n_prin_comps=15)
                 except ValueError:
-                    sc.external.pp.scrublet(adata, n_prin_comps=5)
+                    scrublet(adata, n_prin_comps=5)
                     pass
                 pass
             if "predicted_doublet" in adata.obs.columns:

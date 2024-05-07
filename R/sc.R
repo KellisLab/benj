@@ -237,7 +237,9 @@ se_unnormalize <- function(se, assay=NULL, unnormalized="raw", eps=0.01, total_c
 #' @param se.list List of SummarizedExperiment objects
 #' @export
 se_concat <- function(se.list) {
+    cat(paste0("Concatenating ", length(se.list), " objects\n"))
     se.list = Filter(function(x) { S4Vectors::ncol(x) > 0 }, se.list)
+    cat(paste0("Concatenating ", length(se.list), " nonzero objects\n"))
     rowDatas = lapply(se.list, SummarizedExperiment::rowData)
     colDatas = lapply(se.list, SummarizedExperiment::colData)
     stopifnot(do.call(all.equal, lapply(rowDatas, rownames)))

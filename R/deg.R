@@ -79,6 +79,7 @@ deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes_
         cat("Filtering", length(outliers), "outlier(s):", outliers, "\n")
         se = se[,setdiff(colnames(se), outliers)]
     }
+    cat("Using ", ncol(se), " samples\n")
     return(se)
 }
 
@@ -146,6 +147,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     stopifnot("counts" %in% names(SummarizedExperiment::assays(se)))
     colnames(SummarizedExperiment::rowData(se))[colnames(SummarizedExperiment::rowData(se))=="strand"] = "Strand"
     pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
+    cat("Pseudobulk: ", ncol(pb), " samples\n")
     stopifnot(S4Vectors::ncol(pb) <= 1000) ### we can't have uber-large sample numbers
     if (any(SummarizedExperiment::colData(pb)$total_counts < min.total.counts.per.sample)) {
         cd = SummarizedExperiment::colData(pb)

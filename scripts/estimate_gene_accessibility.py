@@ -60,6 +60,7 @@ def estimate_and_rank(adata, gtf:str,
             sc.pp.scrublet(adata)
         except AttributeError:
             sc.external.pp.scrublet(adata)
+            pass
         gdata.uns["scrublet"] = adata.uns.get("scrublet")
         gdata.obs = adata.obs
         del adata

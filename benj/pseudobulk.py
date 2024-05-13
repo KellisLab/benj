@@ -1,6 +1,8 @@
 
 def pseudobulk_valid_columns(obs, onehot):
+        import numpy as np
         import pandas as pd
+        from tqdm.auto import tqdm
         if isinstance(onehot, pd.DataFrame):
                 onehot = onehot.reindex(obs.index, fill_value=0)
         else:

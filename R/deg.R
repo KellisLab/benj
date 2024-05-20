@@ -122,14 +122,19 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
   } else {
     require(glmnet)
     Y = as.integer(as.factor(cd[[pathology]])) > 1
+    weights = numeric(length(Y))
+    f0 = rep(1 - sum(Y == 0) / nrow(Y), sum(Y == 0))
+    f1 = rep(1 - sum(Y == 1) / nrow(Y), sum(Y == 1))
+    weights[Y == 0] = f0
+    weights[Y == 1] = f1
     cat("Y:\n")
     print(table(Y))
     cat("X:\n")
     print(str(X))
-    cat("NA in X:\n")
-    print(colSums(is.na(X)))
-    ridge_cv = cv.glmnet(y=Y, x=X, alpha=0, family="binomial")
-    ridge = glmnet(y=Y, x=X, alpha=0, lambda=ridge_cv$lambda.min, family="binomial")
+    cat("weights:\n")
+    prin(table(weights))
+    ridge_cv = cv.glmnet(y=Y, x=X, alpha=0, family="binomial", weights=weights)
+    ridge = glmnet(y=Y, x=X, alpha=0, lambda=ridge_cv$lambda.min, family="binomial", weights=weights)
     dnum = cor(predict(ridge), Y)
   }
   return(dnum)

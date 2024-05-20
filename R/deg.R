@@ -104,7 +104,7 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
         rd = SingleCellExperiment::reducedDims(sce)[[reduction]]
         if (!is.null(rd)) {
           sce.cd = as.data.frame(SummarizedExperiment::colData(sce))
-          X = t(make_average(sce.cd[[sample.col]], u=rownames(cd))) %*% t(rd)
+          X = t(make_average(sce.cd[[sample.col]], u=rownames(cd))) %*% rd
           X = cbind(X, design)
         } else {
           pb = se_tmm(pb, log=TRUE)

@@ -133,8 +133,8 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     print(table(weights))
     ridge_cv = cv.glmnet(y=Y, x=X, alpha=0, family="binomial", weights=weights)
     ridge = glmnet(y=Y, x=X, alpha=0, lambda=ridge_cv$lambda.min, family="binomial", weights=weights)
-    print(predict(ridge))
-    dnum = cor(predict(ridge), Y)
+    print(predict(ridge, X))
+    dnum = cor(predict(ridge, X), Y)
   }
   return(dnum)
 }

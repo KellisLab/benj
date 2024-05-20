@@ -120,22 +120,8 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     ## TODO take PC1 and cor?
     dnum = 0
   } else {
-    require(glmnet)
-    Y = as.integer(as.factor(cd[[pathology]])) > 1
-    weights = numeric(length(Y))
-    weights[Y == 0] = 1 - sum(Y == 0) / length(Y)
-    weights[Y == 1] = 1 - sum(Y == 1) / length(Y)
-    ridge_cv = cv.glmnet(y=Y, x=X, alpha=0, family="binomial", weights=weights)
-    ridge = glmnet(y=Y, x=X, alpha=0, lambda=ridge_cv$lambda.min, family="binomial", weights=weights)
-    print(predict(ridge, X, type="response"))
-    predY = predict(ridge, X, type="response") > 0.5
-    print(table(Y, predY))
-    TP = sum((predY > 0) & (Y > 0))
-    TN = sum((predY == 0) & (Y == 0))
-    FP = sum((predY > 0) & (Y == 0))
-    FN = sum((predY == 0) & (Y > 0))
-    MCC = (TP * TN - FP * FN) / sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
-    dnum = MCC
+    AX = t(X) %*% make_average(cd[[pathology]])
+    dnum = mean(cor(AX[,1], AX[,2]))
   }
   return(dnum)
 }

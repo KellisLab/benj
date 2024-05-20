@@ -91,18 +91,6 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     ### Compute cell type pseudobulk
     pb = calculate_qc_metrics(se_make_pseudobulk(sce, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     cd = SummarizedExperiment::colData(pb)
-    if (attr(pb, "class") == "SingleCellExperiment") {
-        rd = SingleCellExperiment::reducedDims(sce)[[reduction]]
-        if (!is.null(rd)) {
-            X = t(rd)
-        } else {
-            pb = se_tmm(pb, log=TRUE)
-            X = SummarizedExperiment::assays(pb)$TMM
-        }
-    } else {
-        pb = se_tmm(pb, log=TRUE)
-        X = SummarizedExperiment::assays(pb)$TMM
-    }
     covariates = covariates[covariates %in% names(SummarizedExperiment::colData(pb))]
     if (verbose) {
         cat("Design matrix for dysregulation score:\n")
@@ -112,24 +100,33 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     design = model.matrix(as.formula(paste0("~", paste0(covariates, collapse="+"))), data=cd) ### No pathology!
     design = deg.filter.design(design)
     design = design[,-grep("^X.Intercept.$", colnames(design))] ### stopgap
-  ## print(tibble::as_tibble(design), n=nrow(design))
-  tryCatch({
-    X1 = limma::removeBatchEffect(X, covariates=design)
-    if (is.numeric(cd[[pathology]]) | is.integer(cd[[pathology]])) {
-        ## TODO take PC1 and cor?
-        dnum = 0
-    } else {
-        MP = make_average(cd[[pathology]])
-        D = X1 %*% MP
-        if (method=="euclidean") {
-            dnum = sum(dist(t(D)))
+    if (attr(pb, "class") == "SingleCellExperiment") {
+        rd = SingleCellExperiment::reducedDims(sce)[[reduction]]
+        if (!is.null(rd)) {
+          sce.cd = as.data.frame(SummarizedExperiment::colData(sce))
+          X = make_average(sce.cd[[sample.col]], levels=rownames(cd)) %*% t(rd)
+          X = cbind(X, design)
         } else {
-            C = cor(D, method=method)
-            dnum = 1 - mean(C[upper.tri(C)])
+          pb = se_tmm(pb, log=TRUE)
+          X = SummarizedExperiment::assays(pb)$TMM
+          X = limma::removeBatchEffect(X, covariates=design)
         }
+    } else {
+      pb = se_tmm(pb, log=TRUE)
+      X = SummarizedExperiment::assays(pb)$TMM
+      X = limma::removeBatchEffect(X, covariates=design)
     }
-    return(dnum)
-    }, error=function(e) { return(NA) })
+  if (is.numeric(cd[[pathology]]) | is.integer(cd[[pathology]])) {
+    ## TODO take PC1 and cor?
+    dnum = 0
+  } else {
+    require(glmnet)
+    Y = as.integer(as.factor(cd[[pathology]])) == 1
+    ridge_cv = cv.glmnet(Y, X, alpha=0, family="binomial")
+    ridge = glmnet(Y, X, alpha=0, lambda=ridge_cv$lambda.min, family="binomial")
+    dnum = cor(predict(ridge), Y)
+  }
+  return(dnum)
 }
 #' Prepare SummarizedExperiment object for DEG calling.
 #' @export

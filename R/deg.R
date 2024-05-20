@@ -123,10 +123,8 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     require(glmnet)
     Y = as.integer(as.factor(cd[[pathology]])) > 1
     weights = numeric(length(Y))
-    f0 = rep(1 - sum(Y == 0) / nrow(Y), sum(Y == 0))
-    f1 = rep(1 - sum(Y == 1) / nrow(Y), sum(Y == 1))
-    weights[Y == 0] = f0
-    weights[Y == 1] = f1
+    weights[Y == 0] = 1 - sum(Y == 0) / length(Y)
+    weights[Y == 1] = 1 - sum(Y == 1) / length(Y)
     cat("Y:\n")
     print(table(Y))
     cat("X:\n")

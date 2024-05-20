@@ -123,7 +123,7 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     require(glmnet)
     Y = as.integer(as.factor(cd[[pathology]])) > 1
     cat("Y:\n")
-    print(str(Y))
+    print(table(Y))
     cat("X:\n")
     print(str(X))
     cat("NA in X:\n")

@@ -105,7 +105,7 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
         if (!is.null(rd)) {
           sce.cd = as.data.frame(SummarizedExperiment::colData(sce))
           X = t(make_average(sce.cd[[sample.col]], u=rownames(cd))) %*% rd
-          X = cbind(X, design)
+          X = t(cbind(X, design))
         } else {
           pb = se_tmm(pb, log=TRUE)
           X = SummarizedExperiment::assays(pb)$TMM
@@ -120,8 +120,8 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
     ## TODO take PC1 and cor?
     dnum = 0
   } else {
-    AX = t(X) %*% make_average(cd[[pathology]])
-    dnum = mean(cor(AX[,1], AX[,2]))
+    AX = X %*% make_average(cd[[pathology]])
+    dnum = median(cor(AX[,1], AX[,-1]))
   }
   return(dnum)
 }

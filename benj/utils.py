@@ -4,7 +4,6 @@ def pg(adata, color_map="Reds"):
     import scanpy as sc
     return lambda x, **kwargs: sc.pl.umap(adata, color=x, color_map=color_map, save="_%s.png" % x, **kwargs)
 
-
 def read_elems(path: str, elems: Union[str, List[str]], retry:int=2) -> Union[Dict[str, any], any]:
     import h5py
     import anndata.experimental
@@ -42,18 +41,24 @@ def filter_LSI(adata, qc_cols, cor_cutoff:float=0.8, sw=None):
             adata.varm["LSI"] = adata.varm["LSI"][:, cor_flag].astype(np.float32)
             adata.uns["lsi"]["stdev"] = adata.uns["lsi"]["stdev"][cor_flag]
 
-def convert_X(X, dtype_tbl=None):
+def convert_X(X, dtype_tbl=None, signed_only:bool=True):
     import numpy as np
     import scipy.sparse
     import gc
     if dtype_tbl is None:
-        dtype_tbl = {np.iinfo(np.int8).max: np.int8,
-                     np.iinfo(np.uint8).max: np.uint8,
-                     np.iinfo(np.int16).max: np.int16,
-                     np.iinfo(np.uint16).max: np.uint16,
-                     np.iinfo(np.int32).max: np.int32,
-                     np.iinfo(np.uint32).max: np.uint32,
-                     np.iinfo(np.int64).max: np.int64}
+        if signed_only:
+            dtype_tbl = {np.iinfo(np.int8).max: np.int8,
+                         np.iinfo(np.int16).max: np.int16,
+                         np.iinfo(np.int32).max: np.int32,
+                         np.iinfo(np.int64).max: np.int64}
+        else:
+            dtype_tbl = {np.iinfo(np.int8).max: np.int8,
+                         np.iinfo(np.uint8).max: np.uint8,
+                         np.iinfo(np.int16).max: np.int16,
+                         np.iinfo(np.uint16).max: np.uint16,
+                         np.iinfo(np.int32).max: np.int32,
+                         np.iinfo(np.uint32).max: np.uint32,
+                         np.iinfo(np.int64).max: np.int64}
     if scipy.sparse.issparse(X):
         X.sum_duplicates()
         D = X.data

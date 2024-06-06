@@ -251,11 +251,15 @@ se_concat <- function(se.list) {
     })
     good.col.cols = Reduce(intersect, lapply(colDatas, colnames))
     se = do.call(SummarizedExperiment::cbind, lapply(se.list, function(se) {
-        rd = as.data.frame(SummarizedExperiment::rowData(se))
+      rd = as.data.frame(SummarizedExperiment::rowData(se))
+      if (sum(good.row.cols, na.rm=TRUE) > 0) { 
         SummarizedExperiment::rowData(se) = rd[,names(which(good.row.cols)),drop=FALSE]
-        cd = as.data.frame(SummarizedExperiment::colData(se))
+      }
+      cd = as.data.frame(SummarizedExperiment::colData(se))
+      if (sum(good.col.cols, na.rm=TRUE) > 0) {
         SummarizedExperiment::colData(se) = S4Vectors::DataFrame(cd[,good.col.cols,drop=FALSE])
-        return(se)
+      }
+      return(se)
     }))
     S4Vectors::metadata(se)$h5ad = sapply(metaDatas, function(md) {
         md$h5ad

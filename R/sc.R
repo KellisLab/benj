@@ -244,12 +244,12 @@ se_concat <- function(se.list) {
     colDatas = lapply(se.list, SummarizedExperiment::colData)
     stopifnot(do.call(all.equal, lapply(rowDatas, rownames)))
     metaDatas = lapply(se.list, S4Vectors::metadata)
-    good.row.cols = sapply(setNames(colnames(rowDatas[[1]]), colnames(rowDatas[[1]])), function(cn) {
+    good.row.cols = as.logical(sapply(setNames(colnames(rowDatas[[1]]), colnames(rowDatas[[1]])), function(cn) {
         all(sapply(rowDatas, function(rd) {
             identical(rd[[cn]], rowDatas[[1]][[cn]])
         }))
-    })
-    good.col.cols = Reduce(intersect, lapply(colDatas, colnames))
+    }))
+    good.col.cols = as.logical(Reduce(intersect, lapply(colDatas, colnames)))
     se = do.call(SummarizedExperiment::cbind, lapply(se.list, function(se) {
       rd = as.data.frame(SummarizedExperiment::rowData(se))
       if (sum(good.row.cols, na.rm=TRUE) > 0) { 

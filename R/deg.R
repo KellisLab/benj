@@ -156,7 +156,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
 ### Get minimum samples for CPM threshold to pass
         cpm.n = min(table(SummarizedExperiment::colData(pb)[[pathology]]))
     ### Filter genes above a cpm cutoff
-        cpm.flag = edgeR::cpm(SummarizedExperiment::assays(pb)$counts) > cpm.cutoff
+        cpm.flag = edgeR::cpm(SummarizedExperiment::assays(pb)$counts) >= cpm.cutoff
     ### Then extract across number of samples
         cpm.flag = rownames(cpm.flag)[Matrix::rowSums(cpm.flag) >= cpm.n]
     }

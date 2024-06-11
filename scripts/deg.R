@@ -42,6 +42,7 @@ get_args <- function(args) {
     params$min.total.counts.per.sample = 100
     params$ncores = as.integer(Sys.getenv("OMP_NUM_THREADS", getOption("mc.cores", 2)))
     params$genes = NULL
+    params$only_ruv = TRUE
     i = 1
     help = function() {
         cat("deg.R [options]
@@ -64,6 +65,8 @@ options:
   -g, --genes File containing genes to use, one per line
   --cpm-cutoff Counts per million cutoff for filtering genes.
   --min-total-counts Number of total counts required per cell
+  --keep-covariates After RUV, keep the original covariates (not enabled by default)
+  --only-ruv After RUV, remove original covariates (enabled by default)
   --iqr-factor Number of IQR above 75% away from outlier covariates to be a bad sample.
   --outlier-covariates Covariates (in colData/.obs) to be used as covariates for pseudobulk outlier detection. If not present, or not calculated by benj::calculate_qc_metrics, will be thrown out.
 ")
@@ -114,6 +117,14 @@ options:
         } else if (arg == "--case") {
             i = i + 1
             params$case = args[[i]]
+            i = i + 1
+        } else if (arg == "--keep-covariates") {
+            i = i + 1
+            params$only_ruv = FALSE
+            i = i + 1
+        } else if (arg == "--only-ruv") {
+            i = i + 1
+            params$only_ruv = TRUE
             i = i + 1
         } else if (arg == "--control") {
             i = i + 1
@@ -215,4 +226,5 @@ adata = benj::deg(adata,
                   verbose=params$verbose,
                   min.total.counts.per.sample=params$min.total.counts.per.sample,
                   IQR.factor=params$IQR.factor,
+                  only_ruv=params$only_ruv,
                   outlier.covariates=params$outlier.covariates)

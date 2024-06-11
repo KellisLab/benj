@@ -216,7 +216,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
 deg <- function(se, pathology, case, control, covariates,
                 method, output=NULL,
                 sample.col="Sample", cpm.cutoff=10,
-                filter_only_case_control=TRUE, NRUV=0,
+                filter_only_case_control=TRUE, NRUV=0, only_ruv=TRUE,
                 min.total.counts.per.sample=100, IQR.factor=1.5,
                 outlier.covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"),
                 verbose=TRUE,
@@ -237,7 +237,7 @@ deg <- function(se, pathology, case, control, covariates,
         se = deg.ruvseq(se, pathology=pathology, covariates=covariates, sample.col=sample.col, NRUV=NRUV, verbose=verbose)
         covariates = c(covariates, paste0("RUV_", 1:NRUV))
         covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
-        if (length(covariates) > 0) {
+        if ((length(covariates) > 0) && only_ruv) {
             covariates = covariates[grep("^RUV_[0-9]+$", covariates)]
         }
     }

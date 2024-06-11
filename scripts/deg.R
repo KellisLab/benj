@@ -121,11 +121,9 @@ options:
         } else if (arg == "--keep-covariates") {
             i = i + 1
             params$only_ruv = FALSE
-            i = i + 1
         } else if (arg == "--only-ruv") {
             i = i + 1
             params$only_ruv = TRUE
-            i = i + 1
         } else if (arg == "--control") {
             i = i + 1
             params$control = args[[i]]

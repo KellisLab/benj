@@ -476,7 +476,7 @@ deg.deseq2 <- function(se,
                        case,
                        control,
                        sample.col,
-                       covariates=NULL,
+                       covariates=NULL, independentFiltering=TRUE,
                        prefix="DESeq2") {
     pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     X = SummarizedExperiment::assays(pb)$counts
@@ -492,7 +492,7 @@ deg.deseq2 <- function(se,
                       colData=cd,
                       design=design)
     out = DESeq2::DESeq(dds)
-    df = DESeq2::results(out, list(make.names(paste0(pathology, case))), independentFiltering=FALSE)
+    df = DESeq2::results(out, list(make.names(paste0(pathology, case))), independentFiltering=independentFiltering)
     rd = as.data.frame(SummarizedExperiment::rowData(se))
     rd[[paste0(prefix, "_log2FC")]] = NA
     rd[rownames(df), paste0(prefix, "_log2FC")] = df$log2FoldChange

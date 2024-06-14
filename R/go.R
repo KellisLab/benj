@@ -29,6 +29,94 @@ enrichGO <- function(gene, OrgDb, keyType="SYMBOL", ont="ALL", minGSSize=10, max
     return(.proc.go.result(ego))
 }
 
+#' @export
+enrichKEGG <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, universe=NULL, ...) {
+  if (keyType != "kegg") {
+    gene = AnnotationDbi::mapIds(OrgDb, keys=gene, keytype=keyType, column="ENTREZID")
+    if (!is.null(universe)) {
+      universe = Reduce(c, AnnotationDbi::mapIds(OrgDb, keys=universe, keytype=keyType, column="ENTREZID", multiVals=list))
+    }
+    keyType = "ncbi-geneid"
+  }
+  if (is.null(universe)) {
+    res = clusterProfiler::enrichKEGG(gene, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
+  } else {
+    res = clusterProfiler::enrichKEGG(gene, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, universe=universe, ...)
+  }
+  return(.proc.go.result(res))
+}
+
+#' @export
+enrichMKEGG <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, universe=NULL, ...) {
+  if (keyType != "kegg") {
+    gene = AnnotationDbi::mapIds(OrgDb, keys=gene, keytype=keyType, column="ENTREZID")
+    if (!is.null(universe)) {
+      universe = Reduce(c, AnnotationDbi::mapIds(OrgDb, keys=universe, keytype=keyType, column="ENTREZID", multiVals=list))
+    }
+    keyType = "ncbi-geneid"
+  }
+  print(str(gene))
+  if (is.null(universe)) {
+    res = clusterProfiler::enrichMKEGG(as.integer(gene), keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
+  } else {
+    res = clusterProfiler::enrichMKEGG(gene, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, universe=universe, ...)
+  }
+  return(.proc.go.result(res))
+}
+
+#' @export
+enrichWP <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, universe=NULL, ...) {
+  mf = S4Vectors::metadata(OrgDb)
+  mf = setNames(mf$value, mf$name)
+  organism = mf[["ORGANISM"]]
+  if (keyType != "ENTREZID") {
+      gene = AnnotationDbi::mapIds(OrgDb, keys=gene, keytype=keyType, column="ENTREZID")
+      if (!is.null(universe)) {
+        universe = Reduce(c, AnnotationDbi::mapIds(OrgDb, keys=universe, keytype=keyType, column="ENTREZID", multiVals=list))
+      }
+  }
+  if (is.null(universe)) {
+    res = clusterProfiler::enrichWP(gene, organism, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
+  } else {
+    res = clusterProfiler::enrichWP(gene, organism, minGSSize=minGSSize, maxGSSize=maxGSSize, universe=universe, ...)
+  }
+  return(.proc.go.result(res))
+}
+
+#' @export
+enrichReactome <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, universe=NULL, ...) {
+  mf = S4Vectors::metadata(OrgDb)
+  mf = setNames(mf$value, mf$name)
+  species = tolower(mf[["SPECIES"]])
+  if (keyType != "ENTREZID") {
+      gene = AnnotationDbi::mapIds(OrgDb, keys=gene, keytype=keyType, column="ENTREZID")
+      if (!is.null(universe)) {
+        universe = Reduce(c, AnnotationDbi::mapIds(OrgDb, keys=universe, keytype=keyType, column="ENTREZID", multiVals=list))
+      }
+  }
+  if (is.null(universe)) {
+    res = ReactomePA::enrichPathway(gene, species, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
+  } else {
+    res = ReactomePA::enrichPathway(gene, species, minGSSize=minGSSize, maxGSSize=maxGSSize, universe=universe, ...)
+  }
+  return(.proc.go.result(res))
+}
+#' 
+enrichDO <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, universe=NULL, ...) {
+  if (keyType != "ENTREZID") {
+    gene = AnnotationDbi::mapIds(OrgDb, keys=gene, keytype=keyType, column="ENTREZID")
+    if (!is.null(universe)) {
+      universe = Reduce(c, AnnotationDbi::mapIds(OrgDb, keys=universe, keytype=keyType, column="ENTREZID", multiVals=list))
+    }
+  }
+  if (is.null(universe)) {
+    res = DOSE::enrichDO(gene, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
+  } else {
+    res = DOSE::enrichDO(gene, minGSSize=minGSSize, maxGSSize=maxGSSize, universe=universe, ...)
+  }
+  return(.proc.go.result(res))
+}
+
 
 #' Run clusterProfiler::gseGO with better options and defaults
 #'
@@ -61,6 +149,16 @@ gseGO <- function(geneList, ranks, OrgDb, filter=NULL, keyType="SYMBOL", ont="AL
     return(.proc.go.result(ego))
 }
 
+gseKEGG <- function(geneList, ranks, OrgDb, filter=NULL, keyType="SYMBOL", minGSSize=10, maxGSSize=100, universe=NULL, ...) {
+    if (keyType != "kegg") {
+    gene = AnnotationDbi::mapIds(OrgDb, keys=gene, keytype=keyType, column="ENTREZID")
+    if (!is.null(universe)) {
+      universe = Reduce(c, AnnotationDbi::mapIds(OrgDb, keys=universe, keytype=keyType, column="ENTREZID", multiVals=list))
+    }
+    keyType = "ncbi-geneid"
+  }
+
+}
 goMatrix <- function() {
     L = as.list(org.Hs.eg.db::org.Hs.egGO2ALLEG)
     X = lapply(L, function(gl) {

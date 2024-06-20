@@ -127,7 +127,7 @@ saveGGplot <- function(gp, pltprefix, w=7, h=7, dpi=600) {
 #' @export
 ht_text <- function(mat, format="%.2f", fontsize=4, ...) {
   return(function(j, i, x, y, width, height, fill) {
-    grid::grid.text(sprintf(format, mat[i, j]), x, y, gp=gpar(fontsize=fontsize, ...))
+    grid::grid.text(sprintf(format, mat[i, j]), x, y, gp=grid::gpar(fontsize=fontsize, ...))
   })
 }
 #' Draw triangles in heatmap

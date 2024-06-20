@@ -66,7 +66,7 @@ htSortMatrix <- function(M, method="euclidean", ratio=0.5, cutoff=0.25, sort=c(1
 #' @export
 autoHeatmap <- function(M, ux=1.5, sort=c(1, 2), method="euclidean",
                         dimname_fontsize=3.5, ratio=0.5, cutoff=0.25,
-                        aspect_ratio=1, cell_text=NULL, cell_text_fontsize=10,
+                        aspect_ratio=1, 
                         cluster_rows=FALSE, cluster_columns=FALSE, ...) {
     if (is.logical(cluster_rows)) {
       cluster_rows = cluster_rows || -1 %in% sort
@@ -75,29 +75,14 @@ autoHeatmap <- function(M, ux=1.5, sort=c(1, 2), method="euclidean",
       cluster_columns = cluster_columns || -2 %in% sort
     }
     M = htSortMatrix(M, method=method, ratio=ratio, cutoff=cutoff, sort=sort)
-    cell_fun=NULL
-    if (!is.null(cell_text)) {
-      cell_fun = function(j, i, x, y, width, height, fill) {
-        grid.text(sprintf(cell_text, M[i, j]), x, y, gp = gpar(fontsize = cell_text_fontsize)) }
-      return(ComplexHeatmap::Heatmap(
-                               M, cluster_rows=cluster_rows, cluster_columns=cluster_columns,
-                               width = ncol(M)*grid::unit(aspect_ratio * ux, "mm"),
-                               height = nrow(M)*grid::unit(ux, "mm"),
-                               row_names_gp=grid::gpar(fontsize=dimname_fontsize),
-                               column_names_gp=grid::gpar(fontsize=dimname_fontsize),
-                               cell_fun=cell_fun,
-                               ...
-                             ))
-    } else {
-      return(ComplexHeatmap::Heatmap(
-                               M, cluster_rows=cluster_rows, cluster_columns=cluster_columns,
-                               width = ncol(M)*grid::unit(aspect_ratio * ux, "mm"),
-                               height = nrow(M)*grid::unit(ux, "mm"),
-                               row_names_gp=grid::gpar(fontsize=dimname_fontsize),
-                               column_names_gp=grid::gpar(fontsize=dimname_fontsize),
-                               ...
-                             ))
-    }
+    return(ComplexHeatmap::Heatmap(
+                             M, cluster_rows=cluster_rows, cluster_columns=cluster_columns,
+                             width = ncol(M)*grid::unit(aspect_ratio * ux, "mm"),
+                             height = nrow(M)*grid::unit(ux, "mm"),
+                             row_names_gp=grid::gpar(fontsize=dimname_fontsize),
+                             column_names_gp=grid::gpar(fontsize=dimname_fontsize),
+                             ...
+                           ))
 }
 #' Save ComplexHeatmap, modified from Carles Boix
 #'
@@ -138,6 +123,13 @@ saveGGplot <- function(gp, pltprefix, w=7, h=7, dpi=600) {
     print(pltprefix)
 }
 
+#' Draw text on a heatmap
+#' @export
+ht_text <- function(mat, format="%.2f", fontsize=4, ...) {
+  return(function(j, i, x, y, width, height, fill) {
+    grid::grid.text(sprintf(format, mat[i, j]), x, y, gp=gpar(fontsize=fontsize, ...))
+  })
+}
 #' Draw triangles in heatmap
 #' Pass cell_fun=ht_triangle_split(...) to Heatmap()
 #' @param mat.ul Upper left matrix

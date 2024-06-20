@@ -66,7 +66,7 @@ htSortMatrix <- function(M, method="euclidean", ratio=0.5, cutoff=0.25, sort=c(1
 #' @export
 autoHeatmap <- function(M, ux=1.5, sort=c(1, 2), method="euclidean",
                         dimname_fontsize=3.5, ratio=0.5, cutoff=0.25,
-                        aspect_ratio=1, 
+                        aspect_ratio=1, cell_text=NULL, cell_text_fontsize=10,
                         cluster_rows=FALSE, cluster_columns=FALSE, ...) {
     if (is.logical(cluster_rows)) {
       cluster_rows = cluster_rows || -1 %in% sort
@@ -75,14 +75,29 @@ autoHeatmap <- function(M, ux=1.5, sort=c(1, 2), method="euclidean",
       cluster_columns = cluster_columns || -2 %in% sort
     }
     M = htSortMatrix(M, method=method, ratio=ratio, cutoff=cutoff, sort=sort)
-    return(ComplexHeatmap::Heatmap(
-        M, cluster_rows=cluster_rows, cluster_columns=cluster_columns,
-        width = ncol(M)*grid::unit(aspect_ratio * ux, "mm"),
-        height = nrow(M)*grid::unit(ux, "mm"),
-        row_names_gp=grid::gpar(fontsize=dimname_fontsize),
-        column_names_gp=grid::gpar(fontsize=dimname_fontsize),
-        ...
-    ))
+    cell_fun=NULL
+    if (!is.null(cell_text)) {
+      cell_fun = function(j, i, x, y, width, height, fill) {
+        grid.text(sprintf(cell_text, M[i, j]), x, y, gp = gpar(fontsize = cell_text_fontsize)) }
+      return(ComplexHeatmap::Heatmap(
+                               M, cluster_rows=cluster_rows, cluster_columns=cluster_columns,
+                               width = ncol(M)*grid::unit(aspect_ratio * ux, "mm"),
+                               height = nrow(M)*grid::unit(ux, "mm"),
+                               row_names_gp=grid::gpar(fontsize=dimname_fontsize),
+                               column_names_gp=grid::gpar(fontsize=dimname_fontsize),
+                               cell_fun=cell_fun,
+                               ...
+                             ))
+    } else {
+      return(ComplexHeatmap::Heatmap(
+                               M, cluster_rows=cluster_rows, cluster_columns=cluster_columns,
+                               width = ncol(M)*grid::unit(aspect_ratio * ux, "mm"),
+                               height = nrow(M)*grid::unit(ux, "mm"),
+                               row_names_gp=grid::gpar(fontsize=dimname_fontsize),
+                               column_names_gp=grid::gpar(fontsize=dimname_fontsize),
+                               ...
+                             ))
+    }
 }
 #' Save ComplexHeatmap, modified from Carles Boix
 #'

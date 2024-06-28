@@ -55,7 +55,7 @@ enrichKEGG <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=10
   }
   xf = .proc.go.result(res)
   if (nrow(xf) > 0) {
-      xf$ONTOLOGY == "KEGG"
+      xf$ONTOLOGY = "KEGG"
       if (keyType == "ncbi-geneid") {
           mapping = setNames(names(gene), gene)
           xf$geneID = sapply(strsplit(xf$geneID, "/"), function(gid) {
@@ -83,7 +83,7 @@ enrichMKEGG <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=1
   }
   xf = .proc.go.result(res)
   if (nrow(xf) > 0) {
-      xf$ONTOLOGY == "MKEGG"
+      xf$ONTOLOGY = "MKEGG"
       if (keyType == "ncbi-geneid") {
           mapping = setNames(names(gene), gene)
           xf$geneID = sapply(strsplit(xf$geneID, "/"), function(gid) {
@@ -112,7 +112,7 @@ enrichWP <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100,
   }
   xf = .proc.go.result(res)
   if (nrow(xf) > 0) {
-      xf$ONTOLOGY == "WP"
+      xf$ONTOLOGY = "WP"
       if (keyType != "ENTREZID") {
           mapping = setNames(names(gene), gene)
           xf$geneID = sapply(strsplit(xf$geneID, "/"), function(gid) {
@@ -141,7 +141,7 @@ enrichReactome <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSiz
   }
   xf = .proc.go.result(res)
   if (nrow(xf) > 0) {
-      xf$ONTOLOGY == "REACTOME"
+      xf$ONTOLOGY = "REACTOME"
       if (keyType != "ENTREZID") {
           mapping = setNames(names(gene), gene)
           xf$geneID = sapply(strsplit(xf$geneID, "/"), function(gid) {
@@ -167,7 +167,7 @@ enrichDO <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100,
   }
     xf = .proc.go.result(res)
   if (nrow(xf) > 0) {
-      xf$ONTOLOGY == "DOSE"
+      xf$ONTOLOGY = "DOSE"
       if (keyType != "ENTREZID") {
           mapping = setNames(names(gene), gene)
           xf$geneID = sapply(strsplit(xf$geneID, "/"), function(gid) {

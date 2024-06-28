@@ -15,6 +15,16 @@
         return(data.frame())
     }
 }
+
+#' @export
+enrichALL <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, ...) {
+  go = enrichGO(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
+  kegg = enrichKEGG(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
+  wp = enrichWP(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
+  reac = enrichReactome(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
+  do = enrichDO(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
+  dplyr::bind_rows(list(go, kegg, wp, reac))
+}
 #' Run clusterProfiler::enrichGO with better options and defaults
 #'
 #' @param gene List of genes
@@ -43,7 +53,17 @@ enrichKEGG <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=10
   } else {
     res = clusterProfiler::enrichKEGG(gene, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, universe=universe, ...)
   }
-  return(.proc.go.result(res))
+  xf = .proc.go.result(res)
+  if (nrow(xf) > 0) {
+      xf$ONTOLOGY == "KEGG"
+      if (keyType == "ncbi-geneid") {
+          mapping = setNames(names(gene), gene)
+          xf$geneID = sapply(strsplit(xf$geneID, "/"), function(gid) {
+              paste0(mapping[gid], collapse="/")
+          })
+      }
+  }
+  return(xf)
 }
 
 #' @export
@@ -61,7 +81,17 @@ enrichMKEGG <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=1
   } else {
     res = clusterProfiler::enrichMKEGG(gene, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, universe=universe, ...)
   }
-  return(.proc.go.result(res))
+  xf = .proc.go.result(res)
+  if (nrow(xf) > 0) {
+      xf$ONTOLOGY == "MKEGG"
+      if (keyType == "ncbi-geneid") {
+          mapping = setNames(names(gene), gene)
+          xf$geneID = sapply(strsplit(xf$geneID, "/"), function(gid) {
+              paste0(mapping[gid], collapse="/")
+          })
+      }
+  }
+  return(xf)
 }
 
 #' @export
@@ -80,7 +110,17 @@ enrichWP <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100,
   } else {
     res = clusterProfiler::enrichWP(gene, organism, minGSSize=minGSSize, maxGSSize=maxGSSize, universe=universe, ...)
   }
-  return(.proc.go.result(res))
+  xf = .proc.go.result(res)
+  if (nrow(xf) > 0) {
+      xf$ONTOLOGY == "WP"
+      if (keyType != "ENTREZID") {
+          mapping = setNames(names(gene), gene)
+          xf$geneID = sapply(strsplit(xf$geneID, "/"), function(gid) {
+              paste0(mapping[gid], collapse="/")
+          })
+      }
+  }
+  return(xf)
 }
 
 #' @export
@@ -99,9 +139,20 @@ enrichReactome <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSiz
   } else {
     res = ReactomePA::enrichPathway(gene, species, minGSSize=minGSSize, maxGSSize=maxGSSize, universe=universe, ...)
   }
-  return(.proc.go.result(res))
+  xf = .proc.go.result(res)
+  if (nrow(xf) > 0) {
+      xf$ONTOLOGY == "REACTOME"
+      if (keyType != "ENTREZID") {
+          mapping = setNames(names(gene), gene)
+          xf$geneID = sapply(strsplit(xf$geneID, "/"), function(gid) {
+              paste0(mapping[gid], collapse="/")
+          })
+      }
+  }
+  return(xf)
 }
-#' 
+
+#' @export
 enrichDO <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, universe=NULL, ...) {
   if (keyType != "ENTREZID") {
     gene = AnnotationDbi::mapIds(OrgDb, keys=gene, keytype=keyType, column="ENTREZID")
@@ -114,7 +165,17 @@ enrichDO <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100,
   } else {
     res = DOSE::enrichDO(gene, minGSSize=minGSSize, maxGSSize=maxGSSize, universe=universe, ...)
   }
-  return(.proc.go.result(res))
+    xf = .proc.go.result(res)
+  if (nrow(xf) > 0) {
+      xf$ONTOLOGY == "DOSE"
+      if (keyType != "ENTREZID") {
+          mapping = setNames(names(gene), gene)
+          xf$geneID = sapply(strsplit(xf$geneID, "/"), function(gid) {
+              paste0(mapping[gid], collapse="/")
+          })
+      }
+  }
+  return(xf)
 }
 
 

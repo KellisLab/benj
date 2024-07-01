@@ -35,6 +35,16 @@ qclip <- function(mat, percentile=0.01, high=TRUE, low=TRUE) {
     return(mat)
 }
 
+#' Transform with chi-squared expected counts
+#' 
+#' @param mat Input counts matrix
+#' @return Transformed data
+#' @export
+chisq_transform <- function(mat) {
+    EC = outer(Matrix::rowSums(mat), Matrix::colSums(mat)) / sum(mat)
+    return(as.matrix(mat - EC) / sqrt(EC))
+}
+
 #' Collapse a matrix into pseudobulk
 #'
 #' @param x a matrix

@@ -45,7 +45,7 @@ def _pb_anncollection(ac, transform, layer_list=None, batch_size:int=10000):
                 L[lay] = convert_X(L[lay].tocsr())
         return anndata.AnnData(X=convert_X(X.tocsr()), layers=L, var=pd.DataFrame(index=ac.var_names))
 
-def pseudobulk(adata, groupby, which:str="sum", batch_size:int=10000, prefix="PB#", dense:bool=False):
+def pseudobulk(adata, groupby, which:str="sum", batch_size:int=10000, prefix="PB#", dense:bool=False, n_cells="n_cells"):
         import numpy as np
         import scipy.sparse
         import pandas as pd
@@ -57,7 +57,8 @@ def pseudobulk(adata, groupby, which:str="sum", batch_size:int=10000, prefix="PB
         else:
                 mc = pd.get_dummies(adata.obs.loc[:, groupby]).reindex(adata.obs_names, fill_value=0)
         cols = pseudobulk_valid_columns(adata.obs, mc)
-        newobs = adata.obs.loc[mc.idxmax().values, cols]
+        newobs = adata.obs.loc[mc.idxmax().values, cols].copy()
+        newobs[n_cells] = mc.loc[:, mc.idxmax().index].values.sum(0)
         newobs.index = ["%s%d" % (prefix, x) for x, _ in enumerate(mc.columns)]
         if which == "sum":
                 S = scipy.sparse.csr_matrix(mc.values, dtype="i8")

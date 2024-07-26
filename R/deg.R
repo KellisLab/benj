@@ -222,7 +222,7 @@ deg <- function(se, pathology, case, control, covariates,
                 verbose=TRUE,
                 ensure.integer.counts=TRUE, mc.cores=getOption("mc.cores", 12)) {
     method = match.arg(gsub(" ", "-", tolower(method)),
-                       c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer", "wilcoxon", "wilcox", "logistic", "limma", "limma-trend", "limma-voom"), several.ok=TRUE)
+                       c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer", "wilcoxon", "wilcox", "logistic", "pimseq", "limma", "limma-trend", "limma-voom"), several.ok=TRUE)
     se = deg.prepare(se, pathology=pathology,
                      case=case, control=control,
                      sample.col=sample.col,
@@ -259,6 +259,9 @@ deg <- function(se, pathology, case, control, covariates,
                             case=case, control=control,
                             sample.col=sample.col,
                             covariates=covariates)
+        } else if (meth == "pimseq") {
+            se = deg.pimseq(se, pathology=pathology, case=case, control=control,
+                            sample.col=sample.col, covariates=covariates)
         } else if (grepl("^edger", meth)) {
             se = deg.edger(se, pathology=pathology,
                            case=case, control=control,
@@ -550,6 +553,10 @@ deg.limma <- function(se, pathology, case, control, sample.col="Sample", covaria
 #' But, use score test instead of LRT/Wald to avoid refitting model
 #' Use (for now), fixed effects for each sample.
 #' Primarily for marker analysis
+#'
+#' Since U=X * res, and I=XWX', where W=diag(\hat{Y}(1-\hat{Y})),
+#' use demeaned X and use L2 norm for X\sqrt{W}.
+#' For demeaning, distribute to save sparse matrix.
 #' @export
 deg.logistic <- function(sce, sample.col, pathology, case, control, covariates=NULL, prefix="logistic", batch.size=1000, verbose=TRUE) {
     M = SummarizedExperiment::assays(sce)$counts
@@ -585,6 +592,35 @@ deg.logistic <- function(sce, sample.col, pathology, case, control, covariates=N
     rd[rownames(df), paste0(prefix, "_FDR")] = df$FDR
     SummarizedExperiment::rowData(sce) = rd
     return(sce)
+}
+
+#' @export
+deg.pimseq <- function(sce, sample.col, pathology, case, control, prefix="PIMseq", mc.cores=getOption("mc.cores", 12)) {
+    pb <- calculate_qc_metrics(se_make_pseudobulk(sce, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
+    pb <- se_tmm(pb, log=TRUE)
+    X = as.matrix(SummarizedExperiment::assays(pb)$TMM)
+    cd = as.data.frame(SummarizedExperiment::colData(pb))
+    cd[[pathology]] = relevel(as.factor(cd[[pathology]]), ref=control)
+    covariates = covariates[covariates %in% colnames(cd)]
+    covariates = covariates[covariates %in% colnames(deg.filter.design(cd[c(covariates)]))]
+    ps = PIMseq::PIMSeq(pb, condition=pathology, assay.name="TMM", nuisance.vars=covariates, BPPARAM=BiocParallel::MulticoreParam(mc.cores))
+    tc = ps$test.contrasts[c("PI", "p.adjusted")]
+    rd = as.data.frame(SummarizedExperiment::rowData(sce))
+    rd[[paste0(prefix, "_FDR")]] = NA
+    rd[rownames(tc), paste0(prefix, "_FDR")] = tc$p.adjusted
+    rd[[paste0(prefix, "_stat")]] = NA
+    rd[rownames(tc), paste0(prefix, "_stat")] = tc$PI
+    SummarizedExperiment::rowData(sce) = rd
+    return(sce)
+    ## design = model.matrix(as.formula(paste0(c("~1", pathology, covariates), collapse="+")),
+    ##                       data=cd)
+    ## design = design[,colnames(design) != "(Intercept)"]
+    ## design_idx = 1
+    ## BP <- parallel::mclapply(seq_len(nrow(X)), function(i) {
+    ##     df = cbind(data.frame(Y=X[i,]), as.data.frame(design))
+    ##     model = pim::pim(as.formula(paste0(c("Y~1", colnames(design)), collapse="+")), data=df)
+    ##     return(summary(model)[design_idx+1, c("Estimate", "Pr(>|z|)")])
+    ## }, mc.cores=mc.cores)
 }
 #' @export
 deg.wilcoxon <- function(sce, sample.col, pathology, case, control, nbootstrap=1000, prefix="wilcox", mc.cores=getOption("mc.cores", 12)) {

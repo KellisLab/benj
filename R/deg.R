@@ -222,7 +222,7 @@ deg <- function(se, pathology, case, control, covariates,
                 verbose=TRUE,
                 ensure.integer.counts=TRUE, mc.cores=getOption("mc.cores", 12)) {
     method = match.arg(gsub(" ", "-", tolower(method)),
-                       c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer", "wilcoxon", "wilcox", "limma", "limma-trend", "limma-voom"), several.ok=TRUE)
+                       c("deseq2", "edger", "edger-lrt", "edger-ql", "nebula", "mast", "mast-re", "lmer", "wilcoxon", "wilcox", "logistic", "limma", "limma-trend", "limma-voom"), several.ok=TRUE)
     se = deg.prepare(se, pathology=pathology,
                      case=case, control=control,
                      sample.col=sample.col,
@@ -251,6 +251,9 @@ deg <- function(se, pathology, case, control, covariates,
                               case=case, control=control,
                               sample.col=sample.col,
                               nbootstrap=1000, mc.cores=mc.cores)
+         } else if (meth == "logistic") {
+             se = deg.logistic(se, pathology=pathology, case=case, control=control,
+                               covariates=covariates, sample.col=sample.col, verbose=verbose)
         } else if (meth == "deseq2") {
             se = deg.deseq2(se, pathology=pathology,
                             case=case, control=control,
@@ -543,6 +546,46 @@ deg.limma <- function(se, pathology, case, control, sample.col="Sample", covaria
     return(se)
 }
 
+#' Use logistic regression to compute DEGs.
+#' But, use score test instead of LRT/Wald to avoid refitting model
+#' Use (for now), fixed effects for each sample.
+#' Primarily for marker analysis
+#' @export
+deg.logistic <- function(sce, sample.col, pathology, case, control, covariates=NULL, prefix="logistic", batch.size=1000, verbose=TRUE) {
+    M = SummarizedExperiment::assays(sce)$counts
+    M = log1p(M %*% Matrix::Diagonal(x=1e4 / Matrix::colSums(M)))
+    cd = as.data.frame(SummarizedExperiment::colData(sce))
+    cd[[pathology]] = relevel(as.factor(cd[[pathology]]), ref=control)
+    df = cbind(data.frame(Y=as.logical(cd[[pathology]] == case)),
+               as.data.frame(model.matrix(as.formula(paste0(c("~1", covariates, sample.col), collapse="+")), data=cd)))
+    null_model = glm(Y ~ ., family=binomial(link="logit"), data=df)
+    mu_null <- predict(null_model, type="response")
+    w <- sqrt(mu_null * (1 - mu_null))
+    res <- resid(null_model)
+    row_means <- Matrix::rowMeans(M)
+    U = as.numeric(M %*% res - row_means * sum(res))
+    I = numeric(length(U)) * NA
+    for (left in seq(1, length(row_means), by=batch_size)) {
+        right = min(left + batch_size - 1, length(row_means))
+        X = as.matrix(M[left:right,] %*% Matrix::Diagonal(x=w)) - outer(row_means[left:right], w)
+        I[left:right] = apply(X, 1, norm, "2")**2
+        if (verbose) {  cat("Logistic: (", left, ",", right, ")\r") }
+    }
+    if (verbose) { cat("\n") }
+    score_test = U**2/I
+    score_test[is.na(score_test)] = 0
+    df = data.frame(statistic=score_test)
+    df$pvalue = pchisq(df$statistic, 1, lower.tail=FALSE)
+    df$FDR = p.adjust(df$pvalue, "fdr")
+    rownames(df) = rownames(M)
+    rd = as.data.frame(SummarizedExperiment::rowData(sce))
+    ## rd[[paste0(prefix, "_log2FC")]] = NA
+    ## rd[rownames(df), paste0(prefix, "_log2FC")] = df$log2FC
+    rd[[paste0(prefix, "_FDR")]] = NA
+    rd[rownames(df), paste0(prefix, "_FDR")] = df$FDR
+    SummarizedExperiment::rowData(sce) = rd
+    return(sce)
+}
 #' @export
 deg.wilcoxon <- function(sce, sample.col, pathology, case, control, nbootstrap=1000, prefix="wilcox", mc.cores=getOption("mc.cores", 12)) {
     set.seed(0)

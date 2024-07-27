@@ -558,7 +558,7 @@ deg.limma <- function(se, pathology, case, control, sample.col="Sample", covaria
 #' use demeaned X and use L2 norm for X\sqrt{W}.
 #' For demeaning, distribute to save sparse matrix.
 #' @export
-deg.logistic <- function(sce, sample.col, pathology, case, control, covariates=NULL, prefix="logistic", batch.size=1000, verbose=TRUE) {
+deg.logistic <- function(sce, sample.col, pathology, case, control, covariates=NULL, prefix="logistic", batch_size=1000, verbose=TRUE) {
     M = SummarizedExperiment::assays(sce)$counts
     M = log1p(M %*% Matrix::Diagonal(x=1e4 / Matrix::colSums(M)))
     cd = as.data.frame(SummarizedExperiment::colData(sce))
@@ -595,7 +595,7 @@ deg.logistic <- function(sce, sample.col, pathology, case, control, covariates=N
 }
 
 #' @export
-deg.pimseq <- function(sce, sample.col, pathology, case, control, prefix="PIMseq", mc.cores=getOption("mc.cores", 12)) {
+deg.pimseq <- function(sce, sample.col, pathology, case, control, covariates=NULL, prefix="PIMseq", mc.cores=getOption("mc.cores", 12)) {
     pb <- calculate_qc_metrics(se_make_pseudobulk(sce, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     pb <- se_tmm(pb, log=TRUE)
     X = as.matrix(SummarizedExperiment::assays(pb)$TMM)

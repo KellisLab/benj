@@ -144,8 +144,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     if (sum(!duplicated(cd[c(sample.col, pathology)])) > length(unique(cd[[sample.col]]))) {
       cat("Intra-sample pathology (e.g. marker gene analysis) re-setting sample columns to fix...\n")
       newcol = paste0(sample.col, ".", pathology)
-      cd[[newcol]] = paste0(cd[[sample.col]], "_", cd[[pathology]])
-      SummarizedExperiment::colData(se) = cd
+      SummarizedExperiment::colData(se)[[newcol]] = paste0(cd[[sample.col]], "_", cd[[pathology]])
       sample.col=newcol
     }
     pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))

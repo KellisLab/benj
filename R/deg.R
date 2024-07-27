@@ -175,9 +175,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     colnames(logCPM) = paste0("logCPM_", colnames(logCPM))
     SummarizedExperiment::rowData(se) = cbind(SummarizedExperiment::rowData(se), as.data.frame(logCPM))
 ### Convert pathology to factor
-    cd = as.data.frame(SummarizedExperiment::colData(se))
-    cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
-    SummarizedExperiment::colData(se) = cd
+    SummarizedExperiment::colData(se)[[pathology]] = as.factor(as.character(cd[[pathology]]))
 ### Check matrix
     X = SummarizedExperiment::assays(se)$counts
     if (inherits(X, "Matrix")) {

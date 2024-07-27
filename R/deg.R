@@ -187,8 +187,8 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
         stopifnot(is_integer_matrix)
     }
     S4Vectors::metadata(se)$deg = list(pathology=pathology,
-                                       case=case,
-                                       control=control,
+                                       case=as.character(case),
+                                       control=as.character(control),
                                        sample_column=sample.col,
                                        filter_only_case_control=filter_only_case_control,
                                        cpm_cutoff=cpm.cutoff,
@@ -240,8 +240,9 @@ deg <- function(se, pathology, case, control, covariates,
                      min.total.counts.per.sample=min.total.counts.per.sample,
                      cpm.cutoff=cpm.cutoff, outlier.covariates=outlier.covariates,
                      ensure.integer.counts=ensure.integer.counts)
-    case=as.character(case)
-    control=as.character(control)
+    case=S4Vectors::metadata(se)$deg$case
+    control=S4Vectors::metadata(se)$deg$case
+    sample.col=S4Vectors::metadata(se)$deg$sample_col
     ### RUVSeq
     covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
     if (NRUV > 0) {

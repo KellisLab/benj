@@ -241,7 +241,7 @@ deg <- function(se, pathology, case, control, covariates,
                      cpm.cutoff=cpm.cutoff, outlier.covariates=outlier.covariates,
                      ensure.integer.counts=ensure.integer.counts)
     case=S4Vectors::metadata(se)$deg$case
-    control=S4Vectors::metadata(se)$deg$case
+    control=S4Vectors::metadata(se)$deg$control
     sample.col=S4Vectors::metadata(se)$deg$sample_col
     ### RUVSeq
     covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]

@@ -140,9 +140,9 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     }
     stopifnot("counts" %in% names(SummarizedExperiment::assays(se)))
     colnames(SummarizedExperiment::rowData(se))[colnames(SummarizedExperiment::rowData(se))=="strand"] = "Strand"
-    cd = as.data.frame(SummarizedExperiment::colData(se))
     if (sum(!duplicated(cd[c(sample.col, pathology)])) > length(unique(cd[[sample.col]]))) {
       cat("Intra-sample pathology (e.g. marker gene analysis) re-setting sample columns to fix...\n")
+      cd = SummarizedExperiment::colData(se)
       newcol = paste0(sample.col, ".", pathology)
       cd[[newcol]] = paste0(cd[[sample.col]], "_", cd[[pathology]])
       SummarizedExperiment::colData(se) = cd

@@ -140,6 +140,14 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     }
     stopifnot("counts" %in% names(SummarizedExperiment::assays(se)))
     colnames(SummarizedExperiment::rowData(se))[colnames(SummarizedExperiment::rowData(se))=="strand"] = "Strand"
+    cd = as.data.frame(SummarizedExperiment::colData(se))
+    if (sum(!duplicated(cd[c(sample.col, pathology)])) > length(unique(cd[[sample.col]]))) {
+      cat("Intra-sample pathology (e.g. marker gene analysis) re-setting sample columns to fix...\n")
+      newcol = paste0(sample.col, ".", pathology)
+      cd[[newcol]] = paste0(cd[[sample.col]], "_", cd[[pathology]])
+      SummarizedExperiment::colData(se) = cd
+      sample.col=newcol
+    }
     pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     cat("Pseudobulk: ", ncol(pb), " samples\n")
     stopifnot(S4Vectors::ncol(pb) <= 10000) ### we can't have uber-large sample numbers
@@ -167,6 +175,10 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     logCPM = edgeR::cpmByGroup(pb, SummarizedExperiment::colData(pb)[[pathology]], log=TRUE)
     colnames(logCPM) = paste0("logCPM_", colnames(logCPM))
     SummarizedExperiment::rowData(se) = cbind(SummarizedExperiment::rowData(se), as.data.frame(logCPM))
+### Convert pathology to factor
+    cd = as.data.frame(SummarizedExperiment::colData(se))
+    cd[[pathology]] = as.factor(as.character(cd[[pathology]]))
+    SummarizedExperiment::colData(se) = cd
 ### Check matrix
     X = SummarizedExperiment::assays(se)$counts
     if (inherits(X, "Matrix")) {
@@ -231,6 +243,8 @@ deg <- function(se, pathology, case, control, covariates,
                      min.total.counts.per.sample=min.total.counts.per.sample,
                      cpm.cutoff=cpm.cutoff, outlier.covariates=outlier.covariates,
                      ensure.integer.counts=ensure.integer.counts)
+    case=as.character(case)
+    control=as.character(control)
     ### RUVSeq
     covariates = covariates[covariates %in% names(SummarizedExperiment::colData(se))]
     if (NRUV > 0) {

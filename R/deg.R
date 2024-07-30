@@ -154,6 +154,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
         cd = SummarizedExperiment::colData(pb)
         cat("Bad samples:", rownames(cd)[cd$total_counts < min.total.counts.per.sample], "\n")
         se = se[, SummarizedExperiment::colData(se)[[sample.col]] %in% rownames(cd)[cd$total_counts >= min.total.counts.per.sample]]
+        cd = SummarizedExperiment::colData(se)
         pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     }
     ### Outlier detection

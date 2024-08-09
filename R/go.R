@@ -25,6 +25,26 @@ enrichALL <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100
   do = enrichDO(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
   dplyr::bind_rows(list(go, kegg, wp, reac))
 }
+
+#' @export
+enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method,
+                            min_log2FC=0, max_FDR=0.05, minGSSize=10, maxGSSize=100, ...) {
+    require(dplyr)
+    df <- readxl::read_xlsx(xlsx)
+    df$log2FC <- df[[paste0(method, "_log2FC")]]
+    df$FDR <- df[[paste0(method, "_FDR")]]
+    universe=df$genes
+    df <- df %>% filter(abs(log2FC) >= min_log2FC & FDR < max_FDR)
+    wb <- openxlsx::loadWorkbook(xlsx)
+    openxlsx::addWorksheet(wb, paste0(new_sheet, " genes"))
+    openxlsx::writeData(wb, paste0(new_sheet, " genes"), df)
+    go_pos <- benj::enrichALL(df$genes[df$log2FC > 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
+    go_neg <- benj::enrichALL(df$genes[df$log2FC < 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
+    df <- dplyr::bind_rows(list(Up=go_pos, Down=go_neg))
+    openxlsx::addWorksheet(wb, paste0(new_sheet, " pathways"))
+    openxlsx::writeData(wb, paste0(new_sheet, " pathways"), df)
+    openxlsx::saveWorkbook(wb, xlsx, overwrite=TRUE)
+}
 #' Run clusterProfiler::enrichGO with better options and defaults
 #'
 #' @param gene List of genes

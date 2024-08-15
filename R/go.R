@@ -31,6 +31,7 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method,
                             min_log2FC=0, max_FDR=0.05, minGSSize=10, maxGSSize=100, ...) {
     require(dplyr)
     df <- readxl::read_xlsx(xlsx)
+    sheet_names <- readxl::excel_sheets(xlsx)
     df$log2FC <- df[[paste0(method, "_log2FC")]]
     df$FDR <- df[[paste0(method, "_FDR")]]
     universe=df$genes
@@ -41,8 +42,20 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method,
     go_pos <- benj::enrichALL(df$genes[df$log2FC > 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
     go_neg <- benj::enrichALL(df$genes[df$log2FC < 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
     df <- dplyr::bind_rows(list(Up=go_pos, Down=go_neg))
-    openxlsx::addWorksheet(wb, paste0(new_sheet, " pathways"))
-    openxlsx::writeData(wb, paste0(new_sheet, " pathways"), df)
+    df$log2FC=min_log2FC
+    df$FDR=max_FDR
+    meth_path <- paste0(method, "_pathways")
+    if (meth_path %in% sheet_names) {
+      mpdf <- openxlsx::readWorkbook(wb, sheet=meth_path)
+      if (all.equals(colnames(mpdf), colnames(df))) {
+        df <- rbind(mpdf, df)
+      } else {
+        warning(paste0("Columns do not match:", paste0(colnames(mpdf),collapse=",") ," vs", paste0(colnames(df), collapse=",")))
+      }
+    } else {
+      openxlsx::addWorksheet(wb, meth_path)
+    }
+    openxlsx::writeData(wb, meth_path, df)
     openxlsx::saveWorkbook(wb, xlsx, overwrite=TRUE)
 }
 #' Run clusterProfiler::enrichGO with better options and defaults

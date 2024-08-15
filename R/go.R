@@ -18,6 +18,9 @@
 
 #' @export
 enrichALL <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, ...) {
+  if (length(gene)==0) {
+    return(data.frame())
+  }
   go = enrichGO(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
   kegg = enrichKEGG(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
   wp = enrichWP(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
@@ -49,15 +52,18 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method,
     meth_path <- paste0(method, "_pathways")
     if (meth_path %in% sheet_names) {
       mpdf <- openxlsx::readWorkbook(wb, sheet=meth_path)
-      if (isTRUE(all.equal(colnames(mpdf), colnames(df)))) {
-        df <- rbind(mpdf, df)
+      I <- intersect(colnames(mpdf), colnames(df))
+      if (length(I) == ncol(df)) {
+        df <- rbind(mpdf[,I], df[,I])
       } else {
         warning(paste0("Columns do not match:", paste0(colnames(mpdf),collapse=",") ," vs", paste0(colnames(df), collapse=",")))
       }
     } else {
       openxlsx::addWorksheet(wb, meth_path)
     }
-    openxlsx::writeData(wb, meth_path, df)
+    if (nrow(df) > 0) {
+      openxlsx::writeData(wb, meth_path, df)
+    }
     openxlsx::saveWorkbook(wb, xlsx, overwrite=TRUE)
 }
 #' Run clusterProfiler::enrichGO with better options and defaults

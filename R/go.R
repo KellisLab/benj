@@ -49,7 +49,7 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method,
     meth_path <- paste0(method, "_pathways")
     if (meth_path %in% sheet_names) {
       mpdf <- openxlsx::readWorkbook(wb, sheet=meth_path)
-      if (all.equal(colnames(mpdf), colnames(df))) {
+      if (isTRUE(all.equal(colnames(mpdf), colnames(df)))) {
         df <- rbind(mpdf, df)
       } else {
         warning(paste0("Columns do not match:", paste0(colnames(mpdf),collapse=",") ," vs", paste0(colnames(df), collapse=",")))

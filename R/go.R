@@ -50,7 +50,7 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method,
     df$log2FC=min_log2FC
     df$FDR=max_FDR
     meth_path <- paste0(method, "_pathways")
-    if (meth_path %in% sheet_names) {
+    if ((meth_path %in% sheet_names)&&(nrow(df)>0)) {
       mpdf <- openxlsx::readWorkbook(wb, sheet=meth_path)
       I <- intersect(colnames(mpdf), colnames(df))
       if (length(I) == ncol(df)) {

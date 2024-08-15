@@ -34,13 +34,13 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method,
     sheet_names <- readxl::excel_sheets(xlsx)
     df$log2FC <- df[[paste0(method, "_log2FC")]]
     df$FDR <- df[[paste0(method, "_FDR")]]
-    universe=df$genes
+    universe <- df$gene
     df <- df %>% filter(abs(log2FC) >= min_log2FC & FDR < max_FDR)
     wb <- openxlsx::loadWorkbook(xlsx)
     openxlsx::addWorksheet(wb, paste0(new_sheet, " genes"))
     openxlsx::writeData(wb, paste0(new_sheet, " genes"), df)
-    go_pos <- benj::enrichALL(df$genes[df$log2FC > 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
-    go_neg <- benj::enrichALL(df$genes[df$log2FC < 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
+    go_pos <- benj::enrichALL(df$gene[df$log2FC > 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
+    go_neg <- benj::enrichALL(df$gene[df$log2FC < 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
     df <- dplyr::bind_rows(list(Up=go_pos, Down=go_neg))
     df$log2FC=min_log2FC
     df$FDR=max_FDR

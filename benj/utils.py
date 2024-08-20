@@ -138,7 +138,7 @@ def weighted_pearson_correlation(A, B, wt=None):
     cor = np.divide(numer, denom, out=np.zeros_like(numer), where=denom != 0)
     return cor
 
-def is_nonzero_combinatorial(adata, genes, label:str="Combination", inplace:bool=True):
+def is_nonzero_combinatorial(adata, genes, label:str="Combination", prefix:str="Combo ", inplace:bool=True):
     import numpy as np
     import scipy.sparse
     I = adata.var_names.get_indexer(genes)
@@ -157,7 +157,9 @@ def is_nonzero_combinatorial(adata, genes, label:str="Combination", inplace:bool
         else:
             combos.append("None")
     df = pd.DataFrame({label: np.asarray(combos)[B]}, index=adata.obs_names)
-    df = pd.concat((df, pd.get_dummies(df[label]).map(lambda x: 1 if x else np.nan)), axis=1)
+    xf = pd.get_dummies(df[label]).map(lambda x: 1 if x else np.nan)
+    xf.columns = ["%s%s" % (prefix, cn) for cn in xf.columns]
+    df = pd.concat((df, xf), axis=1)
     if inplace:
         for cn in df.columns:
             adata.obs[cn] = df[cn]

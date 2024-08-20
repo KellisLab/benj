@@ -138,6 +138,28 @@ def weighted_pearson_correlation(A, B, wt=None):
     cor = np.divide(numer, denom, out=np.zeros_like(numer), where=denom != 0)
     return cor
 
+def is_nonzero_combinatorial(adata, genes, label="Combination"):
+    import numpy as np
+    import scipy.sparse
+    I = adata.var_names.get_indexer(genes)
+    X = adata.X[:, I]
+    if scipy.sparse.issparse(X):
+        X = X.todense().A
+    B = (X > X.mean(0)) @ [1 << x for x in range(X.shape[1])]
+    combos = []
+    for i in range(len(set(B))):
+        subset = []
+        for j, g in enumerate(genes):
+            if i & (1 << j) == (1 << j):
+                subset.append(g)
+        if subset:
+            combos.append(" ".join(subset))
+        else:
+            combos.append("None")
+    df = pd.DataFrame({label: np.asarray(combos)[B]}, index=adata.obs_names)
+    return pd.concat((df, pd.get_dummies(df[label]).map(lambda x: 1 if x else np.nan)), axis=1)
+
+    
 def is_gzip(filename):
     with open(filename, "rb") as f:
         return f.read(2) == b"\x1f\x8b"

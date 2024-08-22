@@ -17,7 +17,7 @@
 }
 
 #' @export
-enrichALL <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, ...) {
+enrichALL <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, minCount=2, ...) {
   if (length(gene)==0) {
     return(data.frame())
   }
@@ -26,7 +26,8 @@ enrichALL <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100
   wp = enrichWP(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
   reac = enrichReactome(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
   do = enrichDO(gene, OrgDb, keyType=keyType, minGSSize=minGSSize, maxGSSize=maxGSSize, ...)
-  dplyr::bind_rows(list(go, kegg, wp, reac))
+  df = dplyr::bind_rows(list(go, kegg, wp, reac))
+  return(df[df$Count >= minCount,])
 }
 
 #' @export

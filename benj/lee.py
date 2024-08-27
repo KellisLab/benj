@@ -63,7 +63,7 @@ def lee(
     if self_neighbor_weight:
         W.setdiag(np.ones(W.shape[0], dtype=W.dtype))
     W.eliminate_zeros()
-    W = W.T.dot(W) * (W.shape[0] / np.ravel(W.sum(0) ** 2).sum())  ### Denominator is 1(V'V)1=squared norm
+    W = W.T.dot(W) * (W.shape[0] / (np.ravel(W.sum(0)) ** 2).sum())  ### Denominator is 1(V'V)1=squared norm
     ### extract means
     mu = np.ravel(adata.X.mean(0))
     cov = np.zeros((adata.shape[1], adata.shape[1]), dtype=np.float32)

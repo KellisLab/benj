@@ -140,7 +140,6 @@ def weighted_pearson_correlation(A, B, wt=None):
 
 def is_nonzero_combinatorial(adata, genes, label:str="Combination", prefix:str="Combo ", inplace:bool=True):
     import numpy as np
-    import pandas as pd
     import scipy.sparse
     I = adata.var_names.get_indexer(genes)
     X = adata.X[:, I]

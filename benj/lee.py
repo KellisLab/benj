@@ -69,7 +69,7 @@ def lee(
     cov = np.zeros((adata.shape[1], adata.shape[1]), dtype=np.float32)
     zero_center |= scale
     inv_sd = np.zeros(adata.shape[1]) * np.nan
-    for ileft in tqdm(np.arange(0, len(all_indices), batch_size), desc="Computing covariance"):
+    for ileft in tqdm(np.arange(0, adata.shape[1], batch_size), desc="Computing covariance"):
         iright = min(ileft + batch_size, adata.shape[1])
         X = adata.X[:, ileft:iright].copy()
         if issparse(X):

@@ -33,7 +33,7 @@ parse_subset <- function(subset.args, sep=Sys.getenv("DEG_sep", ","), assign=Sys
 get_args <- function(args) {
 ### options: aggr
     params = list()
-    params$cpm.cutoff = 10
+    params$cpm.cutoff = 1
     params$sample.col = "Sample"
     params$NRUV = 0
     params$verbose = FALSE

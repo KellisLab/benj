@@ -48,10 +48,10 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method,
     go_pos <- benj::enrichALL(df$gene[df$log2FC > 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
     go_neg <- benj::enrichALL(df$gene[df$log2FC < 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
     df <- dplyr::bind_rows(list(Up=go_pos, Down=go_neg), .id="direction")
-    df$log2FC=min_log2FC
-    df$FDR=max_FDR
     meth_path <- paste0(method, "_pathways")
     if ((meth_path %in% sheet_names)&&(nrow(df)>0)) {
+      df$log2FC=min_log2FC
+      df$FDR=max_FDR
       mpdf <- openxlsx::readWorkbook(wb, sheet=meth_path)
       I <- intersect(colnames(mpdf), colnames(df))
       if (length(I) == ncol(df)) {

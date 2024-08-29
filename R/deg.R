@@ -128,7 +128,7 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
 #' Prepare SummarizedExperiment object for DEG calling.
 #' @export
 deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_case_control=TRUE,
-                        cpm.cutoff=10, min.total.counts.per.sample=100, IQR.factor=1.5,
+                        cpm.cutoff=10, min.total.counts.per.sample=100, IQR.factor=1.5, frac_n=0.5, 
                         outlier.covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"),
                         ensure.integer.counts=TRUE) {
     if (filter_only_case_control) {
@@ -161,7 +161,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     cpm.flag = rownames(se)
     if (!is.na(cpm.cutoff) & !is.null(cpm.cutoff)) {
 ### Get minimum samples for CPM threshold to pass
-        cpm.n = min(table(SummarizedExperiment::colData(pb)[[pathology]]))
+        cpm.n = frac_n * min(table(SummarizedExperiment::colData(pb)[[pathology]]))
     ### Filter genes above a cpm cutoff
         cpm.flag = edgeR::cpm(SummarizedExperiment::assays(pb)$counts) >= cpm.cutoff
     ### Then extract across number of samples

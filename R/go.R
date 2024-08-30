@@ -17,7 +17,7 @@
 }
 
 #' @export
-enrichALL <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, minCount=2, ...) {
+enrichALL <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100, minCount=3, ...) {
   if (length(gene)==0) {
     return(data.frame())
   }

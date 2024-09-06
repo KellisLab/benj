@@ -31,22 +31,23 @@ enrichALL <- function(gene, OrgDb, keyType="SYMBOL", minGSSize=10, maxGSSize=100
 }
 
 #' @export
-enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method,
+enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method, gene_col="gene",
                             min_log2FC=0, max_FDR=0.05, minGSSize=10, maxGSSize=100, ...) {
     require(dplyr)
     df <- readxl::read_xlsx(xlsx)
     sheet_names <- readxl::excel_sheets(xlsx)
     df$log2FC <- df[[paste0(method, "_log2FC")]]
     df$FDR <- df[[paste0(method, "_FDR")]]
-    universe <- df$gene
+    universe <- df[[gene_col]]
     df <- df %>% filter(abs(log2FC) >= min_log2FC & FDR < max_FDR)
     wb <- openxlsx::loadWorkbook(xlsx)
     if (!(paste0(new_sheet, " genes") %in% sheet_names)) {
       openxlsx::addWorksheet(wb, paste0(new_sheet, " genes"))
     }
     openxlsx::writeData(wb, paste0(new_sheet, " genes"), df)
-    go_pos <- benj::enrichALL(df$gene[df$log2FC > 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
-    go_neg <- benj::enrichALL(df$gene[df$log2FC < 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
+    G = df[[gene_col]]
+    go_pos <- benj::enrichALL(G[df$log2FC > 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
+    go_neg <- benj::enrichALL(G[df$log2FC < 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
     df <- dplyr::bind_rows(list(Up=go_pos, Down=go_neg), .id="direction")
     meth_path <- paste0(method, "_pathways")
     if ((meth_path %in% sheet_names)&&(nrow(df)>0)) {

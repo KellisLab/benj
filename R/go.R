@@ -62,6 +62,10 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method, gene_col="gene",
       }
     } else {
       openxlsx::addWorksheet(wb, meth_path)
+      if (nrow(df) > 0) {
+        df$log2FC=min_log2FC
+        df$FDR=max_FDR
+      }
     }
     if (nrow(df) > 0) {
       openxlsx::writeData(wb, meth_path, df)

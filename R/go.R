@@ -38,14 +38,14 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method, gene_col="gene",
     sheet_names <- readxl::excel_sheets(xlsx)
     df$log2FC <- df[[paste0(method, "_log2FC")]]
     df$FDR <- df[[paste0(method, "_FDR")]]
-    universe <- df[[gene_col]]
+    universe <- sapply(strsplit(df[[gene_col]], "_"), "[[", 1)
     df <- df %>% filter(abs(log2FC) >= min_log2FC & FDR < max_FDR)
     wb <- openxlsx::loadWorkbook(xlsx)
     if (!(paste0(new_sheet, " genes") %in% sheet_names)) {
       openxlsx::addWorksheet(wb, paste0(new_sheet, " genes"))
     }
     openxlsx::writeData(wb, paste0(new_sheet, " genes"), df)
-    G = df[[gene_col]]
+    G = sapply(strsplit(df[[gene_col]], "_"), "[[", 1)
     go_pos <- benj::enrichALL(G[df$log2FC > 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
     go_neg <- benj::enrichALL(G[df$log2FC < 0], OrgDb=OrgDb, universe=universe, minGSSize=minGSSize, maxGSSize=maxGSSize)
     df <- dplyr::bind_rows(list(Up=go_pos, Down=go_neg), .id="direction")

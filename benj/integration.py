@@ -85,7 +85,7 @@ def integrate_atac(adata, output=None, batch=None, use_harmony:bool=False, use_b
             use_rep_mod = "%s_mod" % use_rep
             X = adata.obsm[use_rep][:, :n_pcs]
             C = np.cov(X.T)
-            vinv = np.linalg.inv(C + 0.01 * np.eye(C.shape[0]))
+            vinv = np.linalg.inv(C)
             adata.obsm[use_rep_mod] = (X - X.mean(0)) @ np.linalg.cholesky(vinv).T
             use_rep = use_rep_mod
         if batch is not None and use_harmony:
@@ -192,7 +192,7 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
     if "raw" in adata.layers:
         with sw("Copying .layers[\"raw\"] to .X"):
             adata.X = adata.layers["raw"].copy()
-    elif adata.X is not None and np.issubdtype(adata.X.dtype, np.integer) and save_data:
+    elif adata.X is not None and np.issubdtype(adata.X.dtype, np.integer) and (save_data or celltypist is not None):
         with sw("Copying .X to .layers[\"raw\"]"):
             adata.layers["raw"] = adata.X.copy()
     if not save_data and (celltypist is not None) and target_sum != 10000:
@@ -219,7 +219,10 @@ def integrate_rna(adata, output=None, batch=None, hvg:int=0, use_combat:bool=Fal
             with sw("Scaling data"):
                 sc.pp.scale(adata, max_value=10)
         with sw("Running PCA"):
-            sc.pp.pca(adata, zero_center=not (use_scaling or use_combat), use_highly_variable=hvg>0)
+            mask_var = None
+            if hvg > 0:
+                mask_var = adata.var["highly_variable"].values
+            sc.pp.pca(adata, zero_center=not (use_scaling or use_combat), mask_var=mask_var)
             if not save_data:
                 del adata.X
         if batch is not None and use_harmony:

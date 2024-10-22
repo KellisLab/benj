@@ -60,7 +60,7 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method, gene_col="gene",
       } else {
         warning(paste0("Columns do not match:", paste0(colnames(mpdf),collapse=",") ," vs", paste0(colnames(df), collapse=",")))
       }
-    } else {
+    } else if (nrow(df) > 0) {
       openxlsx::addWorksheet(wb, meth_path)
       if (nrow(df) > 0) {
         df$log2FC=min_log2FC

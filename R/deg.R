@@ -128,7 +128,7 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
 #' Prepare SummarizedExperiment object for DEG calling.
 #' @export
 deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_case_control=TRUE,
-                        cpm.cutoff=10, min.total.counts.per.sample=100, IQR.factor=1.5, frac_n=0.5, 
+                        min.count=10, min.total.counts.per.sample=100, IQR.factor=1.5, frac_n=0.5, 
                         outlier.covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"),
                         ensure.integer.counts=TRUE) {
     if (filter_only_case_control) {
@@ -158,16 +158,8 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     }
     ### Outlier detection
     pb = deg.filter.outliers(pb, covariates=outlier.covariates, IQR.factor=IQR.factor)
-    cpm.flag = rownames(se)
-    if (!is.na(cpm.cutoff) & !is.null(cpm.cutoff)) {
-### Get minimum samples for CPM threshold to pass
-        cpm.n = frac_n * min(table(SummarizedExperiment::colData(pb)[[pathology]]))
-    ### Filter genes above a cpm cutoff
-        cpm.flag = edgeR::cpm(SummarizedExperiment::assays(pb)$counts) >= cpm.cutoff
-    ### Then extract across number of samples
-        cpm.flag = rownames(cpm.flag)[Matrix::rowSums(cpm.flag) >= cpm.n]
-    }
-    pb = pb[cpm.flag, ]
+    ### Filter by expression
+    pb = pb[edgeR::filterByExpr(pb, group=pathology, min.count=min.count, min.prop=frac_n),]
     se = se[rownames(pb), SummarizedExperiment::colData(se)[[sample.col]] %in% colnames(pb)]
     cd = SummarizedExperiment::colData(se)
 ### Get logCPM info
@@ -191,7 +183,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
                                        control=as.character(control),
                                        sample_column=sample.col,
                                        filter_only_case_control=filter_only_case_control,
-                                       cpm_cutoff=cpm.cutoff,
+                                       min_count=min.count,
                                        min_total_counts_per_sample=min.total.counts.per.sample,
                                        IQR_factor=IQR.factor,
                                        outlier_covariates=paste0(outlier.covariates, collapse=" + "))
@@ -216,7 +208,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
 #' @param sample.col Sample column in colData(se) corresponding to the experiment. This is the column on which data is pseudobulked.
 #' @param method Method(s) of DEGs to be used. Valid values are DESeq2, edgerR-GLM, edgeR-QL, nebula, mast-hurdle, mast-random-effect
 #' @param output Output XLSX
-#' @param cpm.cutoff Counts per Million cutoff used for filtering lowly-expressed genes. Genes must be expressed in at least min(case, control) samples at least at this log(CPM) level to be used. This n=min(case, control) is after outlier removal and low-count data.
+#' @param min.count Minimum count for edgeR filterByExpr
 #' @param NRUV Number of RUVSeq components to include
 #' @param filter_only_case_control Filter se to only case+control only. Default TRUE
 #' @param IQR.factor Number of IQR factors above 75% percentile to be removed, according to scaled PCA of outlier.covariates. Set to Inf to remove none.
@@ -224,7 +216,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
 #' @export
 deg <- function(se, pathology, case, control, covariates,
                 method, output=NULL,
-                sample.col="Sample", cpm.cutoff=10,
+                sample.col="Sample", min.count=10, 
                 filter_only_case_control=TRUE, NRUV=0, only_ruv=TRUE,
                 min.total.counts.per.sample=100, IQR.factor=1.5,
                 outlier.covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"),
@@ -238,7 +230,7 @@ deg <- function(se, pathology, case, control, covariates,
                      IQR.factor=IQR.factor,
                      filter_only_case_control=filter_only_case_control,
                      min.total.counts.per.sample=min.total.counts.per.sample,
-                     cpm.cutoff=cpm.cutoff, outlier.covariates=outlier.covariates,
+                     min.count=min.count, outlier.covariates=outlier.covariates,
                      ensure.integer.counts=ensure.integer.counts)
     case=S4Vectors::metadata(se)$deg$case
     control=S4Vectors::metadata(se)$deg$control
@@ -494,7 +486,7 @@ deg.deseq2 <- function(se,
                        case,
                        control,
                        sample.col,
-                       covariates=NULL, independentFiltering=TRUE,
+                       covariates=NULL, independentFiltering=as.logical(Sys.getenv("DESEQ2_INDEPENDENT", "FALSE")=="TRUE"),
                        prefix="DESeq2") {
     pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     X = SummarizedExperiment::assays(pb)$counts

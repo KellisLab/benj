@@ -33,7 +33,7 @@ parse_subset <- function(subset.args, sep=Sys.getenv("DEG_sep", ","), assign=Sys
 get_args <- function(args) {
 ### options: aggr
     params = list()
-    params$cpm.cutoff = 1
+    params$min.count = 10
     params$sample.col = "Sample"
     params$NRUV = 0
     params$verbose = FALSE
@@ -148,9 +148,9 @@ options:
             i = i + 1
             params$NRUV = as.integer(args[[i]])
             i = i + 1
-        } else if (arg == "--cpm-cutoff") {
+        } else if (arg == "--min-count") {
             i = i + 1
-            params$cpm.cutoff = as.numeric(args[[i]])
+            params$min.count = as.numeric(args[[i]])
             i = i + 1
         } else if (arg == "--min-total-counts") {
             i = i + 1
@@ -219,7 +219,7 @@ adata = benj::deg(adata,
                   method=params$method,
                   output=params$output,
                   sample.col=params$sample.col,
-                  cpm.cutoff=params$cpm.cutoff,
+                  min.count=params$min.count,
                   NRUV=params$NRUV,
                   verbose=params$verbose,
                   min.total.counts.per.sample=params$min.total.counts.per.sample,

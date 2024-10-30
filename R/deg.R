@@ -77,6 +77,7 @@ deg.filter.outliers <- function(se, covariates=c("log1p_total_counts", "n_genes_
     if (length(outliers) > 0) {
         outliers = colnames(se)[outliers]
         cat("Filtering", length(outliers), "outlier(s):", outliers, "\n")
+        cat("Centroid: ", matrixStats::rowMedians(design), "\n")
         cat(design[outliers,], "\n")
         se = se[,setdiff(colnames(se), outliers)]
     }

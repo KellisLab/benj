@@ -513,6 +513,9 @@ deg.deseq2 <- function(se,
     rd[[paste0(prefix, "_stat")]] = NA
     rd[rownames(df), paste0(prefix, "_stat")] = df$stat
     SummarizedExperiment::rowData(se) = rd
+    if ("deg" %in% names(S4Vectors::metadata(se))) {
+        S4Vectors::metadata(se)$deg[[paste0(prefix, "_harmonic_mean_pvalue")]] <- 1/mean(1/df$pvalue)
+    }
     return(se)
 }
 

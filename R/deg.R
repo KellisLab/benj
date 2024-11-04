@@ -489,6 +489,7 @@ deg.deseq2 <- function(se,
                        control,
                        sample.col,
                        covariates=NULL, independentFiltering=as.logical(Sys.getenv("DESEQ2_INDEPENDENT", "TRUE")=="TRUE"),
+                       shrinkage=Sys.getenv("DESEQ2_SHRINKAGE", "apeglm"),
                        prefix="DESeq2") {
     pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     X = SummarizedExperiment::assays(pb)$counts
@@ -512,7 +513,14 @@ deg.deseq2 <- function(se,
     rd[rownames(df), paste0(prefix, "_FDR")] = df$padj
     rd[[paste0(prefix, "_stat")]] = NA
     rd[rownames(df), paste0(prefix, "_stat")] = df$stat
-    SummarizedExperiment::rowData(se) = rd
+    if (shrinkage %in% c("apeglm", "ashr")) {
+        cat("Shrinking", DESeq2::resultsNames(out)[2], "\n")
+        dfs <- DESeq2::lfcShrink(out, res=df, coef=2, type=shrinkage)
+        rd[rownames(dfs), paste0(prefix, "_", shrinkage, "_log2FC")] <- dfs$log2FoldChange
+    }
+    SummarizedExperiment::rowData(se) <- rd
+    
+    
     if ("deg" %in% names(S4Vectors::metadata(se))) {
         S4Vectors::metadata(se)$deg[[paste0(prefix, "_harmonic_mean_pvalue")]] <- 1/mean(1/df$pvalue)
     }

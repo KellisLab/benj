@@ -97,11 +97,11 @@ make_average <- function(x, u=NULL, unlevel=FALSE) {
 #' @export
 order.tsp <- function(mat, rows=TRUE, method="euclidean") {
     if (rows) {
-        tsp = seriation::seriate(dist(mat, method=method))
+        tsp <- seriation::seriate(dist(mat, method=method))
     } else {
-        tsp = seriation::seriate(dist(t(mat), method=method))
+        tsp <- seriation::seriate(dist(t(mat), method=method))
     }
-    ord = seriation::get_order(tsp, 1)
+    ord <- seriation::get_order(tsp, 1)
     if (rows) {
         return(mat[ord,])
     } else {
@@ -111,7 +111,7 @@ order.tsp <- function(mat, rows=TRUE, method="euclidean") {
 
 #' Diagonally cluster the matrix
 #'
-#' This function clusters a matrix
+#' This function clusters a matrix, by either rows or by columns
 #'
 #' @param mat Input matrix
 #' @param ratio Ratio
@@ -119,35 +119,35 @@ order.tsp <- function(mat, rows=TRUE, method="euclidean") {
 #' @return A list of the sorted matrix and associated columns
 #' @export
 diag.mat3 <- function(mat, ratio=0.5, cutoff=0.25, rows=TRUE) {
-    prev.cutoff = attr(mat, "cutoff")
+    prev.cutoff <- attr(mat, "cutoff")
     if (rows) {
-        ord = order(rowSums(mat > cutoff)  > ratio * ncol(mat),
+        ord <- order(rowSums(mat > cutoff)  > ratio * ncol(mat),
                     apply(mat,1,which.max), decreasing=TRUE)
-        mat = mat[ord,]
-        cto = apply(mat, 1, which.max)
-        idx = rowSums(mat > cutoff)  > ratio * ncol(mat)
-        cto[idx] = 0
+        mat <- mat[ord,]
+        cto <- apply(mat, 1, which.max)
+        idx <- rowSums(mat > cutoff)  > ratio * ncol(mat)
+        cto[idx] <- 0
     } else {
-        ord = order(colSums(mat > cutoff)  > ratio * nrow(mat),
+        ord <- order(colSums(mat > cutoff)  > ratio * nrow(mat),
                     apply(mat,2,which.max), decreasing=TRUE)
-        mat = mat[,ord]
-        cto = apply(mat, 2, which.max)
-        idx = colSums(mat > cutoff)  > ratio * nrow(mat)
-        cto[idx] = 0
+        mat <- mat[,ord]
+        cto <- apply(mat, 2, which.max)
+        idx <- colSums(mat > cutoff)  > ratio * nrow(mat)
+        cto[idx] <- 0
 
     }
-    attr(mat, "cutoff") = prev.cutoff
+    attr(mat, "cutoff") <- prev.cutoff
     if (is.null(attr(mat, "cutoff"))) {
         if (rows) {
-            attr(mat, "cutoff") = list(row=cto, col=NULL)
+            attr(mat, "cutoff") <- list(row=cto, col=NULL)
         } else {
-            attr(mat, "cutoff") = list(row=NULL, col=cto)
+            attr(mat, "cutoff") <- list(row=NULL, col=cto)
         }
     } else {
         if (rows) {
-            attr(mat, "cutoff")$row = cto
+            attr(mat, "cutoff")$row <- cto
         } else {
-            attr(mat, "cutoff")$col = cto
+            attr(mat, "cutoff")$col <- cto
         }
     }
     return(mat)

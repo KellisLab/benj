@@ -7,7 +7,7 @@
 #' @param se SummarizedExperiment
 #' @param on Column in colData() to split upon
 #' @export
-se_make_pseudobulk <- function(se, on, missing.levels=FALSE, unlevel=TRUE) {
+se_make_pseudobulk <- function(se, on, missing.levels=FALSE, unlevel=TRUE, ncell_col="ncell") {
     cd = SummarizedExperiment::colData(se)
     rd = SummarizedExperiment::rowData(se)
     A = SummarizedExperiment::assays(se)
@@ -17,6 +17,7 @@ se_make_pseudobulk <- function(se, on, missing.levels=FALSE, unlevel=TRUE) {
     })
     cd[[on]] = factor(as.character(cd[[on]]), levels=colnames(to_P))
     pcd = data.frame(row.names=levels(cd[[on]]))
+    pcd[[ncell_col]] <- Matrix::colSums(to_P)
     for (cn in colnames(cd)) {
 ### for each "on", ensure all equal
         u = lapply(split(cd[[cn]], cd[[on]]), unique)
@@ -271,7 +272,7 @@ se_as_Seurat <- function(sce) {
     C = SummarizedExperiment::assays(sce)$counts
     cd = SummarizedExperiment::colData(sce)
     s.obj = Seurat::CreateSeuratObject(counts=C, meta.data=as.data.frame(cd))
-    s.obj[["X_umap"]] <- Seurat::CreateDimReducObject(
+    s.obj[["umap"]] <- Seurat::CreateDimReducObject(
          embeddings = SingleCellExperiment::reducedDims(sce)$X_umap,
          key = "UMAP_", assay = "RNA")
     s.obj[["X_pca"]] <- Seurat::CreateDimReducObject(
@@ -279,4 +280,10 @@ se_as_Seurat <- function(sce) {
          key = "PC_", assay = "RNA")
     s.obj = Seurat::NormalizeData(s.obj)
     return(s.obj)
+}
+
+ad_as_Seurat <- function(h5ad) {
+  s.obj = anndataR::read_h5ad(h5ad, to="Seurat")
+  obsm = rhdf5::h5read(h5ad, "obsm")
+  s.obj[["X_umap"]] <- Seurat::CreateDimReducObject(embeddings=t(obsm$X_umap), key="UMAP_", assay="RNA")
 }

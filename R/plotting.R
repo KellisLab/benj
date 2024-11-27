@@ -32,28 +32,35 @@ savePlot <- function(p, pltprefix, w=7, h=7, dpi=600, ...){
   dev.off()
   print(pltprefix)
 }
+#' Heatmap sort matrix
+#'
+#' @param M input matrix
+#' @param cutoff Value cutoff for counting rows as significant to be counted
+#' @param ratio Ratio of of rows above cutoff to be counted
+#' @param method Method to be used for column/row ordering
+#' @param sort Whether to sort by rows, columns, or both
 #' @export
 htSortMatrix <- function(M, method="euclidean", ratio=0.5, cutoff=0.25, sort=c(1,2)) {
     if (is.logical(sort)) {
         if (sort) {
-            sort = c(1,2)
+            sort <- c(1,2)
         } else {
-            sort = c()
+            sort <- c()
         }
     }
-    rows = 1 %in% sort
-    columns = 2 %in% sort
+    rows <- 1 %in% sort
+    columns <- 2 %in% sort
     if (rows) {
-        M = order.tsp(M, rows=TRUE, method=method)
+        M <- order.tsp(M, rows=TRUE, method=method)
     }
     if (columns) {
-        M = order.tsp(M, rows=FALSE, method=method)
+        M <- order.tsp(M, rows=FALSE, method=method)
     }
     if (rows) {
-        M = diag.mat3(M, rows=TRUE, ratio=ratio, cutoff=cutoff)
+        M <- diag.mat3(M, rows=TRUE, ratio=ratio, cutoff=cutoff)
     }
     if (columns) {
-        M = diag.mat3(M, rows=FALSE, ratio=ratio, cutoff=cutoff)
+        M <- diag.mat3(M, rows=FALSE, ratio=ratio, cutoff=cutoff)
     }
     return(M)
 }
@@ -155,6 +162,32 @@ ht_triangle_split <- function(mat.ul, mat.lr, col.ul, col.lr, lwd=0, ...) {
     })
 }
 
+#' @export
+ht_quad_triangle_split <- function(mat.top, mat.right, mat.bot, mat.left, col.top, col.right, col.bot, col.left, lwd=0, ...) {
+    return(function(j, i, x, y, width, height, fill) {
+        ### start with UL, UR, LR, LL
+        corners = data.frame(x=as.numeric(width) * c(-1/2, 1/2, 1/2, -1/2, 0),
+                             y=as.numeric(height) * c(-1/2, -1/2, 1/2, 1/2, 0),
+                             row.names=c("LL", "UL", "UR", "LR", "C"))
+        ### top
+        grid::grid.polygon(x=as.numeric(x) + corners[c("UL", "UR", "C", "UL"),"x"],
+                           y=as.numeric(y) + corners[c("UL", "UR", "C", "UL"),"y"],
+                           gp=grid::gpar(fill=col.top(mat.top[i, j]), lwd=lwd, ...))
+        ### right
+        grid::grid.polygon(x=as.numeric(x) + corners[c("UR", "LR", "C", "UR"),"x"],
+                           y=as.numeric(y) + corners[c("UR", "LR", "C", "UR"),"y"],
+                           gp=grid::gpar(fill=col.right(mat.right[i, j]), lwd=lwd, ...))
+        ### bottom
+        grid::grid.polygon(x=as.numeric(x) + corners[c("LR", "LL", "C", "LR"),"x"],
+                           y=as.numeric(y) + corners[c("LR", "LL", "C", "LR"),"y"],
+                           gp=grid::gpar(fill=col.bot(mat.bot[i, j]), lwd=lwd, ...))
+        ### left
+        grid::grid.polygon(x=as.numeric(x) + corners[c("LL", "UL", "C", "LL"),"x"],
+                           y=as.numeric(y) + corners[c("LL", "UL", "C", "LL"),"y"],
+                           gp=grid::gpar(fill=col.left(mat.left[i, j]), lwd=lwd, ...))
+    })
+}
+
 #' Draw asterisks
 #' Pass cell_fun=ht_asterisks(...) to Heatmap()
 #' @param p.matrix P value matrix, unsorted
@@ -209,6 +242,37 @@ volcano <- function(df, label="gene", title="Volcano plot of",
     }
     g = g + ggpubr::theme_pubr() + ggtitle(title)
     return(g)
+}
+
+#' @export
+pbviolin_facet <- function(sce, gene, groupby, facet.by, facet.keep=NULL, prefix="Gene", sample.col="Sample", target_sum=10000, max_pb=TRUE) {
+    require(ggpubr)
+    if (!is.null(facet.keep)) {
+        sce <- sce[,sce[[facet.by]] %in% facet.keep]
+    }
+    X = SummarizedExperiment::assays(sce)$counts
+    cd = as.data.frame(SummarizedExperiment::colData(sce))
+    if ("total_counts" %in% colnames(cd)) {
+        D = Matrix::Diagonal(x=target_sum / cd$total_counts)
+    } else {
+        D = Matrix::Diagonal(x=target_sum / Matrix::colSums(X))
+    }
+    X = log1p(as.matrix(X[gene,,drop=FALSE] %*% D))
+    uid <- paste0(cd[[groupby]], "#", cd[[sample.col]], "#", cd[[facet.by]])
+    P <- X %*% make_average(uid)
+    pd <- cd[!duplicated(uid), c(groupby, facet.by, sample.col)]
+    rownames(pd) <- uid[!duplicated(uid)]
+    L <- list()
+    for (g in rownames(X)) {
+        cd$gene <- X[g,]
+        pd$gene <- P[g, rownames(pd)]
+        G <- ggviolin(cd, x=groupby, y="gene", fill=groupby, ylim=c(min(P[g,]), max(P[g,]))) + geom_point(data=pd, position=position_jitter(width=0.2))
+        L[[g]] <- facet(G, facet.by=facet.by, nrow=1) + ggtitle(paste0(prefix, " ", g)) + ylab(g)
+        ## if (max_pb) {
+        ##     L[[g]] <- ggpar(L[[g]], ylim=c(min(P), max(P)))
+        ## }
+    }
+    return(L)
 }
 
 #' @export

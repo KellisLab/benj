@@ -489,7 +489,7 @@ deg.deseq2 <- function(se,
                        control,
                        sample.col,
                        covariates=NULL, independentFiltering=as.logical(Sys.getenv("DESEQ2_INDEPENDENT", "TRUE")=="TRUE"),
-                       shrinkage=Sys.getenv("DESEQ2_SHRINKAGE", "apeglm"),
+                       shrinkage=Sys.getenv("DESEQ2_SHRINKAGE", "ashr"),
                        prefix="DESeq2") {
     pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     X = SummarizedExperiment::assays(pb)$counts

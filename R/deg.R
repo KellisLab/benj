@@ -514,8 +514,10 @@ deg.deseq2 <- function(se,
     rd[[paste0(prefix, "_stat")]] = NA
     rd[rownames(df), paste0(prefix, "_stat")] = df$stat
     if (shrinkage %in% c("apeglm", "ashr")) {
+        cat("From coefficients\n")
+        cat("\t", paste0(DESeq2::resultsNames(out), collapse=","), "\n")
         cat("Shrinking", DESeq2::resultsNames(out)[2], "\n")
-        dfs <- DESeq2::lfcShrink(out, res=df, coef=2, type=shrinkage)
+        dfs <- DESeq2::lfcShrink(out, res=df, coef=DESeq2::resultsNames(out)[2], type=shrinkage)
         rd[rownames(dfs), paste0(prefix, "_", shrinkage, "_log2FC")] <- dfs$log2FoldChange
     }
     SummarizedExperiment::rowData(se) <- rd

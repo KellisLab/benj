@@ -516,8 +516,13 @@ deg.deseq2 <- function(se,
     if (shrinkage %in% c("apeglm", "ashr")) {
         cat("From coefficients\n")
         cat("\t", paste0(DESeq2::resultsNames(out), collapse=","), "\n")
-        cat("Shrinking", DESeq2::resultsNames(out)[2], "\n")
-        dfs <- DESeq2::lfcShrink(out, res=df, coef=DESeq2::resultsNames(out)[2], type=shrinkage)
+        if (any(grepl(make.names(paste0(pathology, case))), DESeq2::resultsNames(out))) {
+            IDX = which(grepl(make.names(paste0(pathology, case))))[1]
+        } else {
+            IDX = 1
+        }
+        cat("Shrinking", DESeq2::resultsNames(out)[IDX], "\n")
+        dfs <- DESeq2::lfcShrink(out, res=df, coef=DESeq2::resultsNames(out)[IDX], type=shrinkage)
         rd[rownames(dfs), paste0(prefix, "_", shrinkage, "_log2FC")] <- dfs$log2FoldChange
     }
     SummarizedExperiment::rowData(se) <- rd

@@ -517,7 +517,7 @@ deg.deseq2 <- function(se,
         cat("From coefficients\n")
         cat("\t", paste0(DESeq2::resultsNames(out), collapse=","), "\n")
         if (any(grepl(make.names(paste0(pathology, case))), DESeq2::resultsNames(out))) {
-            IDX = which(grepl(make.names(paste0(pathology, case))))[1]
+            IDX = grep(make.names(paste0(pathology, case)), DESeq2::resultsNames(out))[1]
         } else {
             IDX = 1
         }

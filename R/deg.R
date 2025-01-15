@@ -183,7 +183,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     ### Filter by expression
     pb = pb[edgeR::filterByExpr(pb, group=pathology, min.count=min.count, min.prop=frac_n),]
     if (cpm.cutoff > 0) {
-        pb = pb[filterByCPM(assays(pb)[[1]], group=pb[[pathology]], min.prob=frac_n),]
+        pb = pb[filterByCPM(assays(pb)[[1]], group=pb[[pathology]], min.prob=frac_n, min.cpm=cpm.cutoff),]
     }
     se = se[rownames(pb), SummarizedExperiment::colData(se)[[sample.col]] %in% colnames(pb)]
     cd = SummarizedExperiment::colData(se)

@@ -38,6 +38,7 @@ get_args <- function(args) {
     params$NRUV = 0
     params$verbose = FALSE
     params$IQR.factor = 1.5
+    params$cpm.cutoff = 0
     params$outlier.covariates = c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo")
     params$min.total.counts.per.sample = 100
     params$ncores = as.integer(Sys.getenv("OMP_NUM_THREADS", getOption("mc.cores", 2)))
@@ -124,6 +125,10 @@ options:
         } else if (arg == "--only-ruv") {
             i = i + 1
             params$only_ruv = TRUE
+        } else if (arg == "--cpm-cutoff") {
+            i = i + 1
+            params$cpm.cutoff = as.numeric(args[[i]])
+            i = i + 1
         } else if (arg == "--control") {
             i = i + 1
             params$control = args[[i]]
@@ -219,6 +224,7 @@ adata = benj::deg(adata,
                   method=params$method,
                   output=params$output,
                   sample.col=params$sample.col,
+                  cpm.cutoff=params$cpm.cutoff,
                   min.count=params$min.count,
                   NRUV=params$NRUV,
                   verbose=params$verbose,

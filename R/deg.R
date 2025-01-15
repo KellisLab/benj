@@ -127,10 +127,30 @@ deg.dysregulation <- function(sce, pathology, sample.col, covariates=NULL,  verb
   }
   return(dnum)
 }
+filterByCPM <- function(y, group = NULL, lib.size = NULL, 
+                        min.cpm = 1, min.total.count = 15, 
+                        min.prop = 0.7, large.n = 10) {
+  y <- as.matrix(y)
+  if (mode(y) != "numeric") 
+    stop("y is not a numeric matrix")
+  if (is.null(lib.size)) 
+    lib.size <- colSums(y)
+  group <- as.factor(group)
+  n <- tabulate(group)
+  MinSampleSize <- min(n[n > 0L])
+  if (MinSampleSize > large.n) 
+    MinSampleSize <- large.n + (MinSampleSize - large.n) * min.prop
+  CPM <- edgeR::cpm(y, lib.size = lib.size)
+  tol <- 1e-14
+  keep.CPM <- rowSums(CPM >= min.cpm) >= (MinSampleSize - tol)
+  keep.TotalCount <- (rowSums(y) >= min.total.count - tol)
+  keep.CPM & keep.TotalCount
+}
 #' Prepare SummarizedExperiment object for DEG calling.
 #' @export
 deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_case_control=TRUE,
-                        min.count=10, min.total.counts.per.sample=100, IQR.factor=1.5, frac_n=0.5, 
+                        min.count=10, min.total.counts.per.sample=100, IQR.factor=1.5, frac_n=0.5,
+                        cpm.cutoff=0,
                         outlier.covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"),
                         ensure.integer.counts=TRUE) {
     if (filter_only_case_control) {
@@ -162,6 +182,9 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     pb = deg.filter.outliers(pb, covariates=outlier.covariates, IQR.factor=IQR.factor)
     ### Filter by expression
     pb = pb[edgeR::filterByExpr(pb, group=pathology, min.count=min.count, min.prop=frac_n),]
+    if (cpm.cutoff > 0) {
+        pb = pb[filterByCPM(assays(pb)[[1]], group=pb[[pathology]], min.prob=frac_n),]
+    }
     se = se[rownames(pb), SummarizedExperiment::colData(se)[[sample.col]] %in% colnames(pb)]
     cd = SummarizedExperiment::colData(se)
 ### Get logCPM info
@@ -218,7 +241,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
 #' @export
 deg <- function(se, pathology, case, control, covariates,
                 method, output=NULL,
-                sample.col="Sample", min.count=10, 
+                sample.col="Sample", min.count=10, cpm.cutoff=0,
                 filter_only_case_control=TRUE, NRUV=0, only_ruv=TRUE,
                 min.total.counts.per.sample=100, IQR.factor=1.5,
                 outlier.covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"),
@@ -232,6 +255,7 @@ deg <- function(se, pathology, case, control, covariates,
                      IQR.factor=IQR.factor,
                      filter_only_case_control=filter_only_case_control,
                      min.total.counts.per.sample=min.total.counts.per.sample,
+                     cpm.cutoff=cpm.cutoff,
                      min.count=min.count, outlier.covariates=outlier.covariates,
                      ensure.integer.counts=ensure.integer.counts)
     case=S4Vectors::metadata(se)$deg$case

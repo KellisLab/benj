@@ -72,8 +72,8 @@ def pic_create_h5ad(fragments, peak_bed, sample, h5ad,
     if tss_bed is not None:
         import pyranges
         from muon import atac as ac
-        from benj.gene_estimation import get_tss
-        tss = benj.get_tss(tss_bed).rename({"left": "Start", "right": "End"}, axis=1)
+        from .gene_estimation import get_tss
+        tss = get_tss(tss_bed).rename({"left": "Start", "right": "End"}, axis=1)
         tsse = ac.tl.tss_enrichment(adata, tss, n_tss=tss.shape[0])
         gr = pyranges.from_dict({"Chromosome": adata.var["seqnames"].values,
                                  "Start": adata.var["start"].values,
@@ -102,4 +102,4 @@ def pic_create_h5ad(fragments, peak_bed, sample, h5ad,
         adata.obs[sample_name] = sample
         adata.obs_names = [f"{sample}#{bc}" for bc in adata.obs_names]
     adata.write_h5ad(h5ad, compression="gzip", compression_opts=compression)
-    
+    return adata

@@ -1,9 +1,8 @@
 class _RawNormalizeLogScaler:
         def __init__(self, mean, std, target_sum:int=None, eps=1e-50, pre_normalized:bool=False):
-                self.mean = mean
-                self.std = std
+                self.mean = np.ravel(mean).reshape(1, -1)
+                self.inv_std = np.ravel(1. / std).reshape(1, -1).clip(eps, np.inf)
                 self.target_sum = target_sum
-                self.eps = eps
                 self.pre_normalized = pre_normalized
                 if target_sum is None: ### weird python thing
                         self.target_sum = None
@@ -19,7 +18,10 @@ class _RawNormalizeLogScaler:
                 else:
                         X = sc.pp.normalize_total(data, target_sum=self.target_sum, inplace=False)["X"]
                         X = sc.pp.log1p(X)
-                X = (X - np.reshape(np.ravel(self.mean), (1, -1))) / np.reshape(np.ravel(self.std), (1, -1)).clip(self.eps, np.inf)
+                if issparse(X):
+                        X = (X.toarray() - self.mean) * self.inv_std
+                else:
+                        X = (X - self.mean) * self.inv_std 
                 return np.asarray(X)
 
 class IncrementalPCA:

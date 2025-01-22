@@ -97,7 +97,7 @@ def pic_create_h5ad(fragments, peak_bed, sample, h5ad,
             prom_peaks = pd.unique(gr.join(pr).df["interval"])
             adata.var["overlap_promoter"] = adata.var_names.isin(prom_peaks)
             qc_vars.append("overlap_promoter")
-    sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inpalce=True, percent_top=None)
+    sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True, percent_top=None)
     if sample is not None:
         adata.obs[sample_name] = sample
         adata.obs_names = [f"{sample}#{bc}" for bc in adata.obs_names]

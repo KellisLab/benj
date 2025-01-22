@@ -17,3 +17,4 @@ from .cca import *
 from .metacell import metacell
 from .pseudobulk import pseudobulk
 from .window import *
+from .pic import pic_count, pic_create_h5ad

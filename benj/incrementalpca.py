@@ -12,6 +12,7 @@ class _RawNormalizeLogScaler:
                 import pandas as pd
                 import anndata
                 import scanpy as sc
+                from scipy.sparse import issparse
                 if not isinstance(data, anndata.AnnData):
                         data = anndata.AnnData(data)
                 if self.pre_normalized:

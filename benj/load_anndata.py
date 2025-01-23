@@ -8,6 +8,7 @@ def load_anndata(h5ad:_PathLike,
                  subset:dict=None, qc:bool=True,
                  elt:Union[str, List[str]]=None, logger="benj", verbose:bool=True,
                  obs_min:dict=None, obs_max:dict=None, sep:str="\t", force_qc:bool=False, **kwargs):
+    import gc
     import numpy as np
     import pandas as pd
     import anndata
@@ -82,6 +83,7 @@ def load_anndata(h5ad:_PathLike,
     if temp_X:
         del adata.X
         del adata.layers
+    gc.collect()
     if verbose:
         import logging
         logger = logging.getLogger(logger)

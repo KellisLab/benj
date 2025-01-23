@@ -1,5 +1,5 @@
 
-def pic_count(fragments, peak_bed, extend:int=5, blacklist_bed=None):
+def pic_count(fragments, peak_bed, extend:int=5, blacklist_bed=None, max_value:int=127):
     """ PyRanges and BED are both 0-based, with [start, end) style intervals.
     """
     import os
@@ -55,9 +55,18 @@ def pic_count(fragments, peak_bed, extend:int=5, blacklist_bed=None):
     pic = pd.concat((ovp.loc[ovp["peak_index_s"] != ovp["peak_index_e"], ["barcode_index", "peak_index_e"]].rename({"peak_index_e": "peak_index"}, axis=1),
                      ovp.loc[:, ["barcode_index", "peak_index_s"]].rename({"peak_index_s": "peak_index"}, axis=1)))
     pic = pic.loc[pic["peak_index"] >= 0, :]
-    S = csr_matrix((np.ones(pic.shape[0], dtype=np.int16), (pic["barcode_index"].values, pic["peak_index"].values)),
-                   shape=(len(bc), pf.shape[0]), dtype=np.int16)
+    S = csr_matrix((np.ones(pic.shape[0], dtype=np.int64), (pic["barcode_index"].values, pic["peak_index"].values)),
+                   shape=(len(bc), pf.shape[0]), dtype=np.int64)
     S.sum_duplicates()
+    if max_value <= 127:
+        S.data = S.data.clip(-128, max_value)
+        S = S.astype(np.int8)
+    elif max_value <= 32767:
+        S.data = S.data.clip(-32768, max_value)
+        S = S.astype(np.int16)
+    elif max_value <= 2147483647:
+        S.data = S.data.clip(-2147483648, max_value)
+        S = S.astype(np.int32)
     uns = {"files": {"fragments": os.path.abspath(fragments)}}
     return anndata.AnnData(S, obs=pd.DataFrame(index=bc), var=pf, uns=uns)
 
@@ -68,24 +77,12 @@ def pic_create_h5ad(fragments, peak_bed, sample, h5ad,
                     sample_name="Sample",
                     extend:int=5,
                     promoter_upstream:int=2000,
-                    promoter_downstream:int=100):
+                    promoter_downstream:int=100,
+                    max_value=127):
     import pandas as pd
     import scanpy as sc
-    adata = pic_count(fragments=fragments, peak_bed=peak_bed, extend=extend)
+    adata = pic_count(fragments=fragments, peak_bed=peak_bed, extend=extend, blacklist_bed=blacklist_bed, max_value=max_value)
     qc_vars = []
-    if blacklist_bed is not None:
-        import pyranges
-        gr = pyranges.from_dict({"Chromosome": adata.var["seqnames"].values,
-                                 "Start": adata.var["start"].values,
-                                 "End": adata.var["end"].values,
-                                 "interval": adata.var_names})
-        bl = pd.read_csv(blacklist_bed, sep="\t", header=None)
-        bl = pyranges.from_dict({"Chromosome": bl[0].values,
-                                 "Start": bl[1].values,
-                                 "End": bl[2].values})
-        bl_peaks = pd.unique(gr.join(bl).df["interval"])
-        adata.var["non_blacklist"] = ~adata.var_names.isin(bl_peaks)
-        qc_vars.append("non_blacklist")
     if tss_bed is not None:
         import pyranges
         from muon import atac as ac

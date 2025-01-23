@@ -18,5 +18,6 @@ if __name__ == "__main__":
     ap.add_argument("--extend", type=int, default=5)
     ap.add_argument("--promoter-upstream", type=int, default=2000)
     ap.add_argument("--promoter-downstream", type=int, default=100)
+    ap.add_argument("--max-value", type=int, default=127)
     args = vars(ap.parse_args())
     run(**args)

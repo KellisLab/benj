@@ -1,5 +1,7 @@
 
-def pic_count(fragments, peak_bed, extend:int=5):
+def pic_count(fragments, peak_bed, extend:int=5, blacklist_bed=None):
+    """ PyRanges and BED are both 0-based, with [start, end) style intervals.
+    """
     import os
     import numpy as np
     from scipy.sparse import csr_matrix
@@ -8,7 +10,22 @@ def pic_count(fragments, peak_bed, extend:int=5):
     import anndata
     df = pd.read_csv(fragments, sep="\t", header=None, comment="#").iloc[:, range(4)]
     df.columns = ["seqnames", "start", "end", "barcode"]
+    if blacklist_bed is not None:
+        gr = pyranges.from_dict({"Chromosome": df["seqnames"].values,
+                                 "Start": df["start"].values,
+                                 "End": df["end"].values,
+                                 "frag_index": np.arange(df.shape[0])})
+        bl = pd.read_csv(blacklist_bed, sep="\t", header=None, comment="#").iloc[:, range(3)]
+        bl.columns = ["seqnames", "start", "end"]
+        bl = pyranges.from_dict({"Chromosome": bl["seqnames"].values,
+                                 "Start": bl["start"].values,
+                                 "End": bl["end"].values})
+        frag_index = gr.overlap(bl, invert=True).df["frag_index"].values
+        del gr, bl
+        df = df.iloc[frag_index, :].copy()
     bc = pd.Index(pd.unique(df["barcode"]))
+    ### Subtract one for the current base pair.
+    ### Add extra to LHS like GenomicRanges::resize
     lhs_extend = int((extend - 1) // 2 + (extend - 1) % 2)
     rhs_extend = int((extend - 1) // 2) + 1
     pf = pd.read_csv(peak_bed, sep="\t", header=None).iloc[:, range(3)]

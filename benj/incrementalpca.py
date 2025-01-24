@@ -32,7 +32,12 @@ class IncrementalPCA:
                 self.scaler = _RawNormalizeLogScaler(mean=var["mean"], std=var["std"], target_sum=target_sum, pre_normalized=pre_normalized)
                 self.svd = IncrementalSVD(n_components=n_components)
         def partial_fit(self, X):
+                import gc
                 self.svd.partial_fit(self.scaler.transform(X))
+                gc.collect()
                 return self
         def transform(self, X):
-                return self.svd.transform(self.scaler.transform(X))
+                import gc
+                out = self.svd.transform(self.scaler.transform(X))
+                gc.collect()
+                return out

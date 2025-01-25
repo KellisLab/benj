@@ -133,6 +133,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
                      **kwargs):
     """Metadata+directory, or h5ad with or without metadata"""
     import os
+    import gc
     import numpy as np
     import pandas as pd
     from tqdm.auto import tqdm
@@ -167,6 +168,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
     bad = []
     with sw("Reading H5AD files"):
         for sample in tqdm(metadata.index.values):
+            gc.collect()
             ### TODO sample may be aggr not actual sample
             ### find sample checks 1: h5ad 2: directory+metadata, 3: sample.h5ad
             try:
@@ -196,12 +198,16 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
     if bad:
         print("Bad samples: ", ",".join(bad))
     total_cells = np.sum([adata.shape[0] for _, adata in adata_tbl.items()])
+    gc.collect()
     with sw("Concatenating %d cells into one AnnData object" % total_cells):
         if calc_qc:
+            import gc
             calc_qc = aggregate_var(adata_tbl)
+            gc.collect()
         adata = anndata.concat(adata_tbl, merge="same", uns_merge="same")
         tk = list(adata_tbl.keys())
         del adata_tbl
+        gc.collect()
         if len(tk) == len(scrub_tbl.keys()):
             adata.uns["scrublet"] = {"batches": scrub_tbl,
                                      "batched_by": sample_key}

@@ -2,7 +2,7 @@ class _RawNormalizeLogScaler:
         def __init__(self, mean, std, target_sum:int=None, eps=1e-50, pre_normalized:bool=False):
                 import numpy as np
                 self.mean = np.ravel(mean).reshape(1, -1)
-                self.inv_std = np.ravel(1. / std).reshape(1, -1).clip(eps, np.inf)
+                self.inv_std = np.ravel(1. / std.clip(eps, np.inf)).reshape(1, -1)
                 self.target_sum = target_sum
                 self.pre_normalized = pre_normalized
                 if target_sum is None: ### weird python thing

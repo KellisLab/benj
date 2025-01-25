@@ -86,6 +86,9 @@ def load_anndata(h5ad:_PathLike,
     gc.collect()
     if verbose:
         import logging
+        print("X:", adata.X)
+        print("obs:", adata.obs.head())
+        print("var:", adata.var.head())
         logger = logging.getLogger(logger)
         logging.basicConfig(level=logging.INFO)
         logger.info("Read %d cells" % adata.shape[0])

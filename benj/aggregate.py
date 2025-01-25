@@ -166,6 +166,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
     scrub_tbl = {}
     h5ad_tbl = {}
     bad = []
+    var_same = None
     with sw("Reading H5AD files"):
         for sample in tqdm(metadata.index.values):
             gc.collect()
@@ -183,6 +184,15 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
             if adata is None:
                 bad.append(sample)
             else:
+                if var_same is None:
+                    var_same = adata.var.copy()
+                else:
+                    ### Idea: Keep one .var that keeps track of when the same items are there
+                    ### If the column values are all the same, save and delete in all anndata
+                    ###
+                    var_same = anndata.concat([anndata.AnnData(var=var_same), anndata.AnnData(var=adata.var)], merge="same").var
+                    for cn in var_same.columns:
+                        del adata.var[cn]
                 adata_tbl[sample] = adata
                 fname_tbl[sample] = fname
                 if "H5AD" in adata.uns and adata.uns["H5AD"].get("sample_key", "") == sample_key:
@@ -208,6 +218,8 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
         tk = list(adata_tbl.keys())
         del adata_tbl
         gc.collect()
+        for vn in var_same.columns:
+            adata.var[vn] = var_same[vn]
         if len(tk) == len(scrub_tbl.keys()):
             adata.uns["scrublet"] = {"batches": scrub_tbl,
                                      "batched_by": sample_key}

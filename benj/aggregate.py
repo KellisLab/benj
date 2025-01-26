@@ -3,7 +3,8 @@ from typing import Union, List, Optional
 from pathlib import Path
 _PathLike=Union[str, Path]
 
-def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True):
+def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True, join_vars=None):
+    import gc
     from tqdm.auto import tqdm
     import numpy as np
     import pandas as pd
@@ -16,12 +17,15 @@ def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True)
     good_samples = pd.unique(adata.obs[adata.uns["H5AD"]["sample_key"]])
     for k, v in tqdm(adata.uns["H5AD"]["files"].items()):
         if k not in good_samples:
-                continue
+            continue
         tbl[k] = anndata.read_h5ad(v, backed="r")
         del tbl[k].raw
+        if join_vars is None:
+            del tbl[k].var
         if "layers" not in which and "all" not in which:
-                del tbl[k].layers
-    ac = AnnCollection(tbl, join_vars="inner")
+            del tbl[k].layers
+        gc.collect()
+    ac = AnnCollection(tbl, join_vars=join_vars)
     if view:
         return ac[adata.obs_names, adata.var_names]
     else:

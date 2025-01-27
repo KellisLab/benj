@@ -134,7 +134,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
                      sample_key="Sample", calc_qc:bool=True,
                      min_cells_per_sample:int=30,
                      sep="\t", verbose:bool=True,
-                     keep_var:bool=True
+                     keep_var:bool=True,
                      **kwargs):
     """Metadata+directory, or h5ad with or without metadata"""
     import os

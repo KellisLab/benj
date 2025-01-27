@@ -134,6 +134,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
                      sample_key="Sample", calc_qc:bool=True,
                      min_cells_per_sample:int=30,
                      sep="\t", verbose:bool=True,
+                     keep_var:bool=True
                      **kwargs):
     """Metadata+directory, or h5ad with or without metadata"""
     import os
@@ -190,7 +191,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
             else:
                 if var_same is None:
                     var_same = adata.var.copy()
-                else:
+                elif not keep_var:
                     ### Idea: Keep one .var that keeps track of when the same items are there
                     ### If the column values are all the same, save and delete in all anndata
                     ###
@@ -222,8 +223,9 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
         tk = list(adata_tbl.keys())
         del adata_tbl
         gc.collect()
-        for vn in var_same.columns:
-            adata.var[vn] = var_same[vn]
+        if not keep_var:
+            for vn in var_same.columns:
+                adata.var[vn] = var_same[vn]
         if len(tk) == len(scrub_tbl.keys()):
             adata.uns["scrublet"] = {"batches": scrub_tbl,
                                      "batched_by": sample_key}

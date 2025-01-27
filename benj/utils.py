@@ -6,15 +6,18 @@ def pg(adata, color_map="Reds"):
 
 def read_elems(path: str, elems: Union[str, List[str]], retry:int=2) -> Union[Dict[str, any], any]:
     import h5py
-    import anndata.experimental
+    try:
+        from anndata.io import read_elem
+    except ModuleNotFoundError:
+        from anndata.experimental import read_elem
     if retry < 0:
         return {}
     try:
         with h5py.File(path, "r") as F:
             if isinstance(elems, str):
-                return anndata.experimental.read_elem(F[elems])
+                return read_elem(F[elems])
             else:
-                return {elem: anndata.experimental.read_elem(F[elem]) for elem in elems}
+                return {elem: read_elem(F[elem]) for elem in elems}
     except KeyError:
         import time
         print("Key error for %s, sleeping 5 seconds and retrying..." % path)
@@ -140,6 +143,7 @@ def weighted_pearson_correlation(A, B, wt=None):
 
 def is_nonzero_combinatorial(adata, genes, label:str="Combination", prefix:str="Combo ", inplace:bool=True):
     import numpy as np
+    import pandas as pd
     import scipy.sparse
     I = adata.var_names.get_indexer(genes)
     X = adata.X[:, I]

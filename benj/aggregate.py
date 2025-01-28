@@ -3,7 +3,7 @@ from typing import Union, List, Optional
 from pathlib import Path
 _PathLike=Union[str, Path]
 
-def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True, join_vars=None):
+def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True, join_vars="inner"):
     import gc
     from tqdm.auto import tqdm
     import numpy as np

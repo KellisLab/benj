@@ -16,7 +16,7 @@ se_make_pseudobulk <- function(se, on, missing.levels=FALSE, unlevel=TRUE, ncell
         mat %*% to_P
     })
     if ("counts" %in% names(A)) {
-        Percent <- as.matrix((A$counts > 0) %*% to_P) %*% diag(100/colSums(to_P))
+        Percent <- as.matrix((A$counts > 0) %*% to_P) %*% diag(100/Matrix::colSums(to_P))
         dimnames(Percent) <- dimnames(P$counts)
         P$Percent <- Percent
     }

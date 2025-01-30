@@ -15,6 +15,11 @@ se_make_pseudobulk <- function(se, on, missing.levels=FALSE, unlevel=TRUE, ncell
     P = lapply(A, function(mat) {
         mat %*% to_P
     })
+    if ("counts" %in% names(A)) {
+        Percent <- as.matrix((A$counts > 0) %*% to_P) %*% diag(100/colSums(to_P))
+        dimnames(Percent) <- dimnames(P$counts)
+        P$Percent <- Percent
+    }
     cd[[on]] = factor(as.character(cd[[on]]), levels=colnames(to_P))
     pcd = data.frame(row.names=levels(cd[[on]]))
     pcd[[ncell_col]] <- Matrix::colSums(to_P)
@@ -270,9 +275,11 @@ se_concat <- function(se.list) {
 
 se_as_Seurat <- function(sce) {
     C = SummarizedExperiment::assays(sce)$counts
+    dimnames(C) <- dimnames(sce)
     cd = SummarizedExperiment::colData(sce)
+    rownames(cd) <- colnames(sce)
     s.obj = Seurat::CreateSeuratObject(counts=C, meta.data=as.data.frame(cd))
-    s.obj[["umap"]] <- Seurat::CreateDimReducObject(
+    s.obj[["UMAP"]] <- Seurat::CreateDimReducObject(
          embeddings = SingleCellExperiment::reducedDims(sce)$X_umap,
          key = "UMAP_", assay = "RNA")
     s.obj[["X_pca"]] <- Seurat::CreateDimReducObject(
@@ -285,5 +292,6 @@ se_as_Seurat <- function(sce) {
 ad_as_Seurat <- function(h5ad) {
   s.obj = anndataR::read_h5ad(h5ad, to="Seurat")
   obsm = rhdf5::h5read(h5ad, "obsm")
-  s.obj[["X_umap"]] <- Seurat::CreateDimReducObject(embeddings=t(obsm$X_umap), key="UMAP_", assay="RNA")
+  colnames(obsm$X_umap) <- rhdf5::h5read(h5ad, "/obs/_index")
+  s.obj[["UMAP"]] <- Seurat::CreateDimReducObject(embeddings=t(obsm$X_umap), key="UMAP_", assay="RNA")
 }

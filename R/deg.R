@@ -191,6 +191,15 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     logCPM = edgeR::cpmByGroup(pb, SummarizedExperiment::colData(pb)[[pathology]], log=TRUE)
     colnames(logCPM) = paste0("logCPM_", colnames(logCPM))
     SummarizedExperiment::rowData(se) = cbind(SummarizedExperiment::rowData(se), as.data.frame(logCPM))
+### Get % expressing info
+    if ("Percent" %in% names(SummarizedExperiment::assays(pb))) {
+        Percent <- SummarizedExperiment::assays(pb)$Percent %*% make_pseudobulk(SummarizedExperiment::colData(pb)[[pathology]])
+        pf <- as.data.frame(as.matrix(Percent))
+        colnames(pf) <- paste0("Percent_", colnames(pf))
+        for (cn in names(pf)) {
+          rowData(se)[[paste0("Percent", cn)]] <- pf[[cn]]
+        }
+    }
 ### Convert pathology to factor
     SummarizedExperiment::colData(se)[[pathology]] = as.factor(as.character(cd[[pathology]]))
 ### Check matrix

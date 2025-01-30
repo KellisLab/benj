@@ -193,9 +193,8 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     SummarizedExperiment::rowData(se) = cbind(SummarizedExperiment::rowData(se), as.data.frame(logCPM))
 ### Get % expressing info
     if ("Percent" %in% names(SummarizedExperiment::assays(pb))) {
-        Percent <- SummarizedExperiment::assays(pb)$Percent %*% make_pseudobulk(SummarizedExperiment::colData(pb)[[pathology]])
+        Percent <- SummarizedExperiment::assays(pb)$Percent %*% make_average(SummarizedExperiment::colData(pb)[[pathology]])
         pf <- as.data.frame(as.matrix(Percent))
-        colnames(pf) <- paste0("Percent_", colnames(pf))
         for (cn in names(pf)) {
           SummarizedExperiment::rowData(se)[[paste0("Percent", cn)]] <- pf[[cn]]
         }

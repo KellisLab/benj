@@ -197,7 +197,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
         pf <- as.data.frame(as.matrix(Percent))
         colnames(pf) <- paste0("Percent_", colnames(pf))
         for (cn in names(pf)) {
-          rowData(se)[[paste0("Percent", cn)]] <- pf[[cn]]
+          SummarizedExperiment::rowData(se)[[paste0("Percent", cn)]] <- pf[[cn]]
         }
     }
 ### Convert pathology to factor

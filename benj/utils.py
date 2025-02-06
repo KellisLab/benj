@@ -170,7 +170,57 @@ def is_nonzero_combinatorial(adata, genes, label:str="Combination", prefix:str="
     else:
         return df
 
-    
+
+def trigamma_inverse(x):
+    """limma::trigammaInverse translated into python"""
+    import numpy as np
+    from scipy.special import polygamma
+    if not np.isscalar(x) and not isinstance(x, (np.ndarray, list)):
+        raise ValueError("Non-numeric argument to mathematical function")
+    x = np.asarray(x, dtype=np.float64)
+    if x.size == 0:
+        return np.array([])
+    y = np.copy(x)
+    omit = np.isnan(x)
+    if np.any(omit):
+        y[omit] = np.nan
+        if np.any(~omit):
+            y[~omit] = trigamma_inverse(x[~omit])
+        return y
+    omit = (x < 0)
+    if np.any(omit):
+        y[omit] = np.nan
+        if np.any(~omit):
+            y[~omit] = trigamma_inverse(x[~omit])
+        return y
+    omit = (x > 1e7)
+    if np.any(omit):
+        y[omit] = 1 / np.sqrt(x[omit])
+        if np.any(~omit):
+            y[~omit] = trigamma_inverse(x[~omit])
+        return y
+    omit = (x < 1e-6)
+    if np.any(omit):
+        y[omit] = 1 / x[omit]
+        if np.any(~omit):
+            y[~omit] = trigamma_inverse(x[~omit])
+        return y
+    y = 0.5 + 1 / x
+    iter_count = 0
+    while True:
+        iter_count += 1
+        # Trigamma function
+        tri = polygamma(1, y)
+        # Second derivative of digamma
+        dif = tri * (1 - tri / x) / polygamma(2, y)  
+        y += dif
+        if np.max(-dif / y) < 1e-8:
+            break
+        if iter_count > 50:
+            print("Warning: Iteration limit exceeded")
+            break
+    return y
+
 def is_gzip(filename):
     with open(filename, "rb") as f:
         return f.read(2) == b"\x1f\x8b"

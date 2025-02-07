@@ -22,6 +22,7 @@ def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True,
         del tbl[k].raw
         if join_vars is None:
             del tbl[k].var
+            del tbl[k].obs
         if "layers" not in which and "all" not in which:
             del tbl[k].layers
         gc.collect()

@@ -561,7 +561,7 @@ deg.deseq2 <- function(se,
     
     
     if ("deg" %in% names(S4Vectors::metadata(se))) {
-        S4Vectors::metadata(se)$deg[[paste0(prefix, "_harmonic_mean_pvalue")]] <- 1/mean(1/pmax(1e-300, df$pvalue))
+        S4Vectors::metadata(se)$deg[[paste0(prefix, "_harmonic_mean_pvalue")]] <- 1/mean(1/pmax(1e-300, df$pvalue[!is.na(df$pvalue)]))
     }
     return(se)
 }

@@ -117,7 +117,7 @@ def aggregate_load(adata, which:Union[str, List[str]]="X"):
         which = [which]
     ac = None 
     if "X" in which or "all" in which:
-        ac = aggregate_collection(adata, which=which)
+        ac = aggregate_collection(adata, which=which, join_vars=None)
         try:
             with sw("Loading X (%d, %d)" % adata.shape):
                 adata.X = ac.X

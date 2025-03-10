@@ -219,6 +219,7 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
                                        min_count=min.count,
                                        min_total_counts_per_sample=min.total.counts.per.sample,
                                        IQR_factor=IQR.factor,
+                                       cpm_cutoff=cpm.cutoff,
                                        outlier_covariates=paste0(outlier.covariates, collapse=" + "))
 
 ### Re-order to group by sample
@@ -561,7 +562,10 @@ deg.deseq2 <- function(se,
     
     
     if ("deg" %in% names(S4Vectors::metadata(se))) {
-        S4Vectors::metadata(se)$deg[[paste0(prefix, "_harmonic_mean_pvalue")]] <- 1/mean(1/pmax(1e-300, df$pvalue))
+        pval <- df$pvalue
+        pval[pval < 1e-300] <- 1e-300
+        pval[is.na(df$padj)] <- NA
+        S4Vectors::metadata(se)$deg[[paste0(prefix, "_harmonic_mean_pvalue")]] <- 1./mean(1./pval, na.rm=TRUE)
     }
     return(se)
 }

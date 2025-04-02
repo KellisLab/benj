@@ -10,7 +10,7 @@ def parse_args(ap, which=["log"], parse_anndata_prefix=[], load_all:bool=True):
             for pap in parse_anndata_prefix:
                 ap = setup_args_anndata(ap, parse_anndata_prefix=pap, load_all=load_all)
         else:
-            ap = setup_args_anndata(ap)
+            ap = setup_args_anndata(ap, load_all=load_all)
     if "mudata" in which:
         ap = setup_args_mudata(ap)
     if "scanpy" in which:

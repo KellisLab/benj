@@ -44,6 +44,7 @@ get_args <- function(args) {
     params$ncores = as.integer(Sys.getenv("OMP_NUM_THREADS", getOption("mc.cores", 2)))
     params$genes = NULL
     params$only_ruv = TRUE
+    params$min.cells.per.sample = 5
     i = 1
     help = function() {
         cat("deg.R [options]
@@ -65,7 +66,8 @@ options:
   --ruv Number of subject-level RUV terms to include
   -g, --genes File containing genes to use, one per line
   --cpm-cutoff Counts per million cutoff for filtering genes.
-  --min-total-counts Number of total counts required per cell
+  --min-total-counts Number of total counts required per sample
+  --min-cells Number of minimum cells required per sample
   --keep-covariates After RUV, keep the original covariates (not enabled by default)
   --only-ruv After RUV, remove original covariates (enabled by default)
   --iqr-factor Number of IQR above 75% away from outlier covariates to be a bad sample.

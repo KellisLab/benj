@@ -150,6 +150,7 @@ filterByCPM <- function(y, group = NULL, lib.size = NULL,
 #' @export
 deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_case_control=TRUE,
                         min.count=10, min.total.counts.per.sample=100, IQR.factor=1.5, frac_n=0.5,
+                        min.cells.per.sample=5,
                         cpm.cutoff=0,
                         outlier.covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"),
                         ensure.integer.counts=TRUE) {
@@ -172,10 +173,12 @@ deg.prepare <- function(se, pathology, case, control, sample.col, filter_only_ca
     pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     cat("Pseudobulk: ", ncol(pb), " samples\n")
     stopifnot(S4Vectors::ncol(pb) <= 10000) ### we can't have uber-large sample numbers
-    if (any(SummarizedExperiment::colData(pb)$total_counts < min.total.counts.per.sample)) {
+    if (any(SummarizedExperiment::colData(pb)$total_counts < min.total.counts.per.sample) |
+        any(SummarizedExperiment::colData(pb)$ncell < min.cells.per.sample)) {
         cd = SummarizedExperiment::colData(pb)
-        cat("Bad samples:", rownames(cd)[cd$total_counts < min.total.counts.per.sample], "\n")
-        se = se[, SummarizedExperiment::colData(se)[[sample.col]] %in% rownames(cd)[cd$total_counts >= min.total.counts.per.sample]]
+        cat("Bad samples:", union(rownames(cd)[cd$total_counts < min.total.counts.per.sample],
+                                  rownames(cd)[cd$ncell < min.cells.per.sample], "\n"))
+        se = se[, SummarizedExperiment::colData(se)[[sample.col]] %in% rownames(cd)[(cd$total_counts >= min.total.counts.per.sample)&(cd$ncell >= min.cells.per.sample)]]
         pb = calculate_qc_metrics(se_make_pseudobulk(se, sample.col), assay="counts", qc_vars=c("mt", "ribo", "pc", "chrX", "chrY"))
     }
     ### Outlier detection
@@ -253,6 +256,7 @@ deg <- function(se, pathology, case, control, covariates,
                 sample.col="Sample", min.count=10, cpm.cutoff=0,
                 filter_only_case_control=TRUE, NRUV=0, only_ruv=TRUE,
                 min.total.counts.per.sample=100, IQR.factor=1.5,
+                min.cells.per.sample=5,
                 outlier.covariates=c("log1p_total_counts", "n_genes_by_counts", "pct_counts_mt", "pct_counts_ribo"),
                 verbose=TRUE,
                 ensure.integer.counts=TRUE, mc.cores=getOption("mc.cores", 12)) {
@@ -264,6 +268,7 @@ deg <- function(se, pathology, case, control, covariates,
                      IQR.factor=IQR.factor,
                      filter_only_case_control=filter_only_case_control,
                      min.total.counts.per.sample=min.total.counts.per.sample,
+                     min.cells.per.sample=min.cells.per.sample,
                      cpm.cutoff=cpm.cutoff,
                      min.count=min.count, outlier.covariates=outlier.covariates,
                      ensure.integer.counts=ensure.integer.counts)

@@ -161,6 +161,10 @@ options:
             i = i + 1
             params$min.total.counts.per.sample = as.numeric(args[[i]])
             i = i + 1
+        } else if (arg == "--min-cells") {
+            i = i + 1
+            params$min.cells.per.sample = as.numeric(args[[i]])
+            i = i + 1
         } else if (arg == "--iqr-factor") {
             i = i + 1
             params$IQR.factor = as.numeric(args[[i]])
@@ -229,6 +233,7 @@ adata = benj::deg(adata,
                   NRUV=params$NRUV,
                   verbose=params$verbose,
                   min.total.counts.per.sample=params$min.total.counts.per.sample,
+                  min.cells.per.sample=params$min.cells.per.sample,
                   IQR.factor=params$IQR.factor,
                   only_ruv=params$only_ruv,
                   outlier.covariates=params$outlier.covariates)

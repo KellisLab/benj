@@ -22,7 +22,7 @@ dump.excel <- function(se, output, use.openxlsx=TRUE) {
         # Loop over the list and add each dataframe as a new sheet
         for (sheet_name in names(A)) {
             openxlsx::addWorksheet(wb, sheet_name)
-            openxlsx::writeData(wb, sheet_name, A[[sheet_name]])
+            openxlsx::writeData(wb, sheet_name, A[[sheet_name]], withFilter=TRUE)
         }
 
         openxlsx::conditionalFormatting(wb=wb, sheet="gene_info",

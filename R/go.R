@@ -53,6 +53,8 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method, gene_col="gene",
     if ((meth_path %in% sheet_names)&&(nrow(df)>0)) {
       df$log2FC=min_log2FC
       df$FDR=max_FDR
+      df$mlog10p.adjust <- -log10(df$p.adjust)
+      df$DescID <- paste0(df$Description, " (", df$ID, ")")
       mpdf <- openxlsx::readWorkbook(wb, sheet=meth_path)
       I <- intersect(colnames(mpdf), colnames(df))
       if (length(I) == ncol(df)) {
@@ -68,7 +70,7 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method, gene_col="gene",
       }
     }
     if (nrow(df) > 0) {
-      openxlsx::writeData(wb, meth_path, df)
+      openxlsx::writeData(wb, meth_path, df, withFilter=TRUE)
     }
     openxlsx::saveWorkbook(wb, xlsx, overwrite=TRUE)
 }

@@ -67,6 +67,8 @@ enrichALL_Excel <- function(xlsx, new_sheet, OrgDb, method, gene_col="gene",
       if (nrow(df) > 0) {
         df$log2FC=min_log2FC
         df$FDR=max_FDR
+        df$mlog10p.adjust <- -log10(df$p.adjust)
+        df$DescID <- paste0(df$Description, " (", df$ID, ")")
       }
     }
     if (nrow(df) > 0) {

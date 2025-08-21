@@ -293,5 +293,5 @@ ad_as_Seurat <- function(h5ad) {
   s.obj = anndataR::read_h5ad(h5ad, to="Seurat")
   obsm = rhdf5::h5read(h5ad, "obsm")
   colnames(obsm$X_umap) <- rhdf5::h5read(h5ad, "/obs/_index")
-  s.obj[["UMAP"]] <- Seurat::CreateDimReducObject(embeddings=t(obsm$X_umap), key="UMAP_", assay="RNA")
+  s.obj[["umap"]] <- Seurat::CreateDimReducObject(embeddings=t(obsm$X_umap), key="UMAP_", assay="RNA")
 }

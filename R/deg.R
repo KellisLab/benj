@@ -571,6 +571,7 @@ deg.deseq2 <- function(se,
         pval[pval < 1e-300] <- 1e-300
         pval[is.na(df$padj)] <- NA
         S4Vectors::metadata(se)$deg[[paste0(prefix, "_harmonic_mean_pvalue")]] <- 1./mean(1./pval, na.rm=TRUE)
+        S4Vectors::metadata(se)$deg[[paste0(prefix, "_adj_harmonic_mean_pvalue")]] <- min(1, sum(1/seq(length(pvalue))) / mean(1./pval, na.rm=TRUE))
     }
     return(se)
 }

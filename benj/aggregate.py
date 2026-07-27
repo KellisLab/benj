@@ -1,9 +1,12 @@
-
 from typing import Union, List, Optional
 from pathlib import Path
-_PathLike=Union[str, Path]
 
-def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True, join_vars="inner"):
+_PathLike = Union[str, Path]
+
+
+def aggregate_collection(
+    adata, which: Union[str, List[str]] = "X", view: bool = True, join_vars="inner"
+):
     import gc
     from tqdm.auto import tqdm
     import numpy as np
@@ -11,6 +14,7 @@ def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True,
     import scanpy as sc
     import anndata
     from anndata.experimental.multi_files import AnnCollection
+
     if isinstance(which, str):
         which = [which]
     tbl = {}
@@ -33,37 +37,49 @@ def aggregate_collection(adata, which:Union[str, List[str]]="X", view:bool=True,
         ac
 
 
-def aggregate_var(tbl:dict):
+def aggregate_var(tbl: dict):
     import re
     import numpy as np
     import pandas as pd
     import anndata
+
     def _aggregate_stats(dtbl, prefix=""):
         ### get number of cells per .var
         df_tbl = {}
         for k, df in dtbl.items():
             if "%smean" % prefix in df.columns and "%sstd" % prefix in df.columns:
                 df_tbl[k] = df
-        nf = {s: df.get("total_ncells", df.get("n_cells_by_counts")).max() for s, df in df_tbl.items()}
+        nf = {
+            s: df.get("total_ncells", df.get("n_cells_by_counts")).max()
+            for s, df in df_tbl.items()
+        }
         mf = pd.concat({s: df[prefix + "mean"] for s, df in df_tbl.items()}, axis=1)
         sf = pd.concat({s: df[prefix + "std"] for s, df in df_tbl.items()}, axis=1)
         sf = sf.loc[mf.index.values, mf.columns.values]
         nf = pd.Series(nf, index=mf.columns.values)
         overall_mean = (mf * nf).sum(1) / nf.sum()
         weighted_var = (nf - 1) * sf * sf
-        mean_diff_sq = nf * (mf - overall_mean.values[:, None])**2
+        mean_diff_sq = nf * (mf - overall_mean.values[:, None]) ** 2
         overall_var = (weighted_var + mean_diff_sq).sum(1) / (nf.sum() - len(df_tbl))
-        return pd.DataFrame({prefix + "mean": overall_mean, prefix + "std": np.sqrt(overall_var)})
-    def _aggregate_hvg(gb,
-                       min_disp: Optional[float] = 0.5,
-                       max_disp: Optional[float] = np.inf,
-                       min_mean: Optional[float] = 0.0125,
-                       max_mean: Optional[float] = 3,):
-        hf = gb.agg({
-            "means": np.nanmean,
-            "dispersions": np.nanmean,
-            "dispersions_norm": np.nanmean,
-            "highly_variable": np.nansum})
+        return pd.DataFrame(
+            {prefix + "mean": overall_mean, prefix + "std": np.sqrt(overall_var)}
+        )
+
+    def _aggregate_hvg(
+        gb,
+        min_disp: Optional[float] = 0.5,
+        max_disp: Optional[float] = np.inf,
+        min_mean: Optional[float] = 0.0125,
+        max_mean: Optional[float] = 3,
+    ):
+        hf = gb.agg(
+            {
+                "means": np.nanmean,
+                "dispersions": np.nanmean,
+                "dispersions_norm": np.nanmean,
+                "highly_variable": np.nansum,
+            }
+        )
         hf.rename(columns={"highly_variable": "highly_variable_nbatches"}, inplace=True)
         dispersion_norm = hf.dispersions_norm.values
         dispersion_norm[np.isnan(dispersion_norm)] = 0  # similar to Seurat
@@ -75,8 +91,9 @@ def aggregate_var(tbl:dict):
                 hf.dispersions_norm < max_disp,
             )
         )
-        hf['highly_variable'] = gene_subset
+        hf["highly_variable"] = gene_subset
         return hf
+
     comm_cols = None
     var_tbl = {}
     for k, data in tbl.items():
@@ -89,8 +106,9 @@ def aggregate_var(tbl:dict):
             continue
         var_tbl[k]["gene"] = var_tbl[k].index.values
     cf = pd.concat(var_tbl, axis=0)
-    var = cf.groupby("gene").agg({"total_counts": np.nansum,
-                                  "n_cells_by_counts": np.nansum})
+    var = cf.groupby("gene").agg(
+        {"total_counts": np.nansum, "n_cells_by_counts": np.nansum}
+    )
     var["log1p_total_counts"] = np.log1p(var["total_counts"])
     if "dispersions" in cf.columns:
         dvar = _aggregate_hvg(cf.groupby("gene"))
@@ -108,16 +126,18 @@ def aggregate_var(tbl:dict):
             var[col] = svar.loc[var.index.values, col].values
     return var
 
-def aggregate_load(adata, which:Union[str, List[str]]="X"):
+
+def aggregate_load(adata, which: Union[str, List[str]] = "X"):
     """TODO: recursive option for .uns["H5AD"]"""
     import scanpy as sc
     from .timer import template as stopwatch
+
     sw = stopwatch()
     if isinstance(which, str):
         which = [which]
-    ac = None 
+    ac = None
     if "X" in which or "all" in which:
-        ac = aggregate_collection(adata, which=which)
+        ac = aggregate_collection(adata, which=which, join_vars=None)
         try:
             with sw("Loading X (%d, %d)" % adata.shape):
                 adata.X = ac.X
@@ -130,13 +150,19 @@ def aggregate_load(adata, which:Union[str, List[str]]="X"):
             adata.layers = ac.layers
     return adata
 
-def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=None,
-                     h5ad:Union[_PathLike, List[_PathLike]]=None,
-                     sample_key="Sample", calc_qc:bool=True,
-                     min_cells_per_sample:int=30,
-                     sep="\t", verbose:bool=True,
-                     keep_var:bool=True,
-                     **kwargs):
+
+def aggregate_concat(
+    metadata=None,
+    directory: Union[_PathLike, List[_PathLike]] = None,
+    h5ad: Union[_PathLike, List[_PathLike]] = None,
+    sample_key="Sample",
+    calc_qc: bool = True,
+    min_cells_per_sample: int = 30,
+    sep="\t",
+    verbose: bool = True,
+    keep_var: bool = True,
+    **kwargs,
+):
     """Metadata+directory, or h5ad with or without metadata"""
     import os
     import gc
@@ -146,6 +172,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
     import anndata
     from .timer import template as stopwatch
     from .load_anndata import find_sample
+
     sw = stopwatch()
     if h5ad is not None:
         if isinstance(h5ad, str) or isinstance(h5ad, Path):
@@ -179,12 +206,18 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
             ### TODO sample may be aggr not actual sample
             ### find sample checks 1: h5ad 2: directory+metadata, 3: sample.h5ad
             try:
-                adata, fname = find_sample(directory=directory, h5ad=h5ad.get(sample),
-                                           sample=sample, metadata=metadata, qc=calc_qc,
-                                           min_cells_per_sample=min_cells_per_sample,
-                                           verbose=verbose,
-                                           **kwargs)
-            except:
+                adata, fname = find_sample(
+                    directory=directory,
+                    h5ad=h5ad.get(sample),
+                    sample=sample,
+                    metadata=metadata,
+                    qc=calc_qc,
+                    min_cells_per_sample=min_cells_per_sample,
+                    verbose=verbose,
+                    **kwargs,
+                )
+            except Exception as e:
+                print(f"An error occurred: {e}")
                 adata = None
                 pass
             if adata is None:
@@ -196,15 +229,21 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
                     ### Idea: Keep one .var that keeps track of when the same items are there
                     ### If the column values are all the same, save and delete in all anndata
                     ###
-                    var_same = anndata.concat([anndata.AnnData(var=var_same), anndata.AnnData(var=adata.var)], merge="same").var
+                    var_same = anndata.concat(
+                        [anndata.AnnData(var=var_same), anndata.AnnData(var=adata.var)],
+                        merge="same",
+                    ).var
                     for cn in var_same.columns:
                         del adata.var[cn]
                 adata_tbl[sample] = adata
                 fname_tbl[sample] = fname
-                if "H5AD" in adata.uns and adata.uns["H5AD"].get("sample_key", "") == sample_key:
+                if (
+                    "H5AD" in adata.uns
+                    and adata.uns["H5AD"].get("sample_key", "") == sample_key
+                ):
                     ### Aggregating raw
                     h5ad_tbl |= adata.uns["H5AD"]["files"]
-                else: ### already set, using wrong sample/md combo
+                else:  ### already set, using wrong sample/md combo
                     adata.obs[sample_key] = sample
                 if "scrublet" in adata.uns:
                     if "batches" in adata.uns["scrublet"]:
@@ -218,6 +257,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
     with sw("Concatenating %d cells into one AnnData object" % total_cells):
         if calc_qc:
             import gc
+
             calc_qc = aggregate_var(adata_tbl)
             gc.collect()
         adata = anndata.concat(adata_tbl, merge="same", uns_merge="same")
@@ -228,8 +268,7 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
             for vn in var_same.columns:
                 adata.var[vn] = var_same[vn]
         if len(tk) == len(scrub_tbl.keys()):
-            adata.uns["scrublet"] = {"batches": scrub_tbl,
-                                     "batched_by": sample_key}
+            adata.uns["scrublet"] = {"batches": scrub_tbl, "batched_by": sample_key}
         if len(h5ad_tbl) > 0:
             adata.uns["H5AD"] = {"sample_key": sample_key, "files": h5ad_tbl}
         if isinstance(calc_qc, pd.DataFrame):
@@ -237,6 +276,5 @@ def aggregate_concat(metadata=None, directory:Union[_PathLike, List[_PathLike]]=
                 adata.var[col] = calc_qc.loc[adata.var_names, col].values
     if "H5AD" not in adata.uns:
         ### Creating raw
-        adata.uns["H5AD"] = {"sample_key": sample_key,
-                             "files": fname_tbl}
+        adata.uns["H5AD"] = {"sample_key": sample_key, "files": fname_tbl}
     return adata
